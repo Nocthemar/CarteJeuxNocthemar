@@ -1,0 +1,446 @@
+/* =====================================================================
+   Cartes à collectionner — carte, deck de profil, glisser-déposer.
+   Partagé par profil.html et collection.html (le grimoire est dans collection.css).
+   ===================================================================== */
+/* Raretés : chaque carte rayonne d'une aura à la couleur de sa rareté.
+   --rarete  : couleur franche (bordure des cartes sans image)
+   --aura    : lueur serrée autour du cadre
+   --halo    : lueur large et diffuse */
+:root {
+  --rarete-commune:       #8f8a84;   /* gris cendre */
+  --rarete-eveillee:      #2f8a55;   /* vert profond */
+  --rarete-mythique:      #2c5fb8;   /* bleu profond */
+  --rarete-legendaire:    #a8141f;   /* rouge sombre */
+  --rarete-transcendante: #c9a24a;   /* doré, cerné de noir */
+}
+
+.carte-jeu--commune,
+.carte-verso--commune { --rarete: var(--rarete-commune);       --aura: rgba(143,138,132,.3);  --halo: rgba(143,138,132,.12); }
+.carte-jeu--eveillee,
+.carte-verso--eveillee { --rarete: var(--rarete-eveillee);      --aura: rgba(47,138,85,.4);    --halo: rgba(30,110,65,.2); }
+.carte-jeu--mythique,
+.carte-verso--mythique { --rarete: var(--rarete-mythique);      --aura: rgba(44,95,184,.42);   --halo: rgba(30,70,160,.22); }
+.carte-jeu--legendaire,
+.carte-verso--legendaire { --rarete: var(--rarete-legendaire);    --aura: rgba(190,20,32,.42);   --halo: rgba(150,10,20,.22); }
+.carte-jeu--transcendante,
+.carte-verso--transcendante { --rarete: var(--rarete-transcendante); --aura: rgba(214,176,90,.45);  --halo: rgba(201,162,74,.22); }
+
+/* ---------- Une carte (format 2:3, comme img/Cartes) ---------- */
+.carte-jeu {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  overflow: hidden;
+  background: #0d0a0a url("../img/Cartes/Verso-Carte.webp") center / cover;
+  border: 2px solid var(--rarete, var(--rarete-commune));
+  box-shadow: 0 4px 12px rgba(0,0,0,.45), 0 0 14px var(--halo, transparent);
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  transition: transform .15s ease, box-shadow .15s ease, opacity .15s ease;
+}
+.carte-jeu:hover { transform: translateY(-2px); box-shadow: 0 8px 18px rgba(0,0,0,.55), 0 0 18px var(--halo, transparent); }
+.carte-jeu img { display: block; width: 100%; height: 100%; object-fit: cover; }
+
+/* Carte avec image : les illustrations ont leur propre cadre et un fond transparent.
+   Pas de fond ni de bordure rectangulaire ; l'ombre et l'aura (drop-shadow) épousent la forme de la carte. */
+.carte-jeu:not(.carte-jeu--sans-image) {
+  overflow: visible;
+  background: none;
+  border: 0;
+  box-shadow: none;
+  filter:
+    drop-shadow(0 4px 8px rgba(0,0,0,.5))
+    drop-shadow(0 0 4px var(--aura, transparent))
+    drop-shadow(0 0 12px var(--halo, transparent));
+  transition: transform .15s ease, filter .15s ease, opacity .15s ease;
+}
+.carte-jeu:not(.carte-jeu--sans-image):hover {
+  box-shadow: none;
+  filter:
+    drop-shadow(0 8px 12px rgba(0,0,0,.6))
+    drop-shadow(0 0 6px var(--aura, transparent))
+    drop-shadow(0 0 18px var(--halo, transparent));
+}
+/* Transcendante : un liseré noir sous l'or, et une aura qui respire doucement */
+.carte-jeu--transcendante:not(.carte-jeu--sans-image) {
+  filter:
+    drop-shadow(0 0 2px rgba(0,0,0,.95))
+    drop-shadow(0 0 5px var(--aura))
+    drop-shadow(0 0 14px var(--halo));
+  animation: aura-transcendante 3.2s ease-in-out infinite;
+}
+@keyframes aura-transcendante {
+  50% {
+    filter:
+      drop-shadow(0 0 2px rgba(0,0,0,.95))
+      drop-shadow(0 0 8px var(--aura))
+      drop-shadow(0 0 22px var(--halo));
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .carte-jeu--transcendante:not(.carte-jeu--sans-image) { animation: none; }
+}
+.carte-jeu:not(.carte-jeu--sans-image) img { object-fit: contain; }
+
+/* Nom affiché seulement si l'image manque */
+.carte-jeu__nom {
+  position: absolute;
+  inset: auto 0 0;
+  padding: 18% 6% 8%;
+  background: linear-gradient(transparent, rgba(0,0,0,.85) 45%);
+  font-family: "Cinzel","Cinzel Repli", serif;
+  font-size: clamp(.55rem, 1.6vw, .8rem);
+  line-height: 1.2;
+  text-align: center;
+  color: var(--parchment);
+  display: none;
+}
+.carte-jeu--sans-image .carte-jeu__nom { display: block; }
+
+/* ---------- Glisser-déposer ---------- */
+.carte-jeu--saisie { opacity: .3; }
+.carte-fantome {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1000;
+  pointer-events: none;
+  cursor: grabbing;
+  box-shadow: 0 18px 36px rgba(0,0,0,.6);
+  transition: none;
+}
+body.glisser-actif, body.glisser-actif * { cursor: grabbing !important; }
+
+
+/* ---------- Section deck ---------- */
+.deck-tete {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.carte .deck-nom { margin: 0; overflow-wrap: anywhere; }
+
+.deck-renommer { display: flex; gap: 8px; flex-wrap: wrap; flex: 1; }
+.deck-renommer input {
+  flex: 1;
+  min-width: 160px;
+  padding: 5px 10px;
+  background: var(--fond);
+  border: 1px solid var(--bord);
+  border-radius: var(--rayon);
+  color: var(--texte);
+  font: inherit;
+}
+.deck-renommer input:focus { outline: none; border-color: var(--accent); }
+
+.deck-emplacements {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: clamp(6px, 2vw, 16px);
+}
+.deck-emplacement {
+  position: relative;
+  aspect-ratio: 2 / 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed var(--bord);
+  background: rgba(0,0,0,.25);
+  transition: border-color .15s, background .15s;
+}
+.deck-emplacement--plein { border: 0; background: none; perspective: 900px; }
+
+/* Carte du deck retournable : un clic montre le verso, un second clic le recto */
+.deck-flip {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform .6s cubic-bezier(.45,.05,.3,1);
+  cursor: pointer;
+}
+.deck-flip--retournee { transform: rotateY(180deg); }
+.deck-flip:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+.deck-flip > .carte-jeu,
+.carte-verso {
+  position: absolute;
+  inset: 0;
+  width: auto;
+  height: auto;
+  aspect-ratio: auto;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+.carte-verso {
+  transform: rotateY(180deg);
+  filter:
+    drop-shadow(0 4px 8px rgba(0,0,0,.5))
+    drop-shadow(0 0 4px var(--aura, transparent))
+    drop-shadow(0 0 12px var(--halo, transparent));
+}
+.carte-verso img { display: block; width: 100%; height: 100%; object-fit: contain; }
+@media (prefers-reduced-motion: reduce) { .deck-flip { transition: none; } }
+.deck-emplacement__num {
+  font-family: "Cinzel","Cinzel Repli", serif;
+  font-size: 1.3rem;
+  color: var(--texte-doux);
+  opacity: .5;
+}
+.deck-emplacement__ajout {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-size: 2rem;
+  color: var(--texte-doux);
+  transition: color .15s;
+}
+.deck-emplacement__ajout:hover { color: var(--accent); }
+
+.deck-retirer {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid var(--perte);
+  border-radius: 50%;
+  background: var(--fond);
+  color: var(--perte);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity .15s;
+}
+.deck-emplacement:hover .deck-retirer,
+.deck-retirer:focus-visible { opacity: 1; }
+@media (hover: none) { .deck-retirer { opacity: 1; } }
+.deck-retirer:hover { background: var(--perte); color: var(--texte); }
+
+.deck-emplacement.cible-survol {
+  border: 1px solid var(--accent);
+  background: rgba(194,47,56,.15);
+  outline: 2px solid var(--blood, #c22f38);
+  outline-offset: 2px;
+}
+
+.btn-collection {
+  display: inline-block;
+  margin-top: 16px;
+  padding: 5px 12px;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  font-family: "Cinzel","Cinzel Repli", serif;
+  font-size: .8rem;
+  letter-spacing: .06em;
+  transition: background .15s, color .15s;
+}
+.btn-collection:hover { background: var(--accent); color: var(--fond); }
+
+
+/* ---------- Encart « Duel » du profil ---------- */
+.carte.duel {
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  align-items: center;
+  gap: 24px;
+  padding: 28px;
+  background:
+    radial-gradient(60% 90% at 85% 50%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 70%),
+    linear-gradient(120deg, #1d1717, var(--carte) 55%, #140f0f);
+}
+/* trame de losanges, très discrète */
+.carte.duel::before {
+  content: "";
+  position: absolute; inset: 0;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(45deg, rgba(255,248,235,.025) 0 1px, transparent 1px 22px),
+    repeating-linear-gradient(-45deg, rgba(255,248,235,.025) 0 1px, transparent 1px 22px);
+  mask-image: linear-gradient(90deg, transparent, #000 60%);
+}
+.duel__texte { position: relative; z-index: 1; }
+.duel__sur {
+  font-family: "Cinzel","Cinzel Repli", serif;
+  font-size: .72rem; letter-spacing: .22em; text-transform: uppercase;
+  color: var(--texte-doux);
+}
+.carte .duel__titre {
+  margin: 6px 0 12px;
+  font-family: "Cinzel Decorative","Cinzel","Cinzel Repli", serif;
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  letter-spacing: .02em;
+  color: var(--texte);
+  text-shadow: 0 0 22px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+.duel__accroche { margin: 0; max-width: 46ch; color: var(--texte-doux); line-height: 1.55; }
+.duel__accroche strong { color: var(--accent); font-weight: 600; }
+
+.duel__regles {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  margin: 16px 0 22px; padding: 0; list-style: none;
+}
+.duel__regles li {
+  padding: 4px 10px;
+  border: 1px solid var(--bord);
+  font-family: "Cinzel","Cinzel Repli", serif;
+  font-size: .7rem; letter-spacing: .08em;
+  color: var(--texte-doux);
+}
+.duel__regles span { color: var(--accent); margin-right: 4px; }
+
+.duel__boutons { display: flex; flex-wrap: wrap; gap: 12px; }
+.duel__btn {
+  display: flex; flex-direction: column; gap: 2px;
+  min-width: 180px;
+  padding: 10px 16px;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  transition: background .15s, color .15s, transform .15s, box-shadow .15s;
+}
+.duel__btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+.duel__btn--plein { background: var(--accent); color: var(--fond); }
+.duel__btn:not(.duel__btn--plein):hover { background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.duel__btn-titre { font-family: "Cinzel","Cinzel Repli", serif; font-weight: 700; font-size: .9rem; letter-spacing: .06em; }
+.duel__btn-texte { font-size: .85rem; opacity: .8; }
+
+/* Éventail des cartes du deck : s'ouvre au survol */
+.duel__eventail {
+  position: relative; z-index: 1;
+  height: 230px;
+}
+.duel__eventail .carte-jeu {
+  position: absolute;
+  left: 50%; bottom: 0;
+  width: 120px;
+  margin-left: -60px;
+  cursor: pointer;
+  pointer-events: none;
+  transform-origin: 50% 120%;
+  transition: transform .45s cubic-bezier(.25,.8,.3,1);
+}
+.duel__eventail .carte-jeu:nth-child(1) { transform: rotate(-14deg) translateX(-18px); }
+.duel__eventail .carte-jeu:nth-child(2) { transform: translateY(-10px); z-index: 1; }
+.duel__eventail .carte-jeu:nth-child(3) { transform: rotate(14deg) translateX(18px); }
+.duel__eventail:hover .carte-jeu:nth-child(1),
+.duel__eventail:focus-visible .carte-jeu:nth-child(1) { transform: rotate(-22deg) translateX(-34px) translateY(-6px); }
+.duel__eventail:hover .carte-jeu:nth-child(2),
+.duel__eventail:focus-visible .carte-jeu:nth-child(2) { transform: translateY(-22px) scale(1.05); }
+.duel__eventail:hover .carte-jeu:nth-child(3),
+.duel__eventail:focus-visible .carte-jeu:nth-child(3) { transform: rotate(22deg) translateX(34px) translateY(-6px); }
+
+@media (max-width: 760px) {
+  .carte.duel { grid-template-columns: 1fr; padding: 22px 18px; }
+  .duel__eventail { order: -1; height: 190px; }
+  .duel__eventail .carte-jeu { width: 100px; margin-left: -50px; }
+  .duel__btn { flex: 1 1 160px; min-width: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .duel__eventail .carte-jeu, .duel__btn { transition: none; }
+}
+
+
+/* ---------- Notification ---------- */
+.notif {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translate(-50%, 20px);
+  max-width: calc(100% - 32px);
+  padding: 12px 18px;
+  border-radius: var(--rayon);
+  background: var(--carte);
+  border: 1px solid var(--bord);
+  color: var(--texte);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .2s, transform .2s;
+  z-index: 100;
+}
+.notif--visible { opacity: 1; transform: translate(-50%, 0); }
+.notif--ok     { border-color: var(--gain); }
+.notif--erreur { border-color: var(--perte); }
+
+
+/* Informations dans le cadre noir de la carte : voir CSS/carte-infos.css */
+
+
+/* ---------- Loupe et aperçu en grand ---------- */
+.carte-loupe {
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid rgba(217,183,122,.6);
+  border-radius: 50%;
+  background: rgba(20,12,8,.8);
+  font-size: .7rem;
+  line-height: 1;
+  cursor: zoom-in;
+  /* Cachée par défaut : n'apparaît qu'au survol de la carte (deck et collection) */
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .15s, transform .15s;
+}
+:hover > .carte-loupe, .carte-loupe:focus-visible { opacity: .75; pointer-events: auto; }
+.carte-loupe:hover, .carte-loupe:focus-visible { opacity: 1; transform: scale(1.12); }
+/* Écrans tactiles (pas de survol possible) : la loupe reste visible */
+@media (hover: none) {
+  .carte-loupe { opacity: .75; pointer-events: auto; }
+}
+
+.apercu-carte {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(8,5,5,.82);
+  backdrop-filter: blur(3px);
+  animation: apercu-fondu .2s ease;
+  cursor: zoom-out;
+}
+.apercu-carte__carte {
+  width: min(88vw, 440px, calc((100vh - 48px) / 1.5));
+  animation: apercu-entree .25s ease;
+}
+.apercu-carte .carte-jeu { cursor: default; }
+.apercu-carte .carte-jeu:hover { transform: none; }
+.apercu-carte__fermer {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--bord);
+  border-radius: 50%;
+  background: var(--carte);
+  color: var(--texte);
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.apercu-carte__fermer:hover { border-color: var(--accent); color: var(--accent); }
+@keyframes apercu-fondu { from { opacity: 0; } }
+@keyframes apercu-entree { from { transform: scale(.92); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .apercu-carte, .apercu-carte__carte { animation: none; }
+}

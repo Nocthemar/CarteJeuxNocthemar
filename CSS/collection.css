@@ -1,0 +1,332 @@
+/* =====================================================================
+   Page collection : le grimoire de cartes (cuir, parchemin, pochettes)
+   ===================================================================== */
+:root {
+  --cuir: #3a1d14;
+  --cuir-sombre: #1c0d08;
+  --dorure: rgba(214,172,108,.55);
+  --parchemin: #e6d6b4;
+  --parchemin-sombre: #cdb487;
+  --encre: #3b2715;
+}
+
+.collection-wrap {
+  position: relative;
+  z-index: 1;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 24px 16px 64px;
+}
+.page-collection .carte {
+  max-width: none;
+  margin-left: 0;
+  margin-right: 0;
+}
+.page-collection .deck { margin-top: 36px; }
+
+.retour {
+  display: inline-block;
+  margin-bottom: 8px;
+  color: var(--texte-doux);
+  font-family: "Cinzel","Cinzel Repli", serif;
+  font-size: .85rem;
+  letter-spacing: .06em;
+}
+.retour:hover { color: var(--accent); }
+
+.deck-aide,
+.grimoire__aide {
+  margin: 12px 0 0;
+  max-width: none;
+  font-size: .9rem;
+  font-style: italic;
+  color: var(--texte-doux);
+}
+.grimoire__aide { text-align: center; margin: 14px auto 0; max-width: 70ch; }
+
+.collection-vide {
+  margin: 28px auto 0;
+  max-width: 60ch;
+  text-align: center;
+  font-style: italic;
+  color: var(--texte-doux);
+}
+
+/* ---------- Le livre ---------- */
+.grimoire { margin-top: 28px; }
+
+.grimoire__couverture {
+  position: relative;
+  padding: 58px clamp(14px, 3vw, 34px) clamp(18px, 3vw, 34px);
+  background:
+    radial-gradient(ellipse 60% 40% at 30% 15%, rgba(255,220,170,.07), transparent 70%),
+    radial-gradient(ellipse 120% 90% at 50% 50%, transparent 55%, rgba(0,0,0,.55) 100%),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='c'><feTurbulence type='fractalNoise' baseFrequency='1.3' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .5 0'/></filter><rect width='100%25' height='100%25' filter='url(%23c)'/></svg>"),
+    linear-gradient(135deg, var(--cuir) 0%, #2a130c 55%, var(--cuir-sombre) 100%);
+  border: 1px solid #0b0503;
+  box-shadow:
+    0 30px 70px rgba(0,0,0,.7),
+    inset 0 0 0 7px rgba(0,0,0,.3),
+    inset 0 0 0 8px var(--dorure),
+    inset 0 0 40px rgba(0,0,0,.6);
+}
+/* Couture le long du bord */
+.grimoire__couverture::before {
+  content: "";
+  position: absolute;
+  inset: 16px;
+  border: 1px dashed rgba(214,172,108,.3);
+  pointer-events: none;
+}
+
+/* Coins de métal */
+.grimoire__coin {
+  position: absolute;
+  width: 34px;
+  height: 34px;
+  background: linear-gradient(135deg, #b89458, #6d5230 60%, #3f2e18);
+  box-shadow: 0 2px 4px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,235,190,.4);
+  pointer-events: none;
+}
+.grimoire__coin--hg { top: -1px; left: -1px;  clip-path: polygon(0 0, 100% 0, 0 100%); }
+.grimoire__coin--hd { top: -1px; right: -1px; clip-path: polygon(0 0, 100% 0, 100% 100%); }
+.grimoire__coin--bg { bottom: -1px; left: -1px;  clip-path: polygon(0 0, 100% 100%, 0 100%); }
+.grimoire__coin--bd { bottom: -1px; right: -1px; clip-path: polygon(100% 0, 100% 100%, 0 100%); }
+
+/* Signet en tissu qui dépasse du haut */
+.grimoire__signet {
+  position: absolute;
+  top: -10px;
+  right: 9%;
+  width: 16px;
+  height: 64px;
+  background: linear-gradient(90deg, var(--blood-dim), var(--blood) 50%, var(--blood-dim));
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 82%, 0 100%);
+  box-shadow: 0 2px 4px rgba(0,0,0,.5);
+  z-index: 4;
+  pointer-events: none;
+}
+
+.grimoire__titre {
+  position: absolute;
+  top: 16px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-family: "Cinzel Decorative","Cinzel Decorative Repli", serif;
+  font-size: clamp(.95rem, 2.4vw, 1.35rem);
+  letter-spacing: .08em;
+  color: #d9b77a;
+  text-shadow: 0 1px 0 rgba(0,0,0,.8), 0 0 10px rgba(217,183,122,.25);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  padding: 0 60px;
+}
+
+/* ---------- Double page ---------- */
+.grimoire__double {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  perspective: 2600px;
+  box-shadow: 0 6px 18px rgba(0,0,0,.55);
+}
+/* Creux de la reliure */
+.grimoire__double::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 46px;
+  transform: translateX(-50%);
+  background: linear-gradient(90deg, transparent, rgba(60,35,12,.35) 40%, rgba(30,15,5,.55) 50%, rgba(60,35,12,.35) 60%, transparent);
+  pointer-events: none;
+  z-index: 2;
+}
+.grimoire__gauche, .grimoire__droite { display: flex; }
+
+.page {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: clamp(12px, 2.4vw, 28px) clamp(12px, 2.4vw, 28px) 12px;
+  color: var(--encre);
+  background:
+    radial-gradient(ellipse 90% 80% at 50% 45%, transparent 55%, rgba(120,80,35,.28) 100%),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='p'><feTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .45  0 0 0 0 .3  0 0 0 0 .12  0 0 0 .18 0'/></filter><rect width='100%25' height='100%25' filter='url(%23p)'/></svg>"),
+    linear-gradient(180deg, var(--parchemin), var(--parchemin-sombre));
+}
+.page--gauche { box-shadow: inset -34px 0 40px -28px rgba(70,40,10,.6); }
+.page--droite { box-shadow: inset 34px 0 40px -28px rgba(70,40,10,.6); }
+.page--vierge { min-height: 100%; }
+
+.page__grille {
+  flex: none;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: clamp(8px, 1.6vw, 18px);
+}
+.page__num {
+  margin-top: auto;
+  padding-top: 10px;
+  text-align: center;
+  font-family: "Cinzel","Cinzel Repli", serif;
+  font-size: .8rem;
+  letter-spacing: .12em;
+  color: rgba(59,39,21,.7);
+}
+.page__num::before, .page__num::after { content: " ❧ "; opacity: .6; }
+
+/* ---------- Pochettes (étuis transparents) ----------
+   Découpées selon la silhouette du cadre des cartes (arche à pointes et « N »,
+   pointes sur les côtés, pointe en bas). Le tracé SVG est en coordonnées
+   1024 × 1536, comme les images de img/Cartes. */
+.pochette {
+  --forme: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1024 1536' preserveAspectRatio='none'><path d='M400 45L505 15L612 45L860 190L895 330L895 940L935 965L915 1000L925 1395L600 1410L515 1505L430 1410L105 1395L110 1000L90 965L130 940L130 330L160 190Z'/></svg>");
+  position: relative;
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1024 1536' preserveAspectRatio='none'><defs><linearGradient id='g' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='%235a3a19' stop-opacity='.2'/><stop offset='1' stop-color='%235a3a19' stop-opacity='.08'/></linearGradient></defs><path d='M400 45L505 15L612 45L860 190L895 330L895 940L935 965L915 1000L925 1395L600 1410L515 1505L430 1410L105 1395L110 1000L90 965L130 940L130 330L160 190Z' fill='url(%23g)' stroke='%235a3a19' stroke-opacity='.6' stroke-width='1.2' stroke-linejoin='round' vector-effect='non-scaling-stroke'/></svg>") center / 100% 100% no-repeat;
+}
+/* Reflet de l'étui en plastique, par-dessus la carte, lui aussi à la forme du cadre */
+.pochette::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(115deg, rgba(255,255,255,.22) 0 14%, transparent 30% 72%, rgba(255,255,255,.1) 86%);
+  -webkit-mask: var(--forme) center / 100% 100% no-repeat;
+  mask: var(--forme) center / 100% 100% no-repeat;
+  pointer-events: none;
+  z-index: 1;
+}
+/* Hauteur 2:3 par padding-top (fiable dans une grille, contrairement à aspect-ratio) */
+.pochette::before { content: ""; display: block; padding-top: 150%; }
+.pochette .carte-jeu {
+  position: absolute;
+  inset: 0;
+  width: auto;
+  aspect-ratio: auto;
+}
+/* Pochette occupée : la case disparaît, seule la carte reste visible */
+.pochette--pleine { background: none; }
+.pochette--pleine::after { display: none; }
+
+.pochette.cible-survol {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1024 1536' preserveAspectRatio='none'><defs><linearGradient id='g' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='%23c22f38' stop-opacity='.22'/><stop offset='1' stop-color='%23c22f38' stop-opacity='.12'/></linearGradient></defs><path d='M400 45L505 15L612 45L860 190L895 330L895 940L935 965L915 1000L925 1395L600 1410L515 1505L430 1410L105 1395L110 1000L90 965L130 940L130 330L160 190Z' fill='url(%23g)' stroke='%23c22f38' stroke-opacity='.95' stroke-width='2' stroke-linejoin='round' vector-effect='non-scaling-stroke'/></svg>");
+}
+.pochette--selection .carte-jeu:not(.carte-jeu--sans-image) {
+  filter: drop-shadow(0 0 2px var(--blood)) drop-shadow(0 0 5px var(--blood));
+}
+.pochette--selection .carte-jeu--sans-image { outline: 3px solid var(--blood); outline-offset: 2px; }
+/* Une carte est sélectionnée : les pochettes libres montrent qu'on peut y poser la carte */
+.grimoire:has(.pochette--selection) .pochette:not(.pochette--pleine) {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1024 1536' preserveAspectRatio='none'><defs><linearGradient id='g' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='%23c22f38' stop-opacity='.1'/><stop offset='1' stop-color='%23c22f38' stop-opacity='.05'/></linearGradient></defs><path d='M400 45L505 15L612 45L860 190L895 330L895 940L935 965L915 1000L925 1395L600 1410L515 1505L430 1410L105 1395L110 1000L90 965L130 940L130 330L160 190Z' fill='url(%23g)' stroke='%23c22f38' stroke-opacity='.5' stroke-width='1.2' stroke-linejoin='round' vector-effect='non-scaling-stroke'/></svg>");
+  cursor: pointer;
+}
+
+/* Étoile : ajouter / retirer du deck */
+.carte-etoile {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  z-index: 2;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid rgba(217,183,122,.6);
+  border-radius: 50%;
+  background: rgba(20,12,8,.8);
+  color: rgba(242,238,230,.55);
+  font-size: .85rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: color .15s, transform .15s;
+}
+.carte-etoile:hover { transform: scale(1.12); color: #f0cf8a; }
+.carte-etoile--active { color: #f0cf8a; border-color: #f0cf8a; text-shadow: 0 0 6px rgba(240,207,138,.8); }
+
+/* ---------- Page qui tourne (double page) ---------- */
+.feuille {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50%;
+  z-index: 3;
+  transform-style: preserve-3d;
+  transition: transform .9s cubic-bezier(.45,.05,.3,1);
+  pointer-events: none;
+}
+.feuille--suivante   { left: 50%; transform-origin: left center; }
+.feuille--precedente { left: 0;   transform-origin: right center; }
+.feuille--suivante.feuille--tournee   { transform: rotateY(-180deg); }
+.feuille--precedente.feuille--tournee { transform: rotateY(180deg); }
+
+.feuille__face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+.feuille__verso { transform: rotateY(180deg); }
+/* Ombre qui glisse sur la page pendant qu'elle tourne */
+.feuille__face::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(0,0,0,.28), transparent 60%);
+  opacity: 0;
+  animation: ombre-feuille .9s ease;
+  pointer-events: none;
+}
+@keyframes ombre-feuille { 50% { opacity: 1; } }
+
+/* ---------- Navigation ---------- */
+.grimoire__nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 18px;
+}
+.btn-page {
+  padding: 8px 16px;
+  border: 1px solid var(--bord);
+  background: var(--carte);
+  color: var(--texte);
+  font-family: "Cinzel","Cinzel Repli", serif;
+  font-size: .85rem;
+  letter-spacing: .05em;
+  cursor: pointer;
+  transition: border-color .15s, color .15s;
+}
+.btn-page:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.btn-page:disabled { opacity: .35; cursor: default; }
+.grimoire__folio {
+  font-family: "Cinzel","Cinzel Repli", serif;
+  font-size: .85rem;
+  letter-spacing: .08em;
+  color: var(--texte-doux);
+  text-align: center;
+}
+
+/* ---------- Téléphone : une seule page ---------- */
+@media (max-width: 800px) {
+  .grimoire__double { grid-template-columns: 1fr; perspective: 1400px; }
+  .grimoire__double::after, .grimoire__droite, .grimoire__signet { display: none; }
+  .page--gauche { box-shadow: inset 20px 0 30px -24px rgba(70,40,10,.6); }
+  .grimoire__gauche { transform-origin: left center; }
+  .grimoire__gauche.tourne-suiv { animation: page-part-suiv .35s ease-in forwards; }
+  .grimoire__gauche.tourne-prec { animation: page-part-prec .35s ease-in forwards; }
+  .grimoire__gauche.page-arrivee { animation: page-arrive .35s ease-out; }
+  .btn-page { padding: 8px 10px; font-size: .75rem; }
+  .carte-etoile { width: 22px; height: 22px; font-size: .7rem; }
+}
+@keyframes page-part-suiv { to { transform: rotateY(-80deg); opacity: .2; } }
+@keyframes page-part-prec { to { transform: translateX(8%); opacity: 0; } }
+@keyframes page-arrive { from { transform: translateX(-4%); opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .feuille, .carte-jeu { transition: none; }
+}

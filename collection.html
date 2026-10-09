@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Grimoire des cartes — Nocthémar</title>
+  <link rel="icon" type="image/png" href="img/Logo/Nocthemar_logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800&family=Cinzel+Decorative:wght@700;900&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="CSS/polices.css">
+  <link rel="stylesheet" href="CSS/index.css">
+  <link rel="stylesheet" href="CSS/compte.css">
+  <link rel="stylesheet" href="CSS/cartes-jeu.css">
+  <link rel="stylesheet" href="CSS/carte-infos.css">
+  <link rel="stylesheet" href="CSS/collection.css">
+<!-- Thème clair / sombre (bouton dans la barre latérale) : appliqué avant l'affichage -->
+<script>try{if(localStorage.getItem('nocthemar-theme')==='jour')document.documentElement.dataset.theme='jour'}catch(e){}</script>
+<link rel="stylesheet" href="CSS/theme-jour.css">
+</head>
+<body class="page-profil page-collection">
+<canvas id="embers"></canvas>
+
+  <header class="topbar">
+    <a class="brand" href="index.html">Nocthémar</a>
+    <span class="brand-sub">Duel des Couronnes</span>
+    <nav class="nav-links">
+      <a href="index.html">Accueil</a>
+      <a href="index.html#categories">Le Codex</a>
+    </nav>
+    <a href="boutique.html" class="nav-boutique">Boutique</a>
+    <div id="discord-auth"></div>
+  </header>
+
+  <main class="collection-wrap">
+
+    <a class="retour" href="profil.html">← Retour au profil</a>
+
+    <p id="chargement" class="vide">Ouverture du grimoire…</p>
+
+    <!-- Pas connecté -->
+    <section id="non-connecte" class="carte centre" hidden>
+      <h2>Ton grimoire de cartes</h2>
+      <p>Connecte-toi avec Discord pour ouvrir ta collection de cartes.</p>
+      <button id="btn-connexion" type="button" class="btn-discord">
+        <span class="btn-discord__logo" aria-hidden="true"></span>
+        Connecter Discord
+      </button>
+    </section>
+
+    <div id="collection" hidden>
+
+      <p id="collection-vide" class="collection-vide" hidden>
+        Ton grimoire est encore vide. Les cartes s'obtiennent à la boutique, lors d'événements
+        ou en récompense ; chaque nouvelle carte se range d'elle-même dans la première pochette libre.
+      </p>
+
+      <div class="grimoire" id="grimoire">
+        <div class="grimoire__couverture">
+          <span class="grimoire__coin grimoire__coin--hg" aria-hidden="true"></span>
+          <span class="grimoire__coin grimoire__coin--hd" aria-hidden="true"></span>
+          <span class="grimoire__coin grimoire__coin--bg" aria-hidden="true"></span>
+          <span class="grimoire__coin grimoire__coin--bd" aria-hidden="true"></span>
+          <span class="grimoire__signet" aria-hidden="true"></span>
+
+          <h1 class="grimoire__titre" id="grimoire-titre">Grimoire des cartes</h1>
+
+          <div class="grimoire__double" id="double">
+            <div class="grimoire__gauche" id="page-gauche"></div>
+            <div class="grimoire__droite" id="page-droite"></div>
+          </div>
+        </div>
+
+        <nav class="grimoire__nav" aria-label="Pages du grimoire">
+          <button type="button" class="btn-page" id="page-prec">‹ Page précédente</button>
+          <span class="grimoire__folio" id="folio" aria-live="polite"></span>
+          <button type="button" class="btn-page" id="page-suiv">Page suivante ›</button>
+        </nav>
+
+        <p class="grimoire__aide">
+          Glisse une carte vers n'importe quelle pochette pour la ranger (sur téléphone : appui long).
+          Tu peux aussi toucher une carte, puis la pochette où la poser.
+        </p>
+      </div>
+
+      <!-- Deck du profil : on y glisse des cartes du grimoire -->
+      <section class="carte deck">
+        <div id="deck"></div>
+        <p class="deck-aide">Glisse une carte du grimoire sur un emplacement, ou touche l'étoile ★ d'une carte. 5 cartes au maximum.</p>
+      </section>
+
+    </div>
+  </main>
+
+  <div id="notif" class="notif" role="status" aria-live="polite"></div>
+
+  <script src="JS/embers.js"></script>
+  <script src="JS/lien-site.js"></script>
+  <script src="JS/barre-laterale.js"></script>
+  <script type="module" src="JS/auth.js"></script>
+  <script type="module" src="JS/collection.js"></script>
+</body>
+</html>

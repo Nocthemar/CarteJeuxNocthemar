@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mode Histoire — Nocthémar</title>
+  <link rel="icon" type="image/png" href="img/Logo/Nocthemar_logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800&family=Cinzel+Decorative:wght@700;900&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="CSS/polices.css">
+  <link rel="stylesheet" href="CSS/index.css">
+  <link rel="stylesheet" href="CSS/compte.css">
+  <link rel="stylesheet" href="CSS/histoire.css">
+<!-- Thème clair / sombre (bouton dans la barre latérale) : appliqué avant l'affichage -->
+<script>try{if(localStorage.getItem('nocthemar-theme')==='jour')document.documentElement.dataset.theme='jour'}catch(e){}</script>
+<link rel="stylesheet" href="CSS/theme-jour.css">
+</head>
+<body class="page-profil page-histoire">
+<canvas id="embers"></canvas>
+
+  <header class="topbar">
+    <a class="brand" href="index.html">Nocthémar</a>
+    <span class="brand-sub">Duel des Couronnes</span>
+    <nav class="nav-links">
+      <a href="index.html">Accueil</a>
+      <a href="index.html#categories">Le Codex</a>
+    </nav>
+    <a href="boutique.html" class="nav-boutique">Boutique</a>
+    <div id="discord-auth"></div>
+  </header>
+
+  <main class="histoire-wrap">
+
+    <a class="retour" href="jeu-cartes.html">← Menu du Duel des Couronnes</a>
+
+    <header class="histoire-tete">
+      <p class="histoire-tete__sur">Duel des Couronnes</p>
+      <h1>Mode Histoire</h1>
+      <p class="histoire-tete__texte">Traverse les pays de Nocthémar, duel après duel. Chaque victoire ouvre la route ; le boss de chaque pays ouvre le suivant.</p>
+    </header>
+
+    <p id="chargement" class="vide">La carte se déplie…</p>
+
+    <!-- Pas connecté : la progression est liée au compte Discord -->
+    <section id="non-connecte" class="histoire-connexion" hidden>
+      <p>Le mode Histoire garde ta progression et tes récompenses : connecte-toi avec Discord pour partir en campagne.</p>
+      <button id="btn-connexion" type="button" class="btn-discord">
+        <span class="btn-discord__logo" aria-hidden="true"></span>
+        Connecter Discord
+      </button>
+    </section>
+
+    <div id="histoire" hidden>
+      <!-- Message après un duel (victoire / défaite, récompenses) -->
+      <div id="resultat" class="resultat" role="status" aria-live="polite" hidden></div>
+
+      <!-- Les chapitres (un pays chacun) : les verrouillés sont grisés -->
+      <nav class="chapitres" id="chapitres" aria-label="Chapitres"></nav>
+
+      <!-- La carte du chapitre : chemin et cercles des niveaux, placés en % de l'image -->
+      <section class="chapitre" id="chapitre" aria-live="polite"></section>
+    </div>
+  </main>
+
+  <!-- Fenêtre d'un niveau : nom, adversaire, récompenses, bouton Combattre -->
+  <dialog class="niveau-fiche" id="niveau-fiche" aria-labelledby="niveau-titre">
+    <form method="dialog" class="niveau-fiche__fermer"><button type="submit" aria-label="Fermer">×</button></form>
+    <p class="niveau-fiche__sur" id="niveau-sur"></p>
+    <h2 class="niveau-fiche__titre" id="niveau-titre"></h2>
+    <dl class="niveau-fiche__infos" id="niveau-infos"></dl>
+    <div class="niveau-fiche__recompenses" id="niveau-recompenses"></div>
+    <a class="niveau-fiche__combattre" id="niveau-combattre" href="#">Combattre</a>
+  </dialog>
+
+  <div id="notif" class="notif" role="status" aria-live="polite"></div>
+
+  <script src="JS/embers.js"></script>
+  <script src="JS/lien-site.js"></script>
+  <script src="JS/barre-laterale.js"></script>
+  <script type="module" src="JS/auth.js"></script>
+  <script type="module" src="JS/histoire.js"></script>
+</body>
+</html>

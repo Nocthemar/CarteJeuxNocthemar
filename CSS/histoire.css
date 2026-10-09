@@ -1,0 +1,317 @@
+/* =====================================================================
+   Page histoire.html — Mode Histoire du Duel des Couronnes
+   Reprend les couleurs du site (--ink, --parchment, --blood, --bronze, --line…),
+   donc suit aussi le thème clair (CSS/theme-jour.css).
+   ===================================================================== */
+.page-histoire { --or-histoire: #d8b978; }
+:root[data-theme="jour"] .page-histoire { --or-histoire: #8a6a2c; }
+
+.histoire-wrap {
+  position: relative;
+  z-index: 1;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 24px 16px 64px;
+}
+/* Les <section> de la page n'ont pas les grandes marges des sections du Codex (CSS/index.css) */
+.histoire-wrap section { padding: 0; border-bottom: 0; max-width: none; margin-left: 0; margin-right: 0; }
+.histoire-wrap .histoire-connexion { max-width: 560px; margin: 30px auto; padding: 28px; }
+
+.histoire-wrap .retour {
+  display: inline-block;
+  margin-bottom: 18px;
+  font-family: "Cinzel","Cinzel Repli", serif;
+  font-size: .8rem;
+  letter-spacing: .08em;
+  color: var(--parchment-dim);
+  transition: color .15s;
+}
+.histoire-wrap .retour:hover { color: var(--or-histoire); }
+
+/* ---------- En-tête ---------- */
+.histoire-tete { text-align: center; margin-bottom: 26px; }
+.histoire-tete__sur {
+  margin: 0 auto 6px;
+  font-family: "Cinzel","Cinzel Repli", serif;
+  font-size: .75rem; letter-spacing: .3em; text-transform: uppercase;
+  color: var(--parchment-faint);
+}
+.histoire-tete h1 {
+  font-family: "Cinzel Decorative","Cinzel Decorative Repli", serif;
+  font-size: clamp(2rem, 5vw, 3.2rem);
+  line-height: 1.1;
+}
+.histoire-tete__texte { margin: 12px auto 0; max-width: 56ch; color: var(--parchment-dim); font-style: italic; }
+
+.histoire-connexion {
+  max-width: 560px;
+  margin: 30px auto;
+  padding: 28px;
+  text-align: center;
+  background: var(--ink-2);
+  border: 1px solid var(--line-strong);
+}
+.histoire-connexion p { margin: 0 auto 18px; color: var(--parchment-dim); }
+.histoire-connexion .btn-discord { margin: 0 auto; }
+
+/* ---------- Message après un duel ---------- */
+.resultat {
+  position: relative;
+  display: flex; gap: 16px;
+  margin: 0 auto 26px;
+  max-width: 760px;
+  padding: 18px 54px 18px 22px;
+  background: var(--ink-2);
+  border: 1px solid var(--line-strong);
+  border-left: 3px solid var(--or-histoire);
+  animation: resultat-entree .45s ease-out;
+}
+.resultat--defaite { border-left-color: var(--blood); }
+@keyframes resultat-entree { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
+.resultat__sur { margin: 0; font-size: .85rem; font-style: italic; color: var(--parchment-faint); }
+.resultat__titre { font-size: 1.5rem; letter-spacing: .1em; text-transform: uppercase; color: var(--or-histoire); }
+.resultat--defaite .resultat__titre { color: var(--blood); }
+.resultat__texte { margin: 6px 0 0; color: var(--parchment-dim); }
+.resultat__gains { display: flex; flex-wrap: wrap; gap: 8px 22px; margin: 12px 0 0; padding: 0; list-style: none; }
+.resultat__gains li { display: flex; align-items: center; gap: 8px; color: var(--parchment); }
+.resultat__gains img { width: 24px; height: 24px; object-fit: contain; }
+.resultat__carte img { width: 34px; height: auto; }
+.resultat__xp {
+  display: inline-grid; place-items: center;
+  min-width: 26px; height: 20px; padding: 0 4px;
+  border: 1px solid var(--or-histoire);
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: .62rem; font-weight: 700;
+  color: var(--or-histoire);
+}
+.resultat__fermer {
+  position: absolute; top: 10px; right: 12px;
+  width: 30px; height: 30px;
+  border: 1px solid var(--line-strong); border-radius: 50%;
+  background: none; color: var(--parchment-dim);
+  font-size: 1.1rem; line-height: 1; cursor: pointer;
+}
+.resultat__fermer:hover { color: var(--parchment); border-color: var(--parchment-dim); }
+
+/* ---------- Les chapitres ---------- */
+.chapitres {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+  margin-bottom: 26px;
+}
+.chapitre-onglet {
+  position: relative;
+  display: flex; flex-direction: column; align-items: flex-start; gap: 2px;
+  min-height: 96px;
+  padding: 14px 16px;
+  overflow: hidden;
+  border: 1px solid var(--line-strong);
+  background:
+    linear-gradient(90deg, var(--ink-2) 35%, color-mix(in srgb, var(--ink-2) 55%, transparent)),
+    var(--vignette, none) center / cover no-repeat,
+    var(--ink-2);
+  color: var(--parchment);
+  font: inherit; text-align: left;
+  cursor: pointer;
+  transition: border-color .2s, transform .2s;
+}
+.chapitre-onglet:hover:not(.est-verrouille) { border-color: var(--or-histoire); transform: translateY(-2px); }
+.chapitre-onglet.est-actif { border-color: var(--or-histoire); box-shadow: inset 3px 0 0 var(--or-histoire); }
+.chapitre-onglet__nom { font-family: "Cinzel","Cinzel Repli", serif; font-size: 1.15rem; font-weight: 700; letter-spacing: .06em; }
+.chapitre-onglet__sous { font-size: .9rem; font-style: italic; color: var(--parchment-dim); }
+.chapitre-onglet__etat {
+  display: inline-flex; align-items: center; gap: 6px;
+  margin-top: auto; padding-top: 6px;
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: .72rem; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--or-histoire);
+}
+/* Chapitre verrouillé : visible mais grisé */
+.chapitre-onglet.est-verrouille { cursor: not-allowed; filter: grayscale(1); opacity: .55; }
+.chapitre-onglet.est-verrouille .chapitre-onglet__etat { color: var(--parchment-faint); }
+.ico-cadenas { width: 13px; height: 13px; }
+
+/* ---------- Le chapitre affiché ---------- */
+.chapitre__tete { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.chapitre__nom { font-size: 1.6rem; letter-spacing: .08em; }
+.chapitre__sous { margin: 0; color: var(--parchment-dim); font-style: italic; }
+.chapitre__progression { margin: 0; font-family: "Cinzel","Cinzel Repli", serif; color: var(--parchment-dim); letter-spacing: .06em; }
+.chapitre__progression strong { color: var(--or-histoire); font-size: 1.3rem; }
+.chapitre__desc { margin: 8px 0 16px; max-width: 70ch; color: var(--parchment-dim); }
+
+/* La carte : l'image garde ses proportions, les niveaux sont placés en % */
+.carte-defile {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  border: 1px solid var(--line-strong);
+  box-shadow: 0 20px 50px rgba(0,0,0,.4);
+}
+.carte-histoire {
+  position: relative;
+  width: 100%;
+  min-width: 640px;      /* téléphone : la carte défile plutôt que de devenir illisible */
+  background: var(--ink-3) center / 100% 100% no-repeat;
+}
+.carte-histoire__chemins {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  overflow: visible;
+}
+/* Chemin : doré quand il est parcouru, pointillé ensuite */
+.chemin { stroke-linecap: round; fill: none; }
+.chemin--fait { stroke: var(--or-histoire); stroke-width: 5; filter: drop-shadow(0 0 3px rgba(0,0,0,.5)); }
+.chemin--ouvert { stroke: var(--or-histoire); stroke-width: 4; stroke-dasharray: 2 10; opacity: .9; }
+.chemin--ferme { stroke: rgba(40,28,16,.55); stroke-width: 4; stroke-dasharray: 2 10; }
+
+/* Un niveau : un cercle, son nom en dessous */
+.etape {
+  --taille: clamp(38px, 4.4vw, 54px);
+  position: absolute;
+  z-index: 1;
+  display: flex; flex-direction: column; align-items: center;
+  width: max-content;
+  padding: 0; border: 0; background: none;
+  font: inherit;
+  transform: translate(-50%, calc(var(--taille) / -2));
+  cursor: pointer;
+}
+.etape__cercle {
+  display: grid; place-items: center;
+  width: var(--taille); height: var(--taille);
+  border-radius: 50%;
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: 1.2rem; font-weight: 700;
+  box-shadow: 0 6px 12px rgba(0,0,0,.45);
+  transition: transform .2s, box-shadow .2s;
+}
+.etape__cercle svg { width: 52%; height: 52%; }
+.etape__nom {
+  margin-top: 6px;
+  padding: 2px 8px;
+  max-width: 150px;
+  background: rgba(20,16,14,.78);
+  color: #f2eee6;
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: .68rem; letter-spacing: .04em;
+  text-align: center; line-height: 1.3;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  pointer-events: none;
+}
+.etape:hover .etape__cercle, .etape:focus-visible .etape__cercle { transform: scale(1.1); }
+.etape:focus-visible { outline: none; }
+.etape:focus-visible .etape__cercle { box-shadow: 0 0 0 3px var(--or-histoire), 0 6px 12px rgba(0,0,0,.45); }
+
+/* Terminé : sceau doré avec une coche */
+.etape--termine .etape__cercle {
+  background: radial-gradient(circle at 35% 30%, #f0d48c, #b8862f 70%);
+  color: #2a1a08;
+  border: 2px solid #f5e2a8;
+}
+/* Disponible : cercle sombre cerclé d'or, qui pulse */
+.etape--disponible .etape__cercle {
+  background: radial-gradient(circle at 35% 30%, #3a2c22, #17110d 75%);
+  color: #f0d48c;
+  border: 2px solid #d8b978;
+  animation: etape-appel 1.8s ease-in-out infinite;
+}
+@keyframes etape-appel {
+  0%, 100% { box-shadow: 0 6px 12px rgba(0,0,0,.45), 0 0 0 0 rgba(216,185,120,.55); }
+  50% { box-shadow: 0 6px 12px rgba(0,0,0,.45), 0 0 0 10px rgba(216,185,120,0); }
+}
+/* Verrouillé : pierre grise et cadenas */
+.etape--verrouille { cursor: not-allowed; }
+.etape--verrouille .etape__cercle {
+  background: radial-gradient(circle at 35% 30%, #8d8679, #4f4a42 75%);
+  color: #2b2722;
+  border: 2px solid #6d675d;
+}
+.etape--verrouille .etape__nom { opacity: .75; }
+.etape--verrouille:hover .etape__cercle { transform: none; }
+
+/* Le boss : plus grand, couronne, cerclé de rouge sang */
+.etape--boss { --taille: clamp(56px, 6.6vw, 82px); }
+.etape--boss .etape__cercle { border-width: 3px; }
+.etape--boss.etape--disponible .etape__cercle {
+  background: radial-gradient(circle at 35% 30%, #5a1a1e, #1a0809 75%);
+  border-color: var(--blood);
+  color: #f0d48c;
+  animation-name: boss-appel;
+}
+@keyframes boss-appel {
+  0%, 100% { box-shadow: 0 6px 12px rgba(0,0,0,.45), 0 0 0 0 rgba(194,47,56,.6); }
+  50% { box-shadow: 0 6px 12px rgba(0,0,0,.45), 0 0 0 14px rgba(194,47,56,0); }
+}
+.etape--boss .etape__nom { font-size: .76rem; background: rgba(60,12,16,.85); }
+/* Niveau tout juste débloqué : un rebond à l'arrivée */
+.etape--nouveau .etape__cercle { animation: etape-nouveau .9s ease-out, etape-appel 1.8s ease-in-out .9s infinite; }
+.etape--boss.etape--nouveau .etape__cercle { animation: etape-nouveau .9s ease-out, boss-appel 1.8s ease-in-out .9s infinite; }
+@keyframes etape-nouveau { 0% { transform: scale(.4); } 60% { transform: scale(1.2); } 100% { transform: scale(1); } }
+
+/* ---------- Fiche d'un niveau (fenêtre) ---------- */
+.niveau-fiche {
+  width: min(420px, calc(100vw - 32px));
+  padding: 26px 26px 24px;
+  border: 1px solid var(--line-strong);
+  border-top: 3px solid var(--or-histoire);
+  background: var(--ink-2);
+  color: var(--parchment);
+  box-shadow: 0 30px 80px rgba(0,0,0,.6);
+}
+.niveau-fiche--boss { border-top-color: var(--blood); }
+.niveau-fiche::backdrop { background: rgba(8,6,6,.65); backdrop-filter: blur(2px); }
+.niveau-fiche[open] { animation: resultat-entree .25s ease-out; }
+.niveau-fiche__fermer { position: absolute; top: 10px; right: 12px; margin: 0; }
+.niveau-fiche__fermer button {
+  width: 30px; height: 30px;
+  border: 1px solid var(--line-strong); border-radius: 50%;
+  background: none; color: var(--parchment-dim);
+  font-size: 1.1rem; line-height: 1; cursor: pointer;
+}
+.niveau-fiche__sur {
+  margin: 0;
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: .72rem; letter-spacing: .2em; text-transform: uppercase;
+  color: var(--parchment-faint);
+}
+.niveau-fiche--boss .niveau-fiche__sur { color: var(--blood); }
+.niveau-fiche__titre { margin: 4px 0 14px; font-size: 1.4rem; letter-spacing: .06em; }
+.niveau-fiche__infos { margin: 0 0 16px; }
+.niveau-fiche__infos div { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-bottom: 1px solid var(--line); }
+.niveau-fiche__infos dt { font-family: "Cinzel","Cinzel Repli", serif; font-size: .78rem; letter-spacing: .08em; color: var(--parchment-faint); }
+.niveau-fiche__infos dd { margin: 0; text-align: right; }
+.niveau-fiche__label {
+  margin: 0 0 8px;
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: .72rem; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--or-histoire);
+}
+.niveau-fiche__recompenses ul { display: flex; flex-direction: column; gap: 8px; margin: 0 0 20px; padding: 0; list-style: none; }
+.niveau-fiche__recompenses li { display: flex; align-items: center; gap: 10px; }
+.niveau-fiche__recompenses img { width: 24px; height: 24px; object-fit: contain; }
+.niveau-fiche__carte {
+  display: inline-block; width: 18px; height: 26px;
+  border: 1px solid var(--or-histoire); border-radius: 3px;
+  background: linear-gradient(160deg, color-mix(in srgb, var(--or-histoire) 35%, transparent), transparent);
+}
+.niveau-fiche__deja { margin: 0 0 20px; color: var(--parchment-dim); font-style: italic; }
+.niveau-fiche__combattre {
+  display: block;
+  padding: 13px 20px;
+  text-align: center;
+  background: var(--or-histoire);
+  color: #1b1408;
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: .95rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
+  transition: filter .15s, transform .15s;
+}
+.niveau-fiche--boss .niveau-fiche__combattre { background: var(--blood); color: #fff; }
+.niveau-fiche__combattre:hover { filter: brightness(1.12); transform: translateY(-1px); }
+
+/* ---------- Téléphones ---------- */
+@media (max-width: 600px) {
+  .histoire-wrap { padding-top: 12px; }
+  .chapitres { grid-template-columns: 1fr; }
+  .chapitre-onglet { min-height: 0; }
+  .resultat { padding-right: 46px; }
+  .etape { --taille: 40px; }
+  .etape--boss { --taille: 58px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .etape__cercle, .resultat, .niveau-fiche[open] { animation: none !important; transition: none; }
+}

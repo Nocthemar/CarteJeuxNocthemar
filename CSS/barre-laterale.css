@@ -1,0 +1,163 @@
+/* =====================================================================
+   ESSAI — Barre de navigation latérale (chargée par JS/barre-laterale.js)
+   Pour annuler l'essai : voir l'en-tête de JS/barre-laterale.js.
+   ===================================================================== */
+
+/* ---------- Barre du haut : retirée pendant l'essai ---------- */
+.has-rail .topbar{ display:none; }
+
+/* (réglages précédents, gardés si on la réaffiche : titre + page en cours) */
+.has-rail .topbar{
+  width:fit-content;
+  max-width:calc(100% - 28px);
+  padding:0.7em 1.8em;
+  gap:1em;
+}
+.has-rail .topbar .crumb{ display:inline; white-space:nowrap; }
+.has-rail .side-rail{ display:none; }   /* ancien rail de l'accueil, remplacé */
+
+/* ---------- Barre latérale ---------- */
+.rail{
+  --rail-w:58px;
+  --rail-open:210px;
+  position:fixed; z-index:40;
+  left:16px; top:50%;
+  transform:translateY(-50%);
+  width:var(--rail-w);
+  display:flex; flex-direction:column; gap:4px;
+  padding:9px;
+  border-radius:29px;
+  background:rgba(22,18,18,0.86); /* opaque plutôt que flou : bien plus léger à afficher */
+  border:1px solid rgba(255,248,235,0.16);
+  box-shadow:0 14px 44px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.08);
+  font-family:"Cinzel","Cinzel Repli", serif;
+  transition:width .35s cubic-bezier(.22,.8,.26,1), background .3s ease;
+}
+/* survol / clavier : la barre s'ouvre et montre les libellés
+   (pas pendant qu'une recherche est ouverte, le panneau s'affiche à côté) */
+@media (hover:hover) and (min-width:701px){
+  .rail:hover:not(:has(.search-panel.open)){ width:var(--rail-open); background:rgba(22,18,18,0.94); }
+}
+@media (min-width:701px){
+  .rail:focus-within:not(:has(.search-panel.open)){ width:var(--rail-open); background:rgba(22,18,18,0.94); }
+}
+
+.rail-item{
+  position:relative;
+  display:flex; align-items:center; gap:14px;
+  width:100%; height:40px;
+  padding:0 9px;
+  border:0; border-radius:20px;
+  background:none;
+  color:var(--parchment-dim, #bcb2a4);
+  font:inherit; font-size:0.74rem; letter-spacing:0.1em;
+  text-decoration:none; white-space:nowrap;
+  overflow:hidden;
+  cursor:pointer;
+  transition:background .2s ease, color .2s ease;
+}
+.rail-item:hover, .rail-item:focus-visible{ background:rgba(255,248,235,0.08); color:var(--parchment, #f2eee6); outline:none; }
+.rail-ico{ flex:0 0 22px; width:22px; height:22px; display:grid; place-items:center; }
+.rail-ico svg{ width:20px; height:20px; }
+.rail-label{
+  opacity:0; transform:translateX(-6px);
+  transition:opacity .2s ease, transform .3s ease;
+}
+.rail:hover .rail-label, .rail:focus-within .rail-label{ opacity:1; transform:none; transition-delay:.08s; }
+.rail:has(.search-panel.open) .rail-label{ opacity:0; }
+
+/* page en cours : fond clair + trait doré à gauche */
+.rail-item.is-active{ background:rgba(255,248,235,0.12); color:#d8b978; }
+.rail-item.is-active::before{
+  content:""; position:absolute; left:0; top:10px; bottom:10px;
+  width:3px; border-radius:3px; background:#d8b978;
+}
+
+.rail-sep{ height:1px; margin:5px 8px; background:rgba(255,248,235,0.16); }
+
+/* ---------- Recherche dans la barre ---------- */
+.rail .search-wrap{ margin:0; position:relative; }
+.rail .nav-search.rail-item{ height:40px; width:100%; justify-content:flex-start; }
+.rail .nav-search.active{ background:rgba(255,248,235,0.12); color:var(--parchment, #f2eee6); }
+.rail .search-panel{
+  font-family:"EB Garamond","EB Garamond Repli", serif; letter-spacing:normal;
+  position:absolute;
+  top:50%; left:calc(100% + 22px); right:auto;
+  width:340px; max-width:none;
+  transform:translate(-8px, -50%);
+}
+.rail .search-panel.open{ transform:translate(0, -50%); }
+
+/* ---------- Compte Discord dans la barre ---------- */
+.rail #discord-auth{
+  flex-direction:column; align-items:stretch; justify-content:flex-start;
+  min-width:0; min-height:40px; gap:12px;
+}
+.rail .btn-discord{
+  width:100%; height:40px; padding:0 10px; gap:14px;
+  border-radius:20px; justify-content:flex-start;
+  white-space:nowrap; overflow:hidden;
+  font-family:"Cinzel","Cinzel Repli", serif; font-size:0.72rem; letter-spacing:0.06em;
+}
+.rail .btn-discord__logo{ flex:0 0 18px; width:18px; height:14px; }
+.rail .btn-discord__texte{ display:inline; opacity:0; transition:opacity .2s ease; }
+.rail:hover .btn-discord__texte, .rail:focus-within .btn-discord__texte{ opacity:1; transition-delay:.08s; }
+
+.rail .auth-user{
+  width:100%; height:44px; padding:0 4px; gap:12px;
+  border-radius:22px; overflow:hidden; white-space:nowrap;
+  font-family:"EB Garamond","EB Garamond Repli", serif;
+}
+.rail .auth-user:hover{ background:rgba(255,248,235,0.08); }
+.rail .auth-user__avatar{ flex:0 0 32px; width:32px; height:32px; }
+.rail .auth-user__nom{ display:inline; opacity:0; transition:opacity .2s ease; }
+.rail:hover .auth-user__nom, .rail:focus-within .auth-user__nom{ opacity:1; transition-delay:.08s; }
+/* Déconnexion et panneau MJ : l'un sous l'autre quand la barre est fermée,
+   côte à côte quand elle s'ouvre (survol, clavier) */
+.auth-actions{ display:flex; align-items:center; gap:6px; }
+.rail .auth-actions{ flex-direction:column; justify-content:center; gap:8px; padding-left:0; }
+@media (hover:hover) and (min-width:701px){
+  .rail:hover:not(:has(.search-panel.open)) .auth-actions{ flex-direction:row; justify-content:flex-start; padding-left:5px; }
+}
+@media (min-width:701px){
+  .rail:focus-within:not(:has(.search-panel.open)) .auth-actions{ flex-direction:row; justify-content:flex-start; padding-left:5px; }
+}
+.rail .btn-deco, .rail .lien-mj{ display:inline-flex; align-items:center; justify-content:center; width:30px; height:30px; padding:0; margin-left:0; flex-shrink:0; }
+
+/* Place réservée à gauche pour que la barre ne couvre pas le contenu */
+@media (min-width:701px){
+  body.has-rail{ padding-left:84px; }
+}
+
+/* ---------- Téléphones : barre en bas de l'écran ---------- */
+@media (max-width:700px){
+  .rail{
+    top:auto; bottom:10px; left:10px; right:10px;
+    transform:none;
+    width:auto;
+    flex-direction:row; align-items:center; justify-content:space-between;
+    padding:6px 8px;
+    border-radius:999px;
+  }
+  .rail-label, .rail .btn-discord__texte, .rail .auth-user__nom{ display:none; }
+  .rail-item, .rail .nav-search.rail-item{ width:40px; padding:0; justify-content:center; }
+  .rail-item.is-active::before{ left:12px; right:12px; top:auto; bottom:3px; width:auto; height:2px; }
+  .rail-sep{ width:1px; height:22px; margin:0 2px; }
+  .rail #discord-auth{ flex-direction:row; align-items:center; min-height:0; gap:10px; }
+  .rail .btn-discord{ width:40px; padding:0; justify-content:center; }
+  .rail .auth-user{ width:auto; height:40px; padding:0; }
+  .rail .btn-deco, .rail .lien-mj{ margin-left:0; }
+  .rail .auth-actions{ flex-direction:row; margin:0; gap:10px; padding-left:0; }
+  /* le panneau de recherche s'ouvre au-dessus de la barre, sur toute sa largeur */
+  .rail .search-wrap{ position:static; }
+  .rail .search-panel,
+  .rail .search-panel.open{
+    position:absolute; top:auto; bottom:calc(100% + 10px); left:0; right:0;
+    width:auto; transform:none;
+  }
+  body.has-rail{ padding-bottom:76px; }
+}
+
+
+/* Boutique, placée sous la photo du compte (JS/barre-laterale.js) */
+.rail-compte-liens{ display:contents; }

@@ -1,0 +1,561 @@
+// =====================================================================
+//  Duel des Couronnes — affichage : cartes à facettes, plateau, d20,
+//  effets visuels (UFX : unités à l'arrivée, SFX : sorts), animations.
+//  Aucune règle ici : tout vient de JS/jeu-cartes-moteur.js.
+// =====================================================================
+import { SITE_ROOT } from './supabase.js';
+import { $, esc } from './commun.js';
+import { ENERGIE_MAX, COUT_DESTIN, COUT_DEFAUSSE, COUT_MEDITER, peutJouer, peutAttaquer, peutDestin, peutDefausser, peutMediter, rollInfo, coutDe } from './jeu-cartes-moteur.js';
+import { jouerSon, SM } from './jeu-cartes-son.js';
+import { particules, onde, flash, voile, secousseEcran, eclair, briser } from './jeu-cartes-effets.js';
+
+export const reduit = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// Pause d'animation : nulle si l'utilisateur réduit les animations ou si l'onglet est caché
+export const pause = (ms) => new Promise((r) => setTimeout(r, reduit || document.hidden ? 0 : ms));
+
+
+// ---------------------------------------------------------------------
+//  Illustrations
+// ---------------------------------------------------------------------
+// Couleur sourde de chaque Veine (fond low poly des sorts)
+const TEINTES = {
+  forge: [176, 112, 60], ombre: [74, 79, 106], racine: [95, 125, 79], trone: [179, 149, 64],
+  regard: [109, 127, 168], sang: [142, 59, 59], maree: [63, 111, 134],
+};
+// Silhouettes (ICON) des sorts et du milicien, en 24 × 24
+const ICON = {
+  unit: 'M12 2c1 4 5 5 5 10a5 5 0 0 1-10 0c0-3 2-4 2-7 1 1 2 3 2 4 1-2 1-4 1-7z',
+  face: 'M13 2 4 14h6l-1 8 9-12h-6z',
+  heal: 'M12 3c4 5 6 8 6 11a6 6 0 0 1-12 0c0-3 2-6 6-11z',
+  buff: 'M3 8l4 3 5-6 5 6 4-3-2 11H5z',
+  draw: 'M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12zm10 4a4 4 0 1 0 0-8 4 4 0 0 0 0 8z',
+  aoe: 'M2 15c3-4 5-4 7 0s4 4 7 0 4-4 6 0v5H2z',
+  epee: 'M14 3h7v7L10 21l-3-3L18 7V3zM4 15l5 5-2 2-5-5z',
+  bouclier: 'M12 2 4 5v6c0 5 3.5 9 8 11 4.5-2 8-6 8-11V5z',
+  arc: 'M6 2c9 4 9 16 0 20l-1-2c7-3 7-13 0-16zM5 12h15l-3-3m3 3-3 3',
+  croc: 'M3 4c4 1 6 4 6 9l3 7 3-7c0-5 2-8 6-9-2 4-2 8-3 11l-6 7-6-7C5 12 5 8 3 4z',
+  lance: 'M20 2l-2 6-2-2zM17 7 4 20l-1-1L16 6z',
+};
+
+// Fond low poly (grille de triangles) teinté par la Veine, avec une silhouette au centre
+function artSVG(c) {
+  let s = [...String(c.id)].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) >>> 0, 7);
+  const r = () => ((s = (s * 16807) % 2147483647) / 2147483647);
+  const [R, G, B] = TEINTES[c.veine] ?? [107, 111, 120];
+  const W = 60, H = 44, n = 4, m = 3, pts = [];
+  for (let j = 0; j <= m; j++) {
+    pts[j] = [];
+    for (let i = 0; i <= n; i++) {
+      const bord = i === 0 || i === n || j === 0 || j === m;
+      pts[j][i] = [i * W / n + (bord ? 0 : (r() - 0.5) * 9), j * H / m + (bord ? 0 : (r() - 0.5) * 9)];
+    }
+  }
+  const tri = [];
+  const teinte = (y) => {
+    const l = 0.35 + (1 - y / H) * 0.35 + r() * 0.18;
+    return `rgb(${Math.round(R * l)},${Math.round(G * l)},${Math.round(B * l)})`;
+  };
+  for (let j = 0; j < m; j++) for (let i = 0; i < n; i++) {
+    const a = pts[j][i], b = pts[j][i + 1], cc = pts[j + 1][i + 1], d = pts[j + 1][i];
+    const P = (x, y, z) => tri.push(`<path d="M${x}L${y}L${z}Z" fill="${teinte((x[1] + y[1] + z[1]) / 3)}"/>`);
+    P(a, b, cc); P(a, cc, d);
+  }
+  const icone = ICON[c.fx ?? c.icone] ?? ICON.epee;
+  return `<svg class="dc-art-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid slice" aria-hidden="true">${tri.join('')}
+    <path d="${icone}" transform="translate(18 10) scale(1)" fill="rgba(240,236,227,.88)" stroke="rgba(0,0,0,.35)" stroke-width=".6"/></svg>`;
+}
+
+const rarete = (c) => c.carte?.rarity ?? (c.t === 's' ? 'sort' : 'commune');
+const capacite = (k) => (k === 'guard' ? 'Garde' : k === 'charge' ? 'Charge' : '');
+const ICONE_GARDE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 4 5v6c0 5 3.5 9 8 11 4.5-2 8-6 8-11V5z"/></svg>';
+const ICONE_CHARGE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg>';
+const urlImage = (c) => (c.carte?.image ? esc(new URL(c.carte.image, SITE_ROOT)) : null);
+const texteCarte = (c) => (c.t === 's' ? c.d : capacite(c.k));
+
+// Face d'une carte, la même partout (main, terrain, aperçu, accueil) :
+// - vraie carte : l'illustration originale en entier (son cadre, son nom, sa rareté)
+// - carte du Codex : la même silhouette, cadre argenté, fond low poly et bandeau noir
+function faceCarte(c) {
+  const url = urlImage(c);
+  if (url) return `<img class="dc-face dc-face--image" src="${url}" alt="" draggable="false" loading="lazy">`;
+  return `
+    <span class="dc-face dc-face--codex rar-${c.image ? 'objet' : rarete(c)}">
+      <span class="dc-face__cadre">
+        <span class="dc-face__art${c.image ? ' dc-face__art--objet' : ''}">${c.image
+          ? `<img src="${esc(new URL(c.image, SITE_ROOT))}" alt="" draggable="false" loading="lazy">`
+          : artSVG(c)}</span>
+        <span class="dc-face__panneau">
+          <span class="dc-face__nom">${esc(c.n)}</span>
+          <span class="dc-face__texte">${esc(texteCarte(c))}</span>
+        </span>
+      </span>
+    </span>`;
+}
+
+const htmlCapacite = (k) => (k ? `<span class="dc-k" title="${capacite(k)}">${k === 'guard' ? ICONE_GARDE : ICONE_CHARGE}</span>` : '');
+const htmlStats = (a, h) => `<span class="dc-stat dc-stat--a">${a}</span><span class="dc-stat dc-stat--h">${h}</span>`;
+
+// Carte en main (ou en aperçu, ou à l'accueil)
+export function htmlCarte(c, { index = null, jouable = false, choisie = false, cout = c.c } = {}) {
+  const url = urlImage(c);
+  const etiquette = `${c.n}, coût ${c.c}${c.t === 'u' ? `, ${c.a} attaque, ${c.h} vie` : ''}. ${texteCarte(c)}`;
+  return `
+    <button type="button" class="dc-carte dc-carte--${c.t}${url ? ' dc-carte--image' : ''} rar-${rarete(c)}${jouable ? ' est-jouable' : ''}${choisie ? ' est-choisie' : ''}"
+      ${index != null ? `data-index="${index}"` : ''} aria-label="${esc(etiquette)}" ${url ? `style="--masque:url('${url}')"` : ''}>
+      <span class="dc-carte__corps">
+        ${faceCarte(c)}
+        <span class="dc-cout${cout < c.c ? ' dc-cout--reduit' : ''}">${cout}</span>
+        ${htmlCapacite(c.k)}
+        ${c.t === 'u' ? htmlStats(c.a, c.h) : ''}
+        <span class="dc-reflet${url ? '' : ' dc-reflet--codex'}"></span>
+      </span>
+    </button>`;
+}
+
+// Unité sur le terrain : la même face, avec ses statistiques du moment
+function htmlUnite(u, camp, sel) {
+  const pret = camp === 'joueur' && peutAttaquer(u) && sel.monTour;
+  const cible = sel.cibles?.some((c) => c.camp === camp && c.uid === u.uid);
+  const classes = [
+    'dc-unite', `rar-${rarete(u.def)}`,
+    u.k === 'guard' ? 'a-garde' : '', pret ? 'est-prete' : '',
+    !u.prete || u.aAttaque ? 'est-epuisee' : '',
+    sel.attaquant === u.uid ? 'est-choisie' : '', cible ? 'est-ciblable' : '',
+    u.h < u.hMax ? 'est-blessee' : '',
+  ].filter(Boolean).join(' ');
+  return `
+    <button type="button" class="${classes}" data-uid="${u.uid}" data-camp="${camp}"
+      aria-label="${esc(`${u.n}, ${u.a} attaque, ${u.h} vie${u.k ? `, ${capacite(u.k)}` : ''}${u.brisee ? ', arme brisée' : ''}`)}">
+      <span class="dc-unite__corps">
+        ${faceCarte(u.def)}
+        ${htmlCapacite(u.k)}
+        ${u.brisee ? '<span class="dc-brise" title="Arme brisée">brisée</span>' : ''}
+        ${htmlStats(u.a, u.h)}
+      </span>
+    </button>`;
+}
+
+const COURONNE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8l4 3 5-6 5 6 4-3-2 11H5z"/></svg>';
+
+function htmlHeros(camp, qui, avatar, sel) {
+  const cible = sel.cibles?.some((c) => c.camp === qui && c.heros);
+  const pct = Math.max(0, camp.pv) / camp.pvMax * 100;
+  // Portrait dans un cadre hexagonal, PV dans une goutte de sang, nom sur un cartouche
+  return `
+    <button type="button" class="dc-heros${cible ? ' est-ciblable' : ''}${camp.pv <= 5 ? ' est-en-danger' : ''}" data-heros="${qui}"
+      aria-label="${esc(`${camp.nom}, ${camp.pv} PV sur ${camp.pvMax}`)}" style="--pv:${pct.toFixed(0)}%">
+      <span class="dc-heros__cadre"><span class="dc-heros__portrait">${avatar ? `<img src="${esc(avatar)}" alt="">` : COURONNE}</span></span>
+      <span class="dc-heros__pv"><span>${Math.max(0, camp.pv)}</span></span>
+      <span class="dc-heros__nom">${esc(camp.nom)}</span>
+    </button>`;
+}
+
+// Pioche : une pile de dos de cartes (plus ou moins haute) et le nombre de cartes restantes
+function pileDeck(n) {
+  const epaisseur = n > 12 ? 3 : n > 4 ? 2 : n > 0 ? 1 : 0;
+  return `
+    <span class="pile-deck" title="Grimoire : ${n} carte${n > 1 ? 's' : ''} restante${n > 1 ? 's' : ''}">
+      ${'<i></i>'.repeat(epaisseur)}<b>${n}</b>
+    </span>`;
+}
+
+// Le Tombeau, posé sur le grand cadre du tapis : la dernière carte arrivée, face visible,
+// et le nombre de cartes
+function htmlTombeau(camp) {
+  const n = camp.tombeau?.length ?? 0;
+  const dessus = n ? camp.tombeau[n - 1] : null;
+  return `
+    ${dessus ? `<span class="tombeau__carte">${htmlCarte(dessus).replace('<button', '<span').replace(/<\/button>\s*$/, '</span>')}</span>` : ''}
+    <span class="tombeau__compte" title="Tombeau"><svg viewBox="0 0 24 28" aria-hidden="true"><path d="M4 27V10a8 8 0 0 1 16 0v17z"/><path d="M12 8v8M8.5 11h7"/></svg><b>${n}</b></span>`;
+}
+
+// Le Grimoire, posé sur la pile peinte du tapis : son nombre de cartes
+function pileTapis(n) {
+  return `<b title="Grimoire : ${n} carte${n > 1 ? 's' : ''} restante${n > 1 ? 's' : ''}">${n}</b>`;
+}
+
+function htmlEnergie(camp) {
+  return Array.from({ length: ENERGIE_MAX }, (_, i) => {
+    const etat = i < camp.energie ? 'plein' : i < camp.energieMax ? 'vide' : 'eteint';
+    return `<i class="cristal cristal--${etat}"></i>`;
+  }).join('') + `<span class="energie__texte">${camp.energie} / ${camp.energieMax}</span>`;
+}
+
+
+// ---------------------------------------------------------------------
+//  Rendu complet du plateau
+//  sel : { monTour, attaquant, sortIndex, cibles } (sélection en cours du joueur)
+// ---------------------------------------------------------------------
+export function rendre(p, sel, avatars = {}) {
+  const j = p.camps.joueur;
+  const a = p.camps.adverse;
+
+  $('heros-adverse').innerHTML = htmlHeros(a, 'adverse', avatars.adverse, sel);
+  $('heros-joueur').innerHTML = htmlHeros(j, 'joueur', avatars.joueur, sel);
+  $('infos-adverse').innerHTML = `
+    <span class="energie energie--adverse" title="Énergie de l'adversaire">${htmlEnergie(a)}</span>`;
+  $('energie').innerHTML = htmlEnergie(j);
+  $('orbe-valeur').textContent = j.energie;
+  $('orbe-max').textContent = `/ ${j.energieMax}`;
+  $('pioche-joueur').innerHTML = pileTapis(j.deck.length);
+  $('pioche-adverse').innerHTML = pileTapis(a.deck.length);
+  for (const [qui, camp] of [['joueur', j], ['adverse', a]]) {
+    const el = $(`tombeau-${qui}`);
+    el.innerHTML = htmlTombeau(camp);
+    el.title = `Tombeau : ${camp.tombeau?.length ?? 0} carte${(camp.tombeau?.length ?? 0) > 1 ? 's' : ''} (toucher pour voir)`;
+  }
+
+  for (const [qui, camp] of [['adverse', a], ['joueur', j]]) {
+    $(`terrain-${qui}`).innerHTML = camp.terrain.map((u) => (u
+      ? htmlUnite(u, qui, sel)
+      : '<span class="dc-place" aria-hidden="true"></span>')).join('');
+  }
+
+  $('main-joueur').innerHTML = j.main.map((c, i) => htmlCarte(c, {
+    cout: coutDe(j, c),
+    index: i, jouable: sel.monTour && !sel.defausse && peutJouer(p, 'joueur', i), choisie: sel.sortIndex === i,
+  })).join('');
+  const glissable = sel.monTour && peutDefausser(p, 'joueur');
+  for (const c of $('main-joueur').children) c.draggable = glissable;
+  $('main-joueur').classList.toggle('en-defausse', !!sel.defausse);
+  $('main-adverse').innerHTML = a.main.map(() => '<i class="dos"></i>').join('');
+  // Les deux mains s'ouvrent en éventail : --k = place de la carte par rapport au centre
+  for (const id of ['main-joueur', 'main-adverse']) {
+    const cartes = $(id).children;
+    [...cartes].forEach((c, i) => c.style.setProperty('--k', (i - (cartes.length - 1) / 2).toFixed(1)));
+  }
+
+  $('btn-fin').disabled = !sel.monTour;
+  $('btn-destin').disabled = !sel.monTour || !peutDestin(p, 'joueur');
+  $('btn-destin').title = j.destinUtilise ? 'Déjà lancé ce tour-ci' : `Coûte ${COUT_DESTIN} énergie, une fois par tour`;
+  $('btn-defausser').disabled = !sel.monTour || !peutDefausser(p, 'joueur');
+  $('btn-defausser').classList.toggle('est-actif', !!sel.defausse);
+  $('btn-defausser').title = j.defausseUtilisee ? 'Déjà défaussé ce tour-ci'
+    : `Défausser une carte de ta main et en piocher une (${COUT_DEFAUSSE} énergie, une fois par tour). Tu peux aussi la glisser sur ton Tombeau.`;
+  $('btn-mediter').disabled = !sel.monTour || !peutMediter(p, 'joueur');
+  $('btn-mediter').title = j.mediterUtilise ? 'Déjà médité ce tour-ci'
+    : `Regarder les 3 premières cartes de ton Grimoire (${COUT_MEDITER} énergie, une fois par tour)`;
+
+  $('historique').innerHTML = p.jets.map((x) => `
+    <li class="jet jet--${x.q}${x.qui === 'joueur' ? ' jet--moi' : ''}">
+      <b>${x.de}</b><span>${esc(x.quoi)}<small>${esc(x.label)}</small></span>
+    </li>`).join('') || '<li class="jet jet--vide">Aucun jet pour l\'instant.</li>';
+
+  $('scene-table').classList.toggle('mon-tour', !!sel.monTour);
+  $('scene-table').classList.toggle('vise', !!sel.cibles);
+}
+
+
+// ---------------------------------------------------------------------
+//  Animations
+// ---------------------------------------------------------------------
+const elUnite = (uid) => document.querySelector(`.dc-unite[data-uid="${uid}"]`);
+const elHeros = (qui) => document.querySelector(`.dc-heros[data-heros="${qui}"]`);
+export const elCible = (c) => (c.heros ? elHeros(c.camp) : elUnite(c.uid));
+
+// Chiffre flottant (dégâts en rouge, soin en vert, bonus en ambre)
+// Effets de pioche d'un événement (sorts, Destin, défausse) : cartes piochées, brûlées, épuisement.
+// Le début de tour a ses propres bannières (JS/jeu-cartes.js, afficherTour).
+async function effetsPioche(ev) {
+  const r = ev.pioche;
+  if (!r) return;
+  const pile = $(`pioche-${ev.qui}`);
+  const tombe = $(`tombeau-${ev.qui}`);
+  if (r.piochees?.length) {
+    flotter(pile, `+${r.piochees.length} carte${r.piochees.length > 1 ? 's' : ''}`, 'buff');
+    jouerSon('pioche');
+  }
+  if (r.brulees?.length) {
+    await pause(250);
+    flotter(tombe, `Brûlée : ${r.brulees[0].n ?? 'une carte'}`, 'rate');
+    particules(tombe, { n: 22, couleurs: BRAISES, vitesse: 90, monte: 70, gravite: -40, depuis: 'surface' });
+    jouerSon('feu');
+  }
+  if (r.epuisement) {
+    await pause(250);
+    const heros = elHeros(ev.qui);
+    secouer(heros);
+    flotter(heros, `Épuisement -${r.epuisement}`);
+    particules(heros, { n: 16, couleurs: ['#a66cd9', '#6e3a9a', '#d2b4f0'], vitesse: 70, monte: 30, rond: true, depuis: 'surface' });
+  }
+  await pause(300);
+}
+
+export function flotter(el, texte, type = 'degats') {
+  if (!el) return;
+  const r = el.getBoundingClientRect();
+  const f = document.createElement('span');
+  f.className = `flotte flotte--${type}`;
+  f.textContent = texte;
+  f.style.left = `${r.left + r.width / 2}px`;
+  f.style.top = `${r.top + r.height * 0.35}px`;
+  document.body.appendChild(f);
+  setTimeout(() => f.remove(), reduit ? 600 : 1300);
+}
+
+function classeTemporaire(el, classe, ms) {
+  if (!el) return;
+  el.classList.remove(classe);
+  void el.offsetWidth;
+  el.classList.add(classe);
+  setTimeout(() => el.classList.remove(classe), ms);
+}
+export const secouer = (el) => classeTemporaire(el, 'fx-secousse', 450);
+
+// Bannière au centre (changement de tour, Destin…)
+export async function banniere(texte, sous = '', type = '') {
+  const b = $('banniere');
+  b.innerHTML = `<strong>${esc(texte)}</strong>${sous ? `<span>${esc(sous)}</span>` : ''}`;
+  b.className = `banniere est-visible ${type}`;
+  await pause(1100);
+  b.className = 'banniere';
+}
+
+// d20 : il roule, puis s'arrête sur le résultat
+// Le dé n'apparaît que pendant un lancer (attaque ou Jet du Destin), puis s'efface
+let minuteurDe = null;
+export async function lancerDe(de, label, q, destin = false) {
+  const zone = $('d20');
+  const face = $('d20-face');
+  const res = $('d20-resultat');
+  clearTimeout(minuteurDe);
+  zone.className = `d20 roule est-visible${destin ? ' d20--destin' : ''}`;
+  res.textContent = '';
+  res.className = 'centre__resultat';
+  jouerSon('de');
+  if (!reduit && !document.hidden) {
+    for (let i = 0; i < 9; i++) {
+      face.textContent = 1 + Math.floor(Math.random() * 20);
+      await pause(55 + i * 8);
+    }
+  }
+  face.textContent = de;
+  zone.className = `d20 est-visible d20--${q}${destin ? ' d20--destin' : ''}`;
+  res.textContent = label;
+  res.className = `centre__resultat est-visible centre__resultat--${q}`;
+  if (de === 20) jouerSon('fanfare');
+  if (de === 1) jouerSon('echec');
+  await pause(500);
+  // Le résultat reste lisible un moment, puis le dé et son étiquette s'effacent
+  minuteurDe = setTimeout(() => {
+    zone.classList.remove('est-visible');
+    res.classList.remove('est-visible');
+  }, reduit ? 2500 : 2200);
+}
+
+// Effets visuels à l'arrivée d'une unité (UFX) et des sorts (SFX), indexés par nom de carte.
+// Les cartes sans entrée prennent l'effet par défaut de leur type.
+const BRAISES = ['#ffd27a', '#ff9a3d', '#e8553a', '#ffb347'];
+const OR = ['#f6d995', '#f0c873', '#ffffff', '#d9a441'];
+const SEVE = ['#9fd9b0', '#d5f5de', '#7fb08f'];
+const ONDE_MAREE = ['#bfe3f0', '#7fbcd6', '#ffffff'];
+const POUSSIERE = ['#9aa1ad', '#6b717c', '#c5cad3'];
+
+export const UFX = {
+  'Milicien de la Couronne': (el) => { onde(el, '#f0c873', 2.4); particules(el, { n: 16, couleurs: OR, vitesse: 110, monte: 40, gravite: -20 }); jouerSon('acier', 0.1); },
+};
+// Effet d'un sort sur une cible touchée (el), selon son effet (fx)
+const EFFET_SORT = {
+  unit: (el) => { flash(el, 'rgba(255,170,90,.95)'); particules(el, { n: 22, couleurs: BRAISES, vitesse: 70, monte: 90, gravite: -40, rond: true, depuis: 'surface', duree: 900 }); },
+  face: (el) => { eclair(el); secousseEcran(9); voile('rgba(140,160,255,.35)', 500); },
+  heal: (el) => { particules(el, { n: 16, couleurs: SEVE, vitesse: 25, monte: 70, gravite: -35, rond: true, depuis: 'surface', duree: 1100 }); onde(el, '#9fd9b0', 1.8); },
+  buff: (el) => { particules(el, { n: 18, couleurs: OR, vitesse: 30, monte: 80, gravite: -40, depuis: 'surface', duree: 1000 }); onde(el, '#f0c873', 1.8); },
+  aoe: (el) => { onde(el, '#7fbcd6', 2.2, 700); particules(el, { n: 14, couleurs: ONDE_MAREE, vitesse: 110, gravite: 40, rond: true }); },
+  // Objets
+  ready: (el) => { onde(el, '#9fd9b0', 2, 600); particules(el, { n: 16, couleurs: ['#d5f5de', '#9fd9b0', '#ffffff'], vitesse: 90, monte: 40, gravite: 10 }); },
+  rage: (el) => { flash(el, 'rgba(255,90,80,.85)', 2, 400); particules(el, { n: 22, couleurs: ['#ff6b5b', '#ffb347', '#c33a42'], vitesse: 120, monte: 60, gravite: -10, depuis: 'surface' }); },
+  talisman: () => { const d = $('d20'); onde(d, '#c9b2fb', 2.6, 800); particules(d, { n: 22, couleurs: ['#c9b2fb', '#ffffff', '#9a6cf0'], vitesse: 100, monte: 30, gravite: 0 }); },
+  coffre: (el) => { flash(el, 'rgba(255,224,150,.9)', 2, 400); particules(el, { n: 20, couleurs: OR, vitesse: 140, monte: 80, gravite: 60 }); },
+  jeton: (el) => { onde(el, '#f0c873', 2, 600); particules(el, { n: 12, couleurs: OR, vitesse: 70, monte: 60, gravite: -20, rond: true }); },
+};
+export const SFX = {
+  'Raz-de-Marée': () => secousseEcran(7, 600),
+};
+
+// Coup porté à une cible : étincelles, et plus fort sur un critique
+function impact(el, q, heros) {
+  if (!el) return;
+  if (q === 'critique') {
+    flash(el, 'rgba(255,224,150,.95)', 3);
+    onde(el, '#f0c873', 3, 700);
+    particules(el, { n: 30, couleurs: OR, vitesse: 230, gravite: 90, taille: [3, 9], duree: 900 });
+    secousseEcran(12, 500);
+  } else {
+    flash(el, 'rgba(255,255,255,.85)', 1.6, 300);
+    particules(el, { n: q === 'solide' ? 16 : 10, couleurs: ['#ffffff', '#f6d995', '#c5cad3'], vitesse: 140, gravite: 70, taille: [2, 6], duree: 600 });
+  }
+  if (heros) { voile('rgba(183,40,48,.5)'); secousseEcran(q === 'critique' ? 14 : 7); }
+}
+
+// Joue l'animation d'un événement du moteur (avant le nouveau rendu)
+export async function animer(ev) {
+  switch (ev.type) {
+    case 'pose': {
+      jouerSon('pose');
+      return;
+    }
+    case 'apres-pose': {
+      const el = elUnite(ev.uid);
+      classeTemporaire(el, 'fx-arrivee', 700);
+      // la carte se pose : nuage de poussière ; une Charge part déjà en étincelles
+      setTimeout(() => {
+        particules(el, { n: 14, couleurs: POUSSIERE, vitesse: 80, gravite: 15, taille: [5, 12], rond: true, duree: 800 });
+        onde(el, 'rgba(197,202,211,.7)', 1.6, 500);
+        (UFX[ev.carte.n] ?? ((e) => {
+          if (ev.carte.k === 'charge') { particules(e, { n: 16, couleurs: OR, vitesse: 150, gravite: 50 }); jouerSon('acier', 0.05); }
+          if (ev.carte.k === 'guard') onde(e, '#e6eaf1', 1.9, 650);
+        }))(el);
+      }, reduit ? 0 : 260);
+      await pause(380);
+      return;
+    }
+    case 'sort': {
+      const apercu = $('apercu');
+      apercu.innerHTML = htmlCarte(ev.carte);
+      apercu.className = `apercu est-visible ${ev.qui === 'adverse' ? 'apercu--adverse' : ''}`;
+      await pause(700);
+      apercu.className = 'apercu';
+      jouerSon(SM[ev.carte.fx] ?? 'cloche');
+      SFX[ev.carte.n]?.();
+      for (const t of ev.touches ?? []) {
+        const el = elCible(t);
+        EFFET_SORT[ev.carte.fx]?.(el);
+        if (t.texte) flotter(el, t.texte, 'buff');
+        else if (t.soin) flotter(el, `+${t.valeur}`, 'soin');
+        else if (t.buff) flotter(el, `+${t.valeur}/+${t.valeur}`, 'buff');
+        else { secouer(el); flotter(el, `-${t.valeur}`); }
+      }
+      if (ev.carte.fx === 'draw') particules($('main-joueur'), { n: 12, couleurs: ['#c5d2ef', '#ffffff'], vitesse: 60, monte: 50, gravite: -20, depuis: 'surface' });
+      await pause(250);
+      await mourir(ev.morts);
+      await effetsPioche(ev);
+      await pause(350);
+      return;
+    }
+    case 'attaque': {
+      const att = elUnite(ev.uid);
+      const cib = elCible(ev.cible);
+      // 1. le dé roule d'abord : l'attaquant s'illumine et sa cible est marquée
+      att?.classList.add('fx-prepare');
+      cib?.classList.add('fx-visee');
+      await lancerDe(ev.de, ev.info.label, ev.info.q);
+      att?.classList.remove('fx-prepare');
+      cib?.classList.remove('fx-visee');
+      // 2. puis l'attaquant s'élance vers sa cible, et le coup tombe à l'arrivée
+      if (att && cib && !reduit) {
+        const ra = att.getBoundingClientRect();
+        const rc = cib.getBoundingClientRect();
+        att.style.setProperty('--dx', `${(rc.left + rc.width / 2 - (ra.left + ra.width / 2)) * 0.7}px`);
+        att.style.setProperty('--dy', `${(rc.top + rc.height / 2 - (ra.top + ra.height / 2)) * 0.7}px`);
+        att.classList.add('fx-elan');
+        await pause(230);
+      }
+      jouerSon(ev.info.q === 'echec' ? 'acier' : ev.info.q === 'critique' ? 'tonnerre' : 'choc');
+      if (ev.degats > 0) { secouer(cib); impact(cib, ev.info.q, !!ev.cible.heros); }
+      flotter(cib, ev.degats > 0 ? `-${ev.degats}` : 'Raté', ev.degats > 0 ? 'degats' : 'rate');
+      if (ev.riposte > 0) {
+        setTimeout(() => {
+          secouer(att);
+          flotter(att, `-${ev.riposte}`);
+          particules(att, { n: 8, couleurs: ['#ffffff', '#c5cad3'], vitesse: 110, gravite: 60, taille: [2, 5], duree: 500 });
+        }, reduit ? 0 : 200);
+      }
+      if (ev.brise) {
+        flotter(att, 'Arme brisée !', 'rate');
+        particules(att, { n: 18, couleurs: ['#9aa1ad', '#c5cad3', '#5d6574'], vitesse: 150, gravite: 120, taille: [3, 7], duree: 800 });
+      }
+      await pause(350);
+      att?.classList.remove('fx-elan');
+      await mourir(ev.morts);
+      await effetsPioche(ev);
+      await pause(250);
+      return;
+    }
+    case 'destin': {
+      await lancerDe(ev.de, `Destin : ${ev.info.label}`, ev.info.q, true);
+      const sons = { malediction: 'tonnerre', soin: 'soin', pioche: 'pioche', renfort: 'acier', benediction: 'cloche', grace: 'cloche' };
+      jouerSon(sons[ev.info.q]);
+      if (ev.info.q === 'malediction') { voile('rgba(110,40,150,.55)', 800); secousseEcran(8); }
+      if (ev.info.q === 'grace') { onde($('d20'), '#f0c873', 4, 900); particules($('d20'), { n: 30, couleurs: OR, vitesse: 220, gravite: 60 }); }
+      await banniere(ev.info.label, ev.info.texte + (ev.complet ? ' (mais il n\'y a plus de place)' : ''), `banniere--${ev.info.q}`);
+      for (const t of ev.touches) {
+        const el = elCible(t);
+        if (t.soin) { EFFET_SORT.heal(el); flotter(el, `+${t.valeur}`, 'soin'); }
+        else if (t.buff) { EFFET_SORT.buff(el); flotter(el, `+${t.valeur}/+${t.valeur}`, 'buff'); }
+        else {
+          particules(el, { n: 18, couleurs: ['#a66cd9', '#6e3a9a', '#d2b4f0'], vitesse: 80, monte: 30, rond: true, depuis: 'surface', duree: 900 });
+          secouer(el);
+          flotter(el, `-${t.valeur}`);
+        }
+      }
+      await mourir(ev.morts);
+      await effetsPioche(ev);
+      await pause(300);
+      return;
+    }
+    case 'defausse': {
+      // La carte glisse vers le Tombeau puis s'y efface
+      const tombe = $(`tombeau-${ev.qui}`);
+      flotter(tombe, `Défaussée : ${ev.carte.n}`, 'rate');
+      particules(tombe, { n: 16, couleurs: ['#9aa1ad', '#c5cad3', '#5d6574'], vitesse: 70, monte: 40, gravite: 30, depuis: 'surface' });
+      jouerSon('pioche');
+      await pause(350);
+      await effetsPioche(ev);
+      return;
+    }
+    case 'mediter': {
+      const pile = $(`pioche-${ev.qui}`);
+      flotter(pile, 'Méditation…', 'buff');
+      onde(pile, '#c9b2fb', 1.8, 700);
+      jouerSon('cloche');
+      await pause(400);
+      return;
+    }
+    case 'placer': {
+      if (ev.sous) flotter($(`pioche-${ev.qui}`), 'Une carte sous le Grimoire', 'buff');
+      await pause(250);
+      return;
+    }
+    default: return;
+  }
+}
+
+// Les unités tombées éclatent en morceaux
+async function mourir(uids = []) {
+  if (!uids?.length) return;
+  uids.forEach((uid, i) => setTimeout(() => briser(elUnite(uid)), reduit ? 0 : i * 90));
+  jouerSon('choc', 0.02);
+  jouerSon('acier', 0.08);
+  await pause(650);
+}
+
+// Valeur d'un jet pour l'aide (« 15 à 19 : coup solide »)
+export const libelleJet = (de) => rollInfo(de)?.label ?? '';
+
+
+// ---------------------------------------------------------------------
+//  Profondeur à la souris (décor) et inclinaison 3D des cartes en main
+// ---------------------------------------------------------------------
+export function activerProfondeur() {
+  if (reduit || !matchMedia('(hover: hover)').matches) return;
+  const scene = $('scene');
+  addEventListener('pointermove', (e) => {
+    scene.style.setProperty('--px', (e.clientX / innerWidth - 0.5).toFixed(3));
+    scene.style.setProperty('--py', (e.clientY / innerHeight - 0.5).toFixed(3));
+  }, { passive: true });
+
+  document.addEventListener('pointermove', (e) => {
+    const carte = e.target.closest?.('.dc-carte');
+    document.querySelectorAll('.dc-carte.incline').forEach((c) => { if (c !== carte) { c.classList.remove('incline'); c.style.removeProperty('--rx'); c.style.removeProperty('--ry'); } });
+    if (!carte) return;
+    const r = carte.getBoundingClientRect();
+    const x = (e.clientX - r.left) / r.width;
+    const y = (e.clientY - r.top) / r.height;
+    carte.classList.add('incline');
+    carte.style.setProperty('--rx', `${((0.5 - y) * 16).toFixed(1)}deg`);
+    carte.style.setProperty('--ry', `${((x - 0.5) * 18).toFixed(1)}deg`);
+    carte.style.setProperty('--mx', `${(x * 100).toFixed(0)}%`);
+    carte.style.setProperty('--my', `${(y * 100).toFixed(0)}%`);
+  }, { passive: true });
+}

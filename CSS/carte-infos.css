@@ -1,0 +1,169 @@
+/* =====================================================================
+   Informations écrites dans le cadre noir des cartes (nom, rang, attaques, rareté).
+   Utilisé par le grimoire, le deck du profil et les pages des personnages.
+   ===================================================================== */
+/* ---------- Informations dans le cadre noir de la carte ----------
+   Mise en page inspirée des cartes Pokémon : nom + rang en tête, deux attaques
+   (icône de Veine, nom, effet, puissance), rareté en pied.
+   Position mesurée sur les images 1024 × 1536 de img/Cartes : le cadre noir va
+   d'environ 68 % à 86 % de la hauteur et de 14 % à 86 % de la largeur.
+   Les tailles sont en cqw (% de la largeur de la carte) : tout grandit et
+   rapetisse avec la carte, et le détail s'allège quand la carte est petite. */
+/* Hôte : la carte du grimoire/deck (.carte-jeu) ou la face avant d'une carte
+   des pages personnages (.carte-infos-hote) */
+.carte-jeu { container: carte / inline-size; }
+.carte-infos-hote { position: relative; container: carte / inline-size; }
+
+/* Couleur de la rareté (texte et gemme du pied de carte) */
+.carte-infos--commune       { --rarete: #8f8a84; }
+.carte-infos--eveillee      { --rarete: #2f8a55; }
+.carte-infos--mythique      { --rarete: #2c5fb8; }
+.carte-infos--legendaire    { --rarete: #a8141f; }
+.carte-infos--transcendante { --rarete: #c9a24a; }
+
+.carte-infos {
+  position: absolute;
+  left: 14.5%;
+  right: 14.5%;
+  top: 68.4%;
+  /* Descend jusqu'au bas du cadre noir : la rareté (en pied) se place plus bas */
+  height: 19.4%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: .6cqw 1.4cqw;
+  overflow: hidden;
+  color: #efe6d2;
+  font-family: "EB Garamond","EB Garamond Repli", serif;
+  line-height: 1.15;
+  text-align: left;
+  pointer-events: none;
+}
+
+/* Transcendante : pas de cadre noir dans l'illustration, un voile sombre léger et
+   transparent garde le texte lisible sans cacher l'image */
+.carte-infos--transcendante {
+  top: auto;
+  bottom: 13%;
+  height: auto;
+  min-height: 11%;
+  gap: .8cqw;
+  padding: 1.4cqw 2.4cqw;
+  border: 1px solid rgba(201,162,74,.35);
+  border-radius: 1.6cqw;
+  background: linear-gradient(to bottom, rgba(12,9,6,.35), rgba(12,9,6,.55));
+  backdrop-filter: blur(2px);
+}
+
+.carte-infos__tete {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 2cqw;
+  padding-bottom: .5cqw;
+  border-bottom: 1px solid rgba(201,162,74,.35);
+}
+.carte-infos__nom {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-family: "Cinzel","Cinzel Repli", serif;
+  font-size: 4.2cqw;
+  font-weight: 700;
+  letter-spacing: .02em;
+  text-shadow: 0 1px 2px #000;
+}
+/* Rang façon "PV" : rouge sang (Cinzel simple : en Decorative, le « I » ressemble à un « 1 ») */
+.carte-infos__rang {
+  flex: none;
+  font-family: "Cinzel","Cinzel Repli", serif;
+  letter-spacing: .04em;
+  font-size: 3.2cqw;
+  font-weight: 700;
+  color: #d8434b;
+  text-shadow: 0 0 1.5cqw rgba(194,47,56,.6);
+}
+
+.carte-infos__attaques { display: flex; flex-direction: column; gap: .8cqw; }
+.carte-attaque {
+  display: grid;
+  grid-template-columns: 4.6cqw minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 1.4cqw;
+}
+.carte-attaque__veine {
+  display: grid;
+  place-items: center;
+  width: 4.6cqw;
+  height: 4.6cqw;
+  border: 1px solid rgba(201,162,74,.5);
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, rgba(255,255,255,.12), rgba(0,0,0,.5));
+  font-size: 2.8cqw;
+  line-height: 1;
+}
+.carte-attaque__texte { display: flex; flex-direction: column; min-width: 0; }
+.carte-attaque__nom,
+.carte-attaque__effet {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.carte-attaque__nom { font-family: "Cinzel","Cinzel Repli", serif; font-size: 3.1cqw; font-weight: 600; }
+.carte-attaque__effet { font-size: 2.5cqw; font-style: italic; color: #bcb2a4; }
+.carte-attaque__puissance {
+  font-family: "Cinzel","Cinzel Repli", serif;
+  font-size: 3.8cqw;
+  font-weight: 700;
+  text-shadow: 0 1px 2px #000;
+}
+
+/* Rareté : gemme de la couleur de la rareté + nom */
+.carte-infos__rarete {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.2cqw;
+  font-family: "Cinzel","Cinzel Repli", serif;
+  font-size: 2.3cqw;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--rarete);
+  filter: brightness(1.35);
+  /* Un peu plus bas, vers le bord du cadre noir (reste dans la marge du bas) */
+  transform: translateY(.6cqw);
+}
+.carte-infos__gemme {
+  width: 1.9cqw;
+  height: 1.9cqw;
+  transform: rotate(45deg);
+  background: linear-gradient(135deg, rgba(255,255,255,.7), var(--rarete) 45%, rgba(0,0,0,.4));
+  box-shadow: 0 0 1.4cqw var(--rarete);
+}
+
+/* Carte moyenne (grimoire, deck) : on garde les noms d'attaques et la puissance, sans les effets */
+@container carte (max-width: 300px) {
+  .carte-infos__nom { font-size: 4.6cqw; }
+  .carte-infos__rang { font-size: 3.8cqw; }
+  .carte-attaque { grid-template-columns: 5.4cqw minmax(0, 1fr) auto; }
+  .carte-attaque__veine { width: 5.4cqw; height: 5.4cqw; font-size: 3.3cqw; }
+  .carte-attaque__nom { font-size: 4cqw; }
+  .carte-attaque__effet { display: none; }
+  .carte-attaque__puissance { font-size: 4.4cqw; }
+  .carte-infos__rarete { font-size: 3cqw; }
+  .carte-infos__gemme { width: 2.4cqw; height: 2.4cqw; }
+}
+/* Petite carte : nom, rang et rareté seulement, en plus gros (le détail est dans la loupe 🔍) */
+@container carte (max-width: 190px) {
+  .carte-infos { justify-content: center; gap: 1.6cqw; }
+  .carte-infos__tete { flex-direction: column; align-items: center; gap: .4cqw; border: 0; padding: 0; }
+  .carte-infos__nom { max-width: 100%; font-size: 5cqw; }
+  .carte-infos__rang { font-size: 5cqw; }
+  .carte-infos__attaques { display: none; }
+  /* Nom (+ rang) centrés dans l'espace libre ; rareté toujours au même endroit, en bas,
+     qu'il y ait un rang ou non */
+  .carte-infos__tete { margin-block: auto; }
+  .carte-infos__rarete { font-size: 4cqw; letter-spacing: .06em; transform: none; padding-bottom: 1.4cqw; }
+  .carte-infos__gemme { width: 3cqw; height: 3cqw; }
+}

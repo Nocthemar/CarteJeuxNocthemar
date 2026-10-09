@@ -1,0 +1,155 @@
+/* =====================================================================
+   Thème clair (« jour ») de tout le site
+   Activé par <html data-theme="jour">, posé dans le <head> de chaque page
+   (choix retenu dans le navigateur) et basculé par le bouton soleil / lune
+   de la barre latérale (JS/barre-laterale.js).
+   Les pages gardent leurs propres couleurs : ici on ne fait qu'inverser la
+   palette commune (--ink, --parchment…) et corriger ce qui est écrit en dur.
+   Le jeu de cartes et la fiche du profil ont leur propre décor : non concernés.
+   ===================================================================== */
+
+:root[data-theme="jour"] {
+  color-scheme: light;
+  /* fonds : papier clair */
+  --ink: #e1dacd;
+  --ink-2: #d8d0c1;
+  --ink-3: #cdc3b1;
+  /* textes : encre brune */
+  --parchment: #221a15;
+  --parchment-dim: #4d4238;
+  --parchment-faint: #74685b;
+  --blood: #a8232c;
+  --blood-dim: #d9a3a6;
+  --bronze: #3c2b1d;
+  --bronze-dim: #7a6955;
+  --verdigris: #6a6052;
+  --verdigris-dim: #a39886;
+  --violet: #9c2d34;
+  --violet-dim: #e3c3c5;
+  --line: rgba(50,35,20,.14);
+  --line-strong: rgba(50,35,20,.3);
+  /* palette des pages de compte (CSS/compte.css) */
+  --fond: #e1dacd;
+  --carte: #d8d0c1;
+  --bord: rgba(50,35,20,.3);
+  --texte: #221a15;
+  --texte-doux: #4d4238;
+  --accent: #3c2b1d;
+  --perte: #a8232c;
+  --gain: #2f7a3a;
+}
+
+:root[data-theme="jour"] ::selection { background: #e3c3c5; color: #221a15; }
+
+/* Le vignettage sombre du site devient un voile doux */
+:root[data-theme="jour"] body::before {
+  background-image: radial-gradient(ellipse 140% 100% at 50% 50%, transparent 55%, rgba(120,95,60,.18) 100%);
+}
+
+/* ---------- Accueil : l'image de jour ---------- */
+:root[data-theme="jour"] .home .page-bg:not(.page-bg-blur) {
+  background-image: url("../img/hero-nocthemar-jour.webp") !important;
+}
+/* Version floutée au défilement : la même image, adoucie (pas de fichier flou de jour) */
+:root[data-theme="jour"] .home .page-bg-blur {
+  background-image: url("../img/hero-nocthemar-jour.webp") !important;
+  filter: blur(14px) saturate(.75) brightness(.84);
+  transform: scale(1.06);
+}
+:root[data-theme="jour"] .home .page-bg-blur::after {
+  content: "";
+  position: absolute; inset: 0;
+  background: rgba(225,218,205,.5);
+}
+/* Voile du héros : clair au lieu de noir, pour un texte à l'encre */
+:root[data-theme="jour"] .home .page-bg:not(.page-bg-blur)::after {
+  background: linear-gradient(180deg, rgba(20,26,36,.34), rgba(20,26,36,.2) 45%, rgba(225,218,205,.3) 80%, rgba(225,218,205,.65));
+}
+:root[data-theme="jour"] .home {
+  --glass: rgba(232,225,213,.62);
+  --glass-hi: rgba(255,255,255,.5);
+  --glass-line: rgba(60,40,20,.16);
+  --glass-line-hi: rgba(60,40,20,.3);
+  --gold: #8a6a2c;
+}
+:root[data-theme="jour"] .home #embers { opacity: .18; }
+
+/* ---------- Jeu de cartes et fiche de profil : décors à part, restent tels quels ---------- */
+/* (et les îlots sombres : panneaux de la boutique, dont le bois et les enseignes restent nocturnes) */
+:root[data-theme="jour"] body.page-jeu,
+:root[data-theme="jour"] body.page-fiche,
+:root[data-theme="jour"] .echoppe {
+  --ink: #131010; --ink-2: #1a1616; --ink-3: #221d1c;
+  --parchment: #f2eee6; --parchment-dim: #bcb2a4; --parchment-faint: #8a8073;
+  --bronze: #ece6d9; --bronze-dim: #9a9284;
+  --line: rgba(240,236,227,.14); --line-strong: rgba(240,236,227,.27);
+}
+:root[data-theme="jour"] .echoppe {
+  --fond: #131010; --carte: #1a1616; --bord: rgba(240,236,227,.27);
+  --texte: #f2eee6; --texte-doux: #bcb2a4; --accent: #ece6d9; --perte: #c22f38; --gain: #6fbf73;
+}
+
+/* ---------- Barre latérale ---------- */
+:root[data-theme="jour"] body:not(.page-jeu):not(.page-fiche) .rail {
+  background: rgba(232,225,213,.9);
+  border-color: rgba(60,40,20,.18);
+  box-shadow: 0 14px 40px rgba(60,40,20,.22), inset 0 1px 0 rgba(255,255,255,.7);
+}
+@media (hover:hover) and (min-width:701px){
+  :root[data-theme="jour"] body:not(.page-jeu):not(.page-fiche) .rail:hover:not(:has(.search-panel.open)) { background: rgba(232,225,213,.97); }
+}
+@media (min-width:701px){
+  :root[data-theme="jour"] body:not(.page-jeu):not(.page-fiche) .rail:focus-within:not(:has(.search-panel.open)) { background: rgba(232,225,213,.97); }
+}
+:root[data-theme="jour"] body:not(.page-jeu):not(.page-fiche) .rail-item:hover,
+:root[data-theme="jour"] body:not(.page-jeu):not(.page-fiche) .rail-item:focus-visible { background: rgba(60,40,20,.07); }
+:root[data-theme="jour"] body:not(.page-jeu):not(.page-fiche) .rail-item.is-active { background: rgba(60,40,20,.08); color: #8a6a2c; }
+:root[data-theme="jour"] body:not(.page-jeu):not(.page-fiche) .rail-item.is-active::before { background: #8a6a2c; }
+:root[data-theme="jour"] body:not(.page-jeu):not(.page-fiche) .rail-sep { background: rgba(60,40,20,.16); }
+
+/* ---------- Accueil : héros, carrousel, dock, pied de page ---------- */
+/* Le voile sombre sur l'image devient un voile de lumière, plus dense en bas */
+:root[data-theme="jour"] .page-scrim {
+  background:
+    linear-gradient(180deg, rgba(225,218,205,0) 0%, rgba(225,218,205,0) 50%, rgba(225,218,205,.4) 80%, rgba(225,218,205,.75) 100%),
+    radial-gradient(ellipse 30% 22% at 50% 64%, rgba(228,221,208,.5), transparent 80%),   /* derrière le texte du héros */
+    radial-gradient(ellipse 50% 40% at 50% 45%, rgba(232,225,213,.32), transparent 75%);
+}
+:root[data-theme="jour"] .home .hero-photo p,
+:root[data-theme="jour"] .home .h-heading,
+:root[data-theme="jour"] .home .h-dice-lede {
+  text-shadow: 0 1px 2px rgba(255,250,240,.6), 0 0 22px rgba(255,250,240,.75);
+}
+/* Cartes du carrousel : leurs illustrations sont nocturnes, elles gardent le texte clair */
+:root[data-theme="jour"] .home .cf-card {
+  --parchment: #f2eee6; --parchment-dim: #bcb2a4; --parchment-faint: #8a8073;
+  --bronze: #ece6d9; --gold: #d8b978;
+  --glass-line: rgba(255,248,235,.16); --glass-line-hi: rgba(255,248,235,.3);
+}
+:root[data-theme="jour"] .home .cf-dim { background: #e1dacd; }
+/* Dock et pied de page : verre clair */
+:root[data-theme="jour"] .home .cf-dock,
+:root[data-theme="jour"] .home .h-footer {
+  background: rgba(232,225,213,.82);
+  box-shadow: 0 16px 40px rgba(60,40,20,.18), inset 0 1px 0 rgba(255,255,255,.7);
+}
+:root[data-theme="jour"] .home .cf-arrow { background: rgba(60,40,20,.05); }
+:root[data-theme="jour"] .home .cf-arrow:hover { background: rgba(60,40,20,.12); }
+:root[data-theme="jour"] .home .cf-dots button { background: rgba(60,40,20,.25); }
+:root[data-theme="jour"] .home .cf-dock-thumb { background: rgba(60,40,20,.06); color: color-mix(in srgb, var(--ac) 80%, #000); }
+:root[data-theme="jour"] .home .topbar,
+:root[data-theme="jour"] .home.scrolled .topbar { background: rgba(232,225,213,.8); }
+:root[data-theme="jour"] .home .hero-v2-title { text-shadow: none; }
+:root[data-theme="jour"] .hero-v2-title .accent {
+  background: linear-gradient(120deg, #5a3d16, #9c7426 45%, #5a3d16);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+:root[data-theme="jour"] .hero-photo .hero-cta { background: rgba(232,225,213,.6); }
+:root[data-theme="jour"] .hero-cta:hover { background: rgba(168,35,44,.08); }
+
+/* Barre latérale du jeu et du profil : elle reste sombre, ses boutons de compte (déconnexion, MJ) gardent donc leurs couleurs claires */
+:root[data-theme="jour"] body.page-jeu .rail,
+:root[data-theme="jour"] body.page-fiche .rail {
+  --texte: #f2eee6; --texte-doux: #bcb2a4; --bord: rgba(240,236,227,.27); --fond: #131010;
+}

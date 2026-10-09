@@ -1,0 +1,73 @@
+/* =====================================================================
+   Polices de secours ajustées (anti-CLS)
+   Pendant le chargement de Cinzel / EB Garamond (Google Fonts), le navigateur
+   affiche le texte avec une police locale. Sans réglage, le texte change de
+   taille quand la vraie police arrive et la page « saute » (CLS).
+   Ces polices de secours sont Times New Roman, redimensionnée (size-adjust)
+   et recalée en hauteur (ascent/descent-override) pour occuper la même place
+   que les vraies polices : le passage de l'une à l'autre ne bouge plus rien.
+   Valeurs mesurées dans Chrome sur un texte type du site (100 px).
+   Utilisation : font-family: "Cinzel", "Cinzel Repli", serif;
+   ===================================================================== */
+
+/* Cinzel : ~25-30 % plus large que Times selon le texte ; on vise un peu bas pour
+   qu'une ligne « juste » (ex. badges côte à côte) ne passe pas à la ligne en attendant */
+@font-face {
+  font-family: "Cinzel Repli";
+  src: local("Times New Roman"), local("TimesNewRomanPSMT"), local("Times");
+  font-weight: 100 550;
+  size-adjust: 128%;
+  ascent-override: 76.6%;
+  descent-override: 28.9%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: "Cinzel Repli";
+  src: local("Times New Roman Bold"), local("TimesNewRomanPS-BoldMT"), local("Times Bold");
+  font-weight: 551 900;
+  size-adjust: 124%;
+  ascent-override: 79%;
+  descent-override: 29.8%;
+  line-gap-override: 0%;
+}
+
+/* Cinzel Decorative : ~40 % plus large que Times (gras) */
+@font-face {
+  font-family: "Cinzel Decorative Repli";
+  src: local("Times New Roman Bold"), local("TimesNewRomanPS-BoldMT"), local("Times Bold");
+  font-weight: 100 900;
+  size-adjust: 139.8%;
+  ascent-override: 70.1%;
+  descent-override: 26.5%;
+  line-gap-override: 0%;
+}
+
+/* EB Garamond : ~7 % plus étroite que Times */
+@font-face {
+  font-family: "EB Garamond Repli";
+  src: local("Times New Roman"), local("TimesNewRomanPSMT"), local("Times");
+  font-weight: 100 550;
+  size-adjust: 92.7%;
+  ascent-override: 109%;
+  descent-override: 32.4%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: "EB Garamond Repli";
+  src: local("Times New Roman Bold"), local("TimesNewRomanPS-BoldMT"), local("Times Bold");
+  font-weight: 551 900;
+  size-adjust: 93.5%;
+  ascent-override: 108%;
+  descent-override: 32.1%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: "EB Garamond Repli";
+  src: local("Times New Roman Italic"), local("TimesNewRomanPS-ItalicMT"), local("Times Italic");
+  font-style: italic;
+  font-weight: 100 900;
+  size-adjust: 89.8%;
+  ascent-override: 112.5%;
+  descent-override: 33.4%;
+  line-gap-override: 0%;
+}

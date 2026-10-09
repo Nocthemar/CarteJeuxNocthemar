@@ -1,0 +1,2067 @@
+/* =====================================================================
+   Page jeu-cartes.html — Duel des Couronnes
+   Low poly très visible + fantasy médiévale sombre : formes à facettes,
+   gris / noir / blanc / bleu nuit, un seul accent ambre.
+   Décor : forteresse en ruine sous la lune (img/Fond/profil-forteresse.svg),
+   brume, grain de film, profondeur à la souris (--px, --py posées par JS).
+   ===================================================================== */
+
+.page-jeu {
+  --nuit: #0b0d12;
+  --ardoise: #161a22;
+  --ardoise-2: #1e232d;
+  --ligne: rgba(205,214,230,.16);
+  --ligne-forte: rgba(205,214,230,.34);
+  --blanc: #eef0f4;
+  --gris: #9aa1ad;
+  --ambre: #d9a441;
+  --ambre-lueur: rgba(217,164,65,.45);
+  --sang: #b7444b;
+  --soin: #7fb08f;
+  --facette: polygon(10px 0, calc(100% - 10px) 0, 100% 10px, 100% calc(100% - 10px), calc(100% - 10px) 100%, 10px 100%, 0 calc(100% - 10px), 0 10px);
+
+  --texte: var(--blanc);
+  --texte-doux: var(--gris);
+  --bord: var(--ligne);
+  background: var(--nuit);
+  color: var(--blanc);
+}
+
+
+/* ---------- Décor ---------- */
+.scene {
+  --px: 0; --py: 0;
+  position: fixed; inset: 0; z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.scene__fond {
+  position: absolute; inset: -40px;
+  background:
+    radial-gradient(ellipse 120% 90% at 50% 40%, transparent 40%, rgba(0,0,0,.75) 100%),
+    linear-gradient(180deg, rgba(11,13,18,.35), rgba(11,13,18,.8) 70%),
+    url("../img/Fond/profil-forteresse.svg") center bottom / cover no-repeat,
+    var(--nuit);
+  transform: translate(calc(var(--px) * -18px), calc(var(--py) * -12px)) scale(1.03);
+  transition: transform .4s ease-out;
+}
+.scene__brume {
+  position: absolute; left: -30%; right: -30%; bottom: 0; height: 55%;
+  background:
+    radial-gradient(ellipse 40% 50% at 30% 70%, rgba(170,180,200,.10), transparent 70%),
+    radial-gradient(ellipse 35% 40% at 75% 80%, rgba(170,180,200,.08), transparent 70%);
+  animation: brume 38s linear infinite alternate;
+  transform: translateX(calc(var(--px) * -30px));
+}
+.scene__brume--2 { bottom: 15%; opacity: .7; animation-duration: 52s; animation-direction: alternate-reverse; }
+@keyframes brume { from { translate: -6% 0; } to { translate: 6% 0; } }
+/* grain de film */
+.scene__grain {
+  position: absolute; inset: -50%;
+  opacity: .07;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+  animation: grain .9s steps(6) infinite;
+}
+@keyframes grain {
+  0% { transform: translate(0, 0); } 20% { transform: translate(-3%, 2%); } 40% { transform: translate(2%, -3%); }
+  60% { transform: translate(-2%, -1%); } 80% { transform: translate(3%, 3%); } 100% { transform: translate(0, 0); }
+}
+
+.jeu-wrap {
+  position: relative; z-index: 1;
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 18px 16px 40px;
+}
+.page-jeu .vide { color: var(--gris); font-style: italic; }
+
+
+/* ---------- Boutons ---------- */
+.btn-dc {
+  display: inline-flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 1px;
+  min-height: 42px;
+  padding: 8px 20px;
+  border: 0;
+  clip-path: polygon(8px 0, calc(100% - 8px) 0, 100% 50%, calc(100% - 8px) 100%, 8px 100%, 0 50%);
+  background:
+    linear-gradient(160deg, rgba(255,255,255,.1) 0 40%, transparent 40.1%),
+    var(--ardoise-2);
+  box-shadow: inset 0 0 0 1px var(--ligne-forte);
+  color: var(--blanc);
+  font-family: "Cinzel","Cinzel Repli", serif;
+  font-size: .85rem; font-weight: 700; letter-spacing: .08em;
+  cursor: pointer;
+  transition: filter .15s, transform .15s;
+}
+.btn-dc small { font-family: "EB Garamond", serif; font-size: .72rem; font-weight: 400; letter-spacing: 0; opacity: .7; }
+.btn-dc:hover:not(:disabled) { filter: brightness(1.25); transform: translateY(-1px); }
+.btn-dc:disabled { opacity: .4; cursor: not-allowed; }
+.btn-dc--ambre {
+  color: #1b1408;
+  background: linear-gradient(160deg, #f0c873 0 40%, var(--ambre) 40.1%);
+}
+.btn-dc:focus-visible, .btn-outil:focus-visible, .dc-carte:focus-visible, .dc-unite:focus-visible, .dc-heros:focus-visible {
+  outline: 2px solid var(--ambre); outline-offset: 3px;
+}
+
+
+/* ---------- Accueil ---------- */
+.accueil { padding: 30px 0 10px; text-align: center; }
+.accueil__sur { font-family: "Cinzel","Cinzel Repli", serif; font-size: .75rem; letter-spacing: .3em; text-transform: uppercase; color: var(--gris); }
+.accueil__titre {
+  margin: 8px 0 12px;
+  font-family: "Cinzel Decorative","Cinzel","Cinzel Repli", serif;
+  font-size: clamp(2rem, 6vw, 3.4rem);
+  color: var(--blanc);
+  text-shadow: 0 4px 30px rgba(0,0,0,.8);
+}
+.accueil__texte { max-width: 60ch; margin: 0 auto 22px; color: #c9ced8; font-size: 1.1rem; }
+.accueil__actions { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; margin-bottom: 34px; }
+.accueil__deck-titre { font-family: "Cinzel","Cinzel Repli", serif; font-size: .9rem; letter-spacing: .14em; text-transform: uppercase; color: var(--gris); margin-bottom: 14px; }
+.accueil__deck {
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 12px;
+  --carte-l: 108px;
+}
+.accueil__deck .dc-carte { cursor: default; }
+
+
+/* Main de l'Ombre : dos de cartes */
+.main-adverse { display: flex; justify-content: flex-end; }
+.dos {
+  width: 26px; aspect-ratio: 5 / 7;
+  clip-path: polygon(4px 0, calc(100% - 4px) 0, 100% 4px, 100% calc(100% - 4px), calc(100% - 4px) 100%, 4px 100%, 0 calc(100% - 4px), 0 4px);
+  background:
+    linear-gradient(135deg, transparent 45%, rgba(217,164,65,.35) 45% 55%, transparent 55%),
+    linear-gradient(45deg, transparent 45%, rgba(217,164,65,.35) 45% 55%, transparent 55%),
+    linear-gradient(160deg, #2a3140, #151921);
+  box-shadow: inset 0 0 0 1px var(--ligne-forte);
+}
+.dos + .dos { margin-left: -12px; }
+
+
+/* ---------- Plateau ---------- */
+.table {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 210px;
+  gap: 18px;
+  align-items: start;
+}
+.table__plateau {
+  position: relative;
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 12px 14px;
+  clip-path: polygon(18px 0, calc(100% - 18px) 0, 100% 18px, 100% calc(100% - 18px), calc(100% - 18px) 100%, 18px 100%, 0 calc(100% - 18px), 0 18px);
+  background:
+    linear-gradient(200deg, rgba(200,214,240,.05) 0 25%, transparent 25.1%),
+    linear-gradient(160deg, transparent 0 65%, rgba(0,0,0,.18) 65.1%),
+    rgba(14,17,24,.72);
+  box-shadow: inset 0 0 0 1px var(--ligne);
+  backdrop-filter: blur(4px);
+}
+.camp { display: flex; flex-direction: column; gap: 10px; }
+.camp__tete { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+@media (min-width: 1001px) { .camp--joueur .camp__tete { flex-wrap: nowrap; } }
+.camp--adverse .camp__tete { justify-content: space-between; }
+.camp__infos { display: flex; align-items: center; gap: 14px; color: var(--gris); font-size: .9rem; }
+.camp__boutons { margin-left: auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.pile { display: inline-flex; align-items: center; gap: 6px; font-family: "Cinzel","Cinzel Repli", serif; font-size: .75rem; letter-spacing: .06em; color: var(--gris); }
+.pile__dos { display: inline-block; width: 12px; height: 16px; background: linear-gradient(160deg, #2a3140, #151921); box-shadow: inset 0 0 0 1px var(--ligne-forte); }
+
+/* Terrain : 5 emplacements */
+.terrain {
+  display: grid;
+  grid-template-columns: repeat(5, var(--unite-l));
+  justify-content: center;
+  gap: clamp(6px, 1.2vw, 14px);
+  --unite-l: clamp(58px, 6.4vw, 90px);
+}
+/* Héros */
+.dc-heros {
+  display: flex; align-items: center; gap: 10px;
+  padding: 4px 16px 4px 4px;
+  border: 0;
+  clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%);
+  background: linear-gradient(160deg, rgba(255,255,255,.06) 0 40%, transparent 40.1%), var(--ardoise-2);
+  box-shadow: inset 0 0 0 1px var(--ligne-forte);
+  color: var(--blanc); font: inherit; text-align: left;
+  cursor: pointer;
+}
+.dc-heros.est-ciblable { background: linear-gradient(160deg, rgba(255,255,255,.06) 0 40%, transparent 40.1%), #3a1d22; box-shadow: inset 0 0 0 2px #f07a80; }
+.dc-heros__portrait {
+  display: grid; place-items: center;
+  width: 52px; height: 52px; flex-shrink: 0;
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+  background: linear-gradient(160deg, #3a4252, #1a1e27);
+  overflow: hidden;
+}
+.dc-heros__portrait img { width: 100%; height: 100%; object-fit: cover; }
+.dc-heros__portrait svg { width: 60%; height: 60%; fill: var(--ambre); }
+.dc-heros__infos { display: flex; flex-direction: column; gap: 3px; min-width: 120px; }
+.dc-heros__nom { font-family: "Cinzel","Cinzel Repli", serif; font-size: .82rem; font-weight: 700; letter-spacing: .04em; }
+.dc-heros__pv { display: flex; align-items: center; gap: 8px; font-size: .8rem; color: var(--gris); }
+.dc-heros__pv strong { font-family: "Cinzel","Cinzel Repli", serif; font-size: 1.15rem; color: var(--blanc); }
+.dc-heros__jauge { width: 80px; height: 6px; background: rgba(255,255,255,.08); clip-path: polygon(3px 0, 100% 0, calc(100% - 3px) 100%, 0 100%); }
+.dc-heros__jauge i { display: block; height: 100%; background: linear-gradient(90deg, #8e3238, #c45b61); transition: width .4s ease; }
+
+/* Énergie : 10 cristaux taillés */
+.energie { display: flex; align-items: center; gap: 4px; }
+.cristal {
+  width: 11px; height: 16px;
+  clip-path: polygon(50% 0, 100% 30%, 80% 100%, 20% 100%, 0 30%);
+  background: rgba(255,255,255,.06);
+}
+.cristal--plein { background: linear-gradient(160deg, #f6d995 0 45%, var(--ambre) 45.1%); filter: drop-shadow(0 0 4px var(--ambre-lueur)); }
+.cristal--vide { background: rgba(217,164,65,.22); }
+.energie__texte { margin-left: 6px; font-family: "Cinzel","Cinzel Repli", serif; font-size: .82rem; color: var(--ambre); }
+.energie--petite .cristal { width: 8px; height: 11px; }
+.energie--petite .energie__texte { font-size: .7rem; }
+
+/* Ligne centrale : le d20 */
+.centre {
+  display: flex; align-items: center; justify-content: center; gap: 16px;
+  min-height: 62px;
+  border-top: 1px solid var(--ligne);
+  border-bottom: 1px solid var(--ligne);
+  margin: 4px 0;
+}
+.d20 { position: relative; width: 64px; height: 64px; flex-shrink: 0; }
+.d20 svg { width: 100%; height: 100%; }
+.d20 polygon { fill: #1e232d; stroke: var(--ligne-forte); stroke-width: 2; }
+.d20 path { fill: none; stroke: rgba(205,214,230,.18); stroke-width: 1.2; }
+.d20__face {
+  position: absolute; inset: 0;
+  display: grid; place-items: center;
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: 1.25rem; font-weight: 800;
+  color: var(--blanc); text-shadow: 0 1px 3px #000;
+}
+.d20.roule svg { animation: roule .35s linear infinite; }
+@keyframes roule { to { transform: rotate(360deg); } }
+.d20--critique polygon, .d20--grace polygon { fill: #5a4518; stroke: var(--ambre); }
+.d20--critique, .d20--grace { filter: drop-shadow(0 0 14px var(--ambre)); }
+.d20--echec polygon, .d20--malediction polygon { fill: #3a1d22; stroke: #c45b61; }
+.d20--solide polygon, .d20--benediction polygon { stroke: #e7ecf4; }
+.d20--destin polygon { stroke-dasharray: 4 3; }
+.centre__resultat { margin: 0; min-width: 9em; font-family: "Cinzel","Cinzel Repli", serif; font-size: 1rem; font-weight: 700; letter-spacing: .06em; }
+.centre__resultat--critique, .centre__resultat--grace { color: var(--ambre); }
+.centre__resultat--echec, .centre__resultat--malediction { color: #f07a80; }
+.centre__resultat--faible { color: var(--gris); }
+.centre__consigne { margin: 0; max-width: 34ch; color: var(--gris); font-size: .9rem; font-style: italic; }
+
+
+/* ---------- Historique des jets ---------- */
+.historique {
+  position: sticky; top: 90px;
+  padding: 14px;
+  clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
+  background: rgba(14,17,24,.78);
+  box-shadow: inset 0 0 0 1px var(--ligne);
+}
+.historique__titre { margin: 0 0 10px; font-family: "Cinzel","Cinzel Repli", serif; font-size: .78rem; letter-spacing: .16em; text-transform: uppercase; color: var(--gris); }
+.historique__liste { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.jet { display: flex; align-items: center; gap: 10px; font-size: .82rem; line-height: 1.15; }
+.jet b {
+  display: grid; place-items: center; flex-shrink: 0;
+  width: 30px; height: 30px;
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+  background: #262c38;
+  font-family: "Cinzel","Cinzel Repli", serif;
+}
+.jet small { display: block; color: var(--gris); font-size: .72rem; }
+.jet--moi span { color: var(--blanc); }
+.jet:not(.jet--moi) span { color: #b9bfca; }
+.jet--critique b, .jet--grace b { background: var(--ambre); color: #1b1408; }
+.jet--echec b, .jet--malediction b { background: #8e3238; }
+.jet--vide { color: var(--gris); font-style: italic; }
+.historique__outils { display: flex; gap: 8px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--ligne); }
+.btn-outil {
+  display: grid; place-items: center;
+  width: 36px; height: 36px; padding: 0;
+  border: 0;
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+  background: var(--ardoise-2);
+  color: var(--blanc); font-family: "Cinzel","Cinzel Repli", serif; font-weight: 700;
+  cursor: pointer;
+}
+.btn-outil:hover { background: #2c3341; }
+.ico-son { width: 18px; height: 18px; fill: var(--blanc); stroke: var(--blanc); stroke-width: 1.6; stroke-linecap: round; }
+.ico-son__ondes { fill: none; }
+.ico-son__barre { display: none; fill: none; }
+.est-muet .ico-son__ondes { display: none; }
+.est-muet .ico-son__barre { display: inline; }
+
+
+/* ---------- Bannière, aperçu de sort ---------- */
+.banniere {
+  position: fixed; left: 50%; top: 42%; z-index: 40;
+  translate: -50% -50%;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 16px 60px;
+  clip-path: polygon(0 50%, 30px 0, calc(100% - 30px) 0, 100% 50%, calc(100% - 30px) 100%, 30px 100%);
+  background: rgba(11,13,18,.92);
+  box-shadow: inset 0 0 0 1px var(--ligne-forte);
+  pointer-events: none;
+  opacity: 0; scale: .9;
+  transition: opacity .25s, scale .25s;
+}
+.banniere.est-visible { opacity: 1; scale: 1; }
+.banniere strong { font-family: "Cinzel Decorative","Cinzel","Cinzel Repli", serif; font-size: 1.6rem; color: var(--blanc); }
+.banniere span { color: var(--gris); font-size: .95rem; }
+.banniere--moi strong, .banniere--grace strong, .banniere--benediction strong { color: var(--ambre); }
+.banniere--malediction strong { color: #f07a80; }
+
+.apercu {
+  position: fixed; left: 50%; top: 45%; z-index: 39;
+  translate: -50% -50%;
+  pointer-events: none;
+  opacity: 0; scale: .7;
+  transition: opacity .2s, scale .25s;
+}
+.apercu .dc-carte { --carte-l: 170px; }
+.apercu.est-visible { opacity: 1; scale: 1; }
+
+
+/* ---------- Effets ---------- */
+.flotte {
+  position: fixed; z-index: 50;
+  translate: -50% -50%;
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: 1.6rem; font-weight: 800;
+  text-shadow: 0 2px 4px #000, 0 0 12px rgba(0,0,0,.8);
+  pointer-events: none;
+  animation: flotte 1.2s ease-out forwards;
+}
+.flotte--degats { color: #ff8a8f; }
+.flotte--soin { color: #9fd9b0; }
+.flotte--buff { color: var(--ambre); font-size: 1.2rem; }
+.flotte--rate { color: var(--gris); font-size: 1.1rem; }
+@keyframes flotte { 0% { opacity: 0; transform: translateY(10px) scale(.8); } 15% { opacity: 1; transform: translateY(0) scale(1.15); } 100% { opacity: 0; transform: translateY(-50px) scale(1); } }
+
+.fx-secousse { animation: secousse .4s ease; }
+@keyframes secousse { 20% { translate: -6px 0; } 40% { translate: 5px 0; } 60% { translate: -4px 0; } 80% { translate: 2px 0; } }
+.fx-elan { transform: translate(var(--dx), var(--dy)) scale(1.08) !important; transition: transform .22s cubic-bezier(.5,0,.75,0) !important; z-index: 10; }
+.fx-arrivee { animation: arrivee .6s cubic-bezier(.2,1.4,.4,1); }
+@keyframes arrivee { from { transform: translateY(-30px) scale(1.3); opacity: 0; } }
+.fx-mort { animation: mort .5s ease forwards; }
+@keyframes mort { to { transform: scale(.6) rotate(-6deg); opacity: 0; filter: grayscale(1) brightness(2); } }
+.fx-coup, .fx-feu, .fx-foudre, .fx-critique, .fx-soin, .fx-buff, .fx-charge, .fx-renfort { position: relative; }
+.fx-coup::after, .fx-feu::after, .fx-foudre::after, .fx-critique::after, .fx-soin::after, .fx-buff::after, .fx-charge::after, .fx-renfort::after {
+  content: ""; position: absolute; inset: 0; z-index: 3; pointer-events: none;
+  animation: eclat .7s ease-out forwards;
+}
+.fx-coup::after { background: radial-gradient(circle, rgba(255,255,255,.7), transparent 60%); }
+.fx-critique::after { background: radial-gradient(circle, rgba(240,200,115,.95), transparent 65%); }
+.fx-feu::after { background: radial-gradient(circle at 50% 70%, rgba(255,150,60,.9), rgba(183,68,75,.5) 45%, transparent 70%); }
+.fx-foudre::after { background: linear-gradient(115deg, transparent 40%, rgba(200,214,255,.95) 48% 52%, transparent 60%); }
+.fx-soin::after { background: radial-gradient(circle, rgba(159,217,176,.8), transparent 65%); }
+.fx-buff::after, .fx-renfort::after, .fx-charge::after { background: radial-gradient(circle, rgba(217,164,65,.8), transparent 65%); }
+@keyframes eclat { from { opacity: 1; transform: scale(.6); } to { opacity: 0; transform: scale(1.4); } }
+.fx-vague { animation: vague .8s ease; }
+@keyframes vague { 30% { filter: brightness(1.6) hue-rotate(-20deg); translate: 0 -4px; } }
+.fx-eclair { animation: eclair .5s ease; }
+@keyframes eclair { 10%, 40% { filter: brightness(1.8); } 25% { filter: brightness(1); } }
+
+
+/* ---------- Règles ---------- */
+.regles {
+  max-width: 680px; width: calc(100% - 32px);
+  max-height: calc(100vh - 60px);
+  padding: 26px 30px;
+  border: 0;
+  clip-path: polygon(16px 0, calc(100% - 16px) 0, 100% 16px, 100% calc(100% - 16px), calc(100% - 16px) 100%, 16px 100%, 0 calc(100% - 16px), 0 16px);
+  background: #12151c;
+  box-shadow: inset 0 0 0 1px var(--ligne-forte);
+  color: var(--blanc);
+}
+.regles::backdrop { background: rgba(5,6,9,.75); backdrop-filter: blur(3px); }
+.regles h2 { margin: 0 0 16px; font-family: "Cinzel","Cinzel Repli", serif; font-size: 1.2rem; color: var(--ambre); }
+.regles > ul { margin: 0 0 20px; padding-left: 18px; display: flex; flex-direction: column; gap: 8px; font-size: 1rem; line-height: 1.45; }
+.regles__table { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-direction: column; gap: 3px; }
+.regles__table b { display: inline-block; min-width: 3.4em; font-family: "Cinzel","Cinzel Repli", serif; color: var(--ambre); }
+
+
+/* ---------- Fin du duel ---------- */
+.fin {
+  position: fixed; inset: 0; z-index: 60;
+  display: grid; place-items: center;
+  padding: 16px;
+  background: rgba(5,6,9,.78);
+  backdrop-filter: blur(4px);
+}
+.fin__cadre {
+  width: min(520px, 100%);
+  padding: 34px 30px 28px;
+  text-align: center;
+  clip-path: polygon(20px 0, calc(100% - 20px) 0, 100% 20px, 100% calc(100% - 20px), calc(100% - 20px) 100%, 20px 100%, 0 calc(100% - 20px), 0 20px);
+  background: linear-gradient(200deg, rgba(200,214,240,.06) 0 30%, transparent 30.1%), #12151c;
+  box-shadow: inset 0 0 0 1px var(--ligne-forte);
+}
+.fin__sur { font-family: "Cinzel","Cinzel Repli", serif; font-size: .75rem; letter-spacing: .25em; text-transform: uppercase; color: var(--gris); }
+.fin__titre { margin: 6px 0 8px; font-family: "Cinzel Decorative","Cinzel","Cinzel Repli", serif; font-size: 2.6rem; }
+.fin__titre--victoire { color: var(--ambre); text-shadow: 0 0 30px var(--ambre-lueur); }
+.fin__titre--defaite { color: #c9ced8; }
+.fin__texte { margin: 0 auto 18px; color: #c9ced8; }
+.fin__stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 0 0 24px; }
+.fin__stats div { padding: 10px 6px; background: rgba(255,255,255,.04); clip-path: var(--facette); }
+.fin__stats dt { font-size: .72rem; color: var(--gris); }
+.fin__stats dd { margin: 2px 0 0; font-family: "Cinzel","Cinzel Repli", serif; font-size: 1.4rem; font-weight: 800; }
+.fin__actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+
+/* ---------- Écrans moyens et téléphones ---------- */
+@media (max-width: 1000px) {
+  .table { grid-template-columns: minmax(0, 1fr); }
+  .historique { position: static; }
+  .historique__liste { flex-direction: row; flex-wrap: wrap; }
+  .historique__liste .jet { width: calc(50% - 4px); }
+}
+@media (max-width: 600px) {
+  .jeu-wrap { padding: 8px 6px 30px; }
+  .table__plateau { padding: 8px 6px; clip-path: none; }
+  .terrain { gap: 4px; }
+  .camp__tete { gap: 8px; }
+  .dc-heros__infos { min-width: 0; }
+  .dc-heros__jauge { width: 54px; }
+  .dc-heros__portrait { width: 40px; height: 40px; }
+  .camp__boutons { margin-left: 0; width: 100%; justify-content: space-between; }
+  .btn-dc { padding: 6px 14px; font-size: .75rem; }
+  .main { overflow-x: auto; justify-content: flex-start; padding-top: 30px; }
+  .centre { min-height: 60px; gap: 10px; }
+  .d20 { width: 50px; height: 50px; }
+  .centre__consigne { display: none; }
+  .fin__stats { grid-template-columns: repeat(2, 1fr); }
+  .historique__liste .jet { width: 100%; }
+}
+
+/* Réduire les animations : rien ne bouge */
+@media (prefers-reduced-motion: reduce) {
+  .scene__brume, .scene__grain, .d20.roule svg, .dc-unite.est-ciblable, .dc-heros.est-ciblable { animation: none !important; }
+  .scene__fond { transform: none; transition: none; }
+  .dc-carte { transform: none; transition: none; }
+  .fx-secousse, .fx-arrivee, .fx-mort, .fx-vague, .fx-eclair, .flotte { animation-duration: .01s !important; }
+}
+
+/* ---------- Ajustements du plateau (une seule ligne pour le joueur, main dans l'écran) ---------- */
+.energie__texte { white-space: nowrap; }
+.camp__boutons { flex-wrap: nowrap; }
+.camp--joueur .camp__tete { gap: 10px; }
+.camp--joueur .dc-heros__infos { min-width: 104px; }
+@media (min-width: 1001px) {
+  .camp--joueur .energie { gap: 3px; }
+  .camp--joueur .cristal { width: 9px; height: 14px; }
+}
+.dos { width: 20px; }
+.dos + .dos { margin-left: -10px; }
+@media (max-width: 1000px) {
+  .camp__boutons { flex-wrap: wrap; }
+}
+/* Téléphones : les 5 emplacements se partagent la largeur du plateau */
+@media (max-width: 600px) {
+  .terrain { grid-template-columns: repeat(5, minmax(0, 1fr)); --unite-l: 100%; }
+  .dc-unite, .dc-place { width: 100%; }
+}
+
+
+/* =====================================================================
+   Mode en ligne : onglets, salon, salle d'attente
+   ===================================================================== */
+.modes {
+  display: inline-flex;
+  margin: 0 auto 22px;
+  clip-path: polygon(12px 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 12px 100%, 0 50%);
+  background: rgba(14,17,24,.8);
+  box-shadow: inset 0 0 0 1px var(--ligne-forte);
+}
+.mode {
+  display: flex; flex-direction: column; gap: 2px;
+  padding: 10px 30px;
+  border: 0; background: none;
+  color: var(--gris); font: inherit;
+  cursor: pointer;
+  transition: background .15s, color .15s;
+}
+.mode + .mode { border-left: 1px solid var(--ligne); }
+.mode:hover { color: var(--blanc); background: rgba(255,255,255,.04); }
+.mode:focus-visible { outline: 2px solid var(--ambre); outline-offset: -4px; }
+.mode__titre { font-family: "Cinzel","Cinzel Repli", serif; font-size: .9rem; font-weight: 700; letter-spacing: .08em; }
+.mode__texte { font-size: .82rem; font-style: italic; }
+.mode.est-actif { color: var(--blanc); background: linear-gradient(160deg, rgba(217,164,65,.18) 0 40%, rgba(217,164,65,.08) 40.1%); }
+.mode.est-actif .mode__titre { color: var(--ambre); }
+
+.ligne { max-width: 760px; margin: 0 auto 24px; text-align: left; }
+.ligne__accueil { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.ligne__bloc {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 10px;
+  padding: 18px 20px;
+  clip-path: var(--facette);
+  background: linear-gradient(200deg, rgba(200,214,240,.05) 0 30%, transparent 30.1%), rgba(14,17,24,.8);
+  box-shadow: inset 0 0 0 1px var(--ligne);
+}
+.ligne__bloc--centre { align-items: center; text-align: center; }
+.ligne__bloc h3 { margin: 0; font-family: "Cinzel","Cinzel Repli", serif; font-size: .95rem; letter-spacing: .08em; color: var(--blanc); }
+.ligne__bloc p { margin: 0; flex: 1; color: var(--gris); font-size: .95rem; font-style: italic; }
+.ligne__rejoindre { display: flex; gap: 8px; width: 100%; }
+.ligne__rejoindre input {
+  flex: 1; min-width: 0;
+  padding: 8px 12px;
+  border: 0;
+  background: rgba(0,0,0,.35);
+  box-shadow: inset 0 0 0 1px var(--ligne-forte);
+  color: var(--blanc);
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: 1.1rem; letter-spacing: .3em; text-transform: uppercase;
+}
+.ligne__rejoindre input:focus { outline: 2px solid var(--ambre); outline-offset: 0; }
+
+.salon {
+  padding: 18px 20px;
+  clip-path: var(--facette);
+  background: rgba(14,17,24,.82);
+  box-shadow: inset 0 0 0 1px var(--ligne-forte);
+}
+.salon__tete { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+.salon__code { display: flex; align-items: baseline; gap: 12px; }
+.salon__label { font-family: "Cinzel","Cinzel Repli", serif; font-size: .75rem; letter-spacing: .2em; text-transform: uppercase; color: var(--gris); }
+.salon__code strong { font-family: "Cinzel","Cinzel Repli", serif; font-size: 1.6rem; letter-spacing: .3em; color: var(--ambre); }
+.salon__boutons { display: flex; gap: 8px; }
+.salon__boutons .btn-dc { min-height: 34px; padding: 4px 16px; font-size: .75rem; }
+.salon__joueurs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.salon__joueur {
+  display: grid;
+  grid-template-areas: "avatar nom" "avatar role" "avatar pret";
+  grid-template-columns: auto 1fr;
+  column-gap: 12px;
+  align-items: center;
+  padding: 10px 12px;
+  background: rgba(255,255,255,.03);
+  box-shadow: inset 0 0 0 1px var(--ligne);
+}
+.salon__joueur.est-pret { box-shadow: inset 0 0 0 1px var(--ambre), inset 0 0 22px rgba(217,164,65,.1); }
+.salon__joueur--vide { grid-template-areas: "avatar nom"; opacity: .6; }
+.salon__avatar {
+  grid-area: avatar;
+  display: grid; place-items: center;
+  width: 44px; height: 44px;
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+  background: #262c38;
+  object-fit: cover;
+  color: var(--gris);
+}
+.salon__nom { grid-area: nom; font-family: "Cinzel","Cinzel Repli", serif; font-size: .9rem; font-weight: 700; }
+.salon__nom small { font-family: "EB Garamond", serif; font-weight: 400; color: var(--gris); }
+.salon__role { grid-area: role; font-size: .8rem; color: var(--gris); }
+.salon__pret { grid-area: pret; font-size: .8rem; font-style: italic; color: var(--gris); }
+.est-pret .salon__pret { color: var(--ambre); font-style: normal; }
+.salon__etat { margin: 12px 0; text-align: center; color: #c9ced8; font-style: italic; }
+.salon__pret-btn { display: flex; margin: 0 auto; }
+
+/* Notification (copie du lien, erreurs) */
+.notif {
+  position: fixed; left: 50%; bottom: 24px; z-index: 70;
+  transform: translate(-50%, 20px);
+  max-width: calc(100% - 32px);
+  padding: 12px 20px;
+  clip-path: var(--facette);
+  background: #12151c;
+  box-shadow: inset 0 0 0 1px var(--ligne-forte);
+  color: var(--blanc);
+  opacity: 0; pointer-events: none;
+  transition: opacity .2s, transform .2s;
+}
+.notif--visible { opacity: 1; transform: translate(-50%, 0); }
+.notif--erreur { box-shadow: inset 0 0 0 1px #c45b61; }
+
+@media (max-width: 600px) {
+  .ligne__accueil, .salon__joueurs { grid-template-columns: 1fr; }
+  .mode { padding: 8px 16px; }
+}
+
+/* Annule le style générique des <section> de CSS/index.css (grande marge, filet, largeur bornée) */
+.jeu-wrap .table, .jeu-wrap .ligne { padding: 0; border-bottom: 0; }
+.jeu-wrap .table { max-width: none; }
+
+/* Accueil : les cartes du Codex ajoutées au deck sont un peu en retrait */
+.accueil__ajout { position: relative; opacity: .8; }
+.accueil__ajout::after {
+  content: "Codex";
+  position: absolute; top: -8px; left: 50%; translate: -50% 0;
+  padding: 1px 8px;
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: .6rem; letter-spacing: .12em; text-transform: uppercase;
+  color: #1b1408; background: var(--gris);
+}
+
+/* Le plateau descend un peu sous le haut de la page */
+.jeu-wrap .table { margin-top: 56px; }
+@media (max-width: 600px) { .jeu-wrap .table { margin-top: 24px; } }
+
+.fx-visee { filter: drop-shadow(0 0 12px rgba(240,122,128,.85)); }
+
+/* Énergie : des gouttes au lieu des cristaux (carré arrondi sauf un coin, tourné : pointe en haut) */
+.page-jeu .cristal,
+.page-jeu .camp--joueur .cristal {
+  width: 11px; height: 11px;
+  margin: 3px 2px 0;
+  clip-path: none;
+  border-radius: 50% 0 50% 50%;
+  transform: rotate(-45deg);
+}
+.page-jeu .cristal--plein { background: radial-gradient(circle at 35% 65%, #ffe9b8 0 18%, #f0c873 30%, var(--ambre) 75%); }
+.page-jeu .energie--petite .cristal { width: 8px; height: 8px; margin: 2px 1px 0; }
+
+/* Gouttes d'énergie en violet */
+.page-jeu { --energie: #9a6cf0; --energie-claire: #c9b2fb; --energie-lueur: rgba(154,108,240,.55); }
+.page-jeu .cristal--plein {
+  background: radial-gradient(circle at 35% 65%, #efe6ff 0 18%, var(--energie-claire) 30%, var(--energie) 75%);
+  filter: drop-shadow(0 0 4px var(--energie-lueur));
+}
+.page-jeu .cristal--vide { background: rgba(154,108,240,.25); }
+.page-jeu .energie__texte { color: var(--energie-claire); }
+
+
+
+/* =====================================================================
+   Cartes : main, terrain, aperçu, accueil — toutes à la forme des vraies cartes
+   - vraie carte : l'illustration originale en entier (son cadre, son nom, sa rareté)
+   - carte du Codex : la même silhouette (sommet en arc, pointe en bas), cadre argenté
+   Par-dessus : coût, capacité, attaque / vie. Les lueurs (jouable, prête, ciblée…)
+   sont des drop-shadow : elles épousent la forme de la carte.
+   ===================================================================== */
+.dc-carte, .dc-unite {
+  --rx: 0deg; --ry: 0deg; --mx: 50%; --my: 50%; --dx: 0px; --dy: 0px;
+  --ombre: drop-shadow(0 6px 9px rgba(0,0,0,.65));
+  position: relative;
+  flex-shrink: 0;
+  aspect-ratio: 2 / 3;
+  padding: 0; border: 0;
+  background: none; clip-path: none;
+  color: var(--blanc); font: inherit; text-align: left;
+  cursor: pointer;
+  filter: var(--ombre);
+  transition: transform .2s ease, filter .2s ease, translate .2s ease;
+}
+.dc-carte {
+  width: var(--carte-l, clamp(84px, 9vw, 120px));
+  transform: perspective(700px) rotateX(var(--rx)) rotateY(var(--ry));
+}
+.dc-carte.incline { transition: transform .06s linear, translate .2s ease, filter .2s ease; }
+.dc-unite { width: var(--unite-l); }
+.dc-carte__corps, .dc-unite__corps { position: absolute; inset: 0; display: block; }
+
+/* --- Face de la carte --- */
+.dc-face { position: absolute; inset: 0; width: 100%; height: 100%; }
+.dc-face--image { display: block; object-fit: contain; pointer-events: none; }
+/* Silhouette des vraies cartes, reprise pour les cartes du Codex */
+.dc-face--codex, .dc-place {
+  --silhouette: polygon(50% 0, 64% 2.5%, 80% 4%, 92% 7%, 97% 12%, 100% 20%, 100% 82%, 95% 89%, 80% 93%, 60% 95.5%, 50% 100%,
+                        40% 95.5%, 20% 93%, 5% 89%, 0 82%, 0 20%, 3% 12%, 8% 7%, 20% 4%, 36% 2.5%);
+}
+.dc-face--codex {
+  clip-path: var(--silhouette);
+  background: linear-gradient(160deg, #eef1f6, #7b8494 32%, #cfd5df 52%, #5d6574 78%, #dfe4ec);
+}
+.dc-face--codex.rar-sort { background: linear-gradient(160deg, #c3cff0, #4d5d85 36%, #a7b7dc 56%, #3d4a6b 80%, #b9c6e8); }
+.dc-face__cadre {
+  position: absolute; inset: 3.5%;
+  clip-path: var(--silhouette);
+  display: flex; flex-direction: column;
+  background: #0b0e14;
+}
+.dc-face__art { flex: 0 0 60%; overflow: hidden; }
+.dc-face__art svg { display: block; width: 100%; height: 100%; }
+.dc-face__panneau {
+  position: relative; z-index: 1;
+  flex: 1;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  margin: -7% 7% 15%;
+  padding: 6% 5% 3%;
+  border-radius: 10% / 14%;
+  background: linear-gradient(180deg, #171b23, #07080b);
+  box-shadow: inset 0 1px 0 rgba(205,214,230,.3), 0 -4px 10px rgba(0,0,0,.5);
+  text-align: center;
+  overflow: hidden;
+}
+.dc-face__nom {
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: .56rem; font-weight: 700; line-height: 1.12;
+  overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+}
+.dc-face__texte { font-size: .54rem; line-height: 1.15; color: var(--gris); overflow: hidden; }
+.dc-unite .dc-face__texte { display: none; }
+
+/* --- Informations du duel posées sur la carte --- */
+.dc-cout {
+  position: absolute; top: 2%; left: 3%; z-index: 2;
+  display: grid; place-items: center;
+  width: 24px; height: 26px;
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+  background: linear-gradient(160deg, #f0c873 0 45%, var(--ambre) 45.1%);
+  color: #1b1408;
+  font-family: "Cinzel","Cinzel Repli", serif; font-weight: 800; font-size: .85rem;
+}
+.dc-k {
+  position: absolute; top: 3%; right: 5%; z-index: 2;
+  width: 20px; height: 20px; padding: 3px;
+  background: rgba(8,10,14,.82);
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+}
+.dc-k svg { width: 100%; height: 100%; fill: var(--blanc); }
+.dc-brise {
+  position: absolute; top: 18%; left: 50%; z-index: 2; translate: -50% 0;
+  padding: 0 5px;
+  font-size: .55rem; letter-spacing: .06em; text-transform: uppercase;
+  background: rgba(183,68,75,.92);
+}
+.dc-stat {
+  position: absolute; bottom: 4%; z-index: 2;
+  display: grid; place-items: center;
+  min-width: 22px; height: 20px; padding: 0 4px;
+  clip-path: polygon(4px 0, calc(100% - 4px) 0, 100% 50%, calc(100% - 4px) 100%, 4px 100%, 0 50%);
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: .78rem; font-weight: 800;
+  color: #fff; text-shadow: 0 1px 1px rgba(0,0,0,.6);
+}
+.dc-stat--a { left: 5%; background: linear-gradient(160deg, #6a7385 0 45%, #474e5c 45.1%); }
+.dc-stat--h { right: 5%; background: linear-gradient(160deg, #c45b61 0 45%, #8e3238 45.1%); }
+.dc-unite.est-blessee .dc-stat--h { background: linear-gradient(160deg, #f07a80 0 45%, #b7444b 45.1%); }
+/* Reflet qui suit la souris, découpé à la forme de la carte (masque = l'image elle-même) */
+.dc-reflet {
+  position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background: radial-gradient(circle at var(--mx) var(--my), rgba(255,255,255,.28), transparent 45%);
+  -webkit-mask: var(--masque) center / contain no-repeat;
+          mask: var(--masque) center / contain no-repeat;
+  opacity: 0; transition: opacity .2s;
+}
+.dc-carte:hover .dc-reflet, .dc-carte.incline .dc-reflet { opacity: 1; }
+
+/* --- Main du joueur --- */
+.main { min-height: calc(clamp(78px, 8vw, 108px) * 1.5 + 14px); }
+.main .dc-carte { --carte-l: clamp(78px, 8vw, 108px); translate: 0 14px; filter: brightness(.68) saturate(.8) var(--ombre); }
+.main .dc-carte + .dc-carte { margin-left: calc(var(--carte-l) * -0.14); }
+.main .dc-carte.est-jouable { translate: 0 6px; filter: drop-shadow(0 0 3px #f0c873) drop-shadow(0 0 8px var(--ambre-lueur)) var(--ombre); }
+.main .dc-carte:hover, .main .dc-carte:focus-visible { translate: 0 -18px; z-index: 5; }
+.main .dc-carte.est-choisie { translate: 0 -26px; z-index: 6; filter: drop-shadow(0 0 4px #f6d995) drop-shadow(0 0 16px var(--ambre)) var(--ombre); }
+.accueil__deck { --carte-l: 104px; }
+.accueil__deck .dc-carte { cursor: default; }
+
+/* --- Terrain --- */
+.dc-place {
+  width: var(--unite-l); aspect-ratio: 2 / 3;
+  clip-path: var(--silhouette);
+  background: rgba(205,214,230,.05);
+}
+.dc-unite.a-garde { filter: drop-shadow(0 0 2px #e6eaf1) drop-shadow(0 0 7px rgba(205,214,230,.55)) var(--ombre); }
+.dc-unite.est-epuisee .dc-face { filter: grayscale(.45) brightness(.72); }
+.dc-unite.est-prete { filter: drop-shadow(0 0 3px #f0c873) drop-shadow(0 0 10px var(--ambre-lueur)) var(--ombre); }
+.dc-unite.est-prete:hover { transform: translateY(-4px); }
+.dc-unite.est-choisie { transform: translateY(-10px) scale(1.05); filter: drop-shadow(0 0 4px #f6d995) drop-shadow(0 0 16px var(--ambre)) var(--ombre); }
+.dc-unite.est-ciblable { animation: ciblable-carte 1s ease-in-out infinite; }
+@keyframes ciblable-carte {
+  0%, 100% { filter: drop-shadow(0 0 3px #f07a80) drop-shadow(0 0 6px rgba(240,122,128,.5)) var(--ombre); }
+  50%      { filter: drop-shadow(0 0 4px #ff9aa0) drop-shadow(0 0 16px rgba(240,122,128,.9)) var(--ombre); }
+}
+.dc-heros.est-ciblable { animation: ciblable 1s ease-in-out infinite; }
+@keyframes ciblable { 50% { filter: drop-shadow(0 0 12px rgba(240,122,128,.8)); } }
+.vise .dc-unite:not(.est-ciblable):not(.est-choisie), .vise .dc-heros:not(.est-ciblable) { opacity: .5; }
+.dc-unite.fx-prepare { transform: translateY(-8px) scale(1.06); filter: drop-shadow(0 0 5px #f6d995) drop-shadow(0 0 16px var(--ambre)) var(--ombre); z-index: 10; }
+.dc-unite.fx-elan { transform: translate(var(--dx), var(--dy)) scale(1.08); transition: transform .22s cubic-bezier(.5,0,.75,0); z-index: 10; }
+@media (max-width: 600px) {
+  .terrain { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .dc-unite, .dc-place { width: 100%; }
+  .dc-cout { width: 18px; height: 20px; font-size: .7rem; }
+  .dc-stat { min-width: 17px; height: 16px; font-size: .65rem; }
+  .dc-k { width: 16px; height: 16px; }
+}
+
+
+/* =====================================================================
+   Effets : éclats de carte détruite, étincelles, ondes, braises, éclairs,
+   poussière, voile rouge, secousse de l'écran (JS/jeu-cartes-arene.js)
+   ===================================================================== */
+.fx-couche { position: fixed; inset: 0; z-index: 45; pointer-events: none; overflow: hidden; }
+.fx-eclat { position: fixed; margin: 0; pointer-events: none; will-change: transform, opacity; }
+.fx-particule {
+  position: fixed; width: var(--t, 6px); height: var(--t, 6px);
+  margin: calc(var(--t, 6px) / -2) 0 0 calc(var(--t, 6px) / -2);
+  background: var(--c, #f0c873);
+  box-shadow: 0 0 8px var(--c, #f0c873);
+  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+  will-change: transform, opacity;
+}
+.fx-particule--rond { clip-path: none; border-radius: 50%; }
+.fx-onde {
+  position: fixed; border-radius: 50%;
+  border: 3px solid var(--c, #f0c873);
+  box-shadow: 0 0 20px var(--c, #f0c873), inset 0 0 20px var(--c, #f0c873);
+  translate: -50% -50%;
+}
+.fx-flash { position: fixed; translate: -50% -50%; border-radius: 50%; background: radial-gradient(circle, var(--c, #fff) 0, transparent 70%); }
+.fx-voile { position: fixed; inset: 0; background: radial-gradient(ellipse at 50% 50%, transparent 40%, var(--c, rgba(183,40,48,.55)) 100%); }
+.fx-eclair-trait {
+  position: fixed; width: 22px;
+  translate: -50% 0;
+  background: linear-gradient(180deg, transparent, #e8eeff 20%, #b8c6ff 80%, transparent);
+  filter: drop-shadow(0 0 8px #b8c6ff);
+  clip-path: polygon(40% 0, 100% 0, 55% 40%, 100% 40%, 20% 100%, 45% 55%, 0 55%);
+}
+/* Reflet des cartes du Codex : découpé à la silhouette (pas d'image pour servir de masque) */
+.dc-reflet--codex {
+  -webkit-mask: none; mask: none;
+  clip-path: polygon(50% 0, 64% 2.5%, 80% 4%, 92% 7%, 97% 12%, 100% 20%, 100% 82%, 95% 89%, 80% 93%, 60% 95.5%, 50% 100%,
+                     40% 95.5%, 20% 93%, 5% 89%, 0 82%, 0 20%, 3% 12%, 8% 7%, 20% 4%, 36% 2.5%);
+}
+/* Main du joueur : cartes serrées, centrées, alignées par le bas */
+.main { display: flex; justify-content: center; align-items: flex-end; padding: 10px 8px 4px; }
+@media (max-width: 600px) { .main { overflow-x: auto; justify-content: flex-start; padding-top: 30px; } }
+
+
+/* =====================================================================
+   Plateau : la table de guerre
+   - une table ovale en bois, tapis bleu nuit brodé d'or, vue en légère
+     perspective, deux bougies (table de jeu en bois)
+   - héros au centre dans de grands cadres, PV dans une goutte de sang,
+     mains en éventail, « Fin du tour » sur le côté de la table
+   - un grand orbe d'énergie lumineux, ciel traversé de lueurs violettes
+   ===================================================================== */
+
+/* Ciel : lueurs violettes et bleues derrière la table */
+.page-jeu .scene__fond {
+  background:
+    radial-gradient(ellipse 45% 35% at 22% 30%, rgba(130,80,210,.22), transparent 70%),
+    radial-gradient(ellipse 40% 30% at 80% 22%, rgba(70,110,220,.18), transparent 70%),
+    radial-gradient(ellipse 120% 90% at 50% 40%, transparent 40%, rgba(0,0,0,.75) 100%),
+    linear-gradient(180deg, rgba(11,13,18,.35), rgba(11,13,18,.8) 70%),
+    url("../img/Fond/profil-forteresse.svg") center bottom / cover no-repeat,
+    var(--nuit);
+}
+
+/* Le plateau n'est plus un panneau : la table elle-même fait le décor */
+.page-jeu .table__plateau {
+  display: flex; flex-direction: column; align-items: stretch; gap: 6px;
+  padding: 0;
+  clip-path: none;
+  background: none;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+/* --- Haut et bas : héros au centre --- */
+.tg-haut, .tg-bas {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 16px;
+  position: relative; z-index: 3;
+}
+.tg-haut .main-adverse { justify-self: start; }
+.tg-infos { justify-self: end; display: flex; align-items: center; gap: 14px; color: var(--gris); font-size: .85rem; }
+.tg-heros { justify-self: center; }
+.tg-bas { margin-top: -6px; }
+.tg-energie { justify-self: start; display: flex; align-items: center; gap: 14px; }
+.tg-pile { justify-self: end; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; text-align: right; }
+.tg-pile .centre__consigne { max-width: 26ch; font-size: .85rem; }
+
+/* --- Héros : cadre hexagonal, goutte de PV, cartouche du nom --- */
+.page-jeu .dc-heros {
+  position: relative;
+  display: flex; flex-direction: column; align-items: center; gap: 0;
+  padding: 0;
+  clip-path: none;
+  background: none;
+  box-shadow: none;
+}
+.dc-heros__cadre {
+  display: grid; place-items: center;
+  width: 86px; height: 96px;
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+  background: linear-gradient(160deg, #f6d995, #8a6a2c 35%, #e8c77e 55%, #6e5322 80%, #f0d08a);
+  filter: drop-shadow(0 6px 10px rgba(0,0,0,.7));
+}
+.page-jeu .dc-heros__portrait {
+  width: 78px; height: 88px;
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+  background: radial-gradient(circle at 50% 35%, #3a4252, #11141b);
+}
+.page-jeu .dc-heros__portrait svg { width: 52%; height: 52%; fill: var(--ambre); }
+/* PV : goutte de sang en bas à droite du portrait */
+.page-jeu .dc-heros__pv {
+  position: absolute; right: -12px; bottom: 16px;
+  display: grid; place-items: center;
+  width: 34px; height: 34px;
+  border-radius: 50% 0 50% 50%;
+  transform: rotate(-45deg);
+  background: radial-gradient(circle at 35% 65%, #ff9aa0 0 10%, #c33a42 45%, #6e161c 100%);
+  box-shadow: 0 0 0 2px #2a0d10, 0 4px 8px rgba(0,0,0,.6);
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: 1rem; font-weight: 800; line-height: 1;
+  color: #fff;
+  text-shadow: 0 1px 2px #000;
+}
+.dc-heros__pv > span { transform: rotate(45deg); }   /* le chiffre reste droit dans la goutte tournée */
+.dc-heros.est-en-danger .dc-heros__pv { animation: danger 1.2s ease-in-out infinite; }
+@keyframes danger { 50% { box-shadow: 0 0 0 2px #2a0d10, 0 0 16px 4px rgba(255,80,90,.7); } }
+.page-jeu .dc-heros__nom {
+  margin-top: -10px;
+  padding: 3px 18px;
+  clip-path: polygon(10px 0, calc(100% - 10px) 0, 100% 50%, calc(100% - 10px) 100%, 10px 100%, 0 50%);
+  background: linear-gradient(180deg, #232836, #11141b);
+  box-shadow: inset 0 0 0 1px rgba(217,164,65,.5);
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: .75rem; font-weight: 700; letter-spacing: .06em;
+  white-space: nowrap;
+}
+.page-jeu .dc-heros.est-ciblable .dc-heros__cadre { background: linear-gradient(160deg, #ffb3b8, #b7444b 40%, #ffd0d3 60%, #8e3238); }
+.page-jeu .dc-heros.est-ciblable { animation: ciblable 1s ease-in-out infinite; }
+
+/* --- La table --- */
+.tg-table {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 18px;
+}
+.tg-perspective { perspective: 1400px; perspective-origin: 50% 20%; }
+.tg-bord {
+  padding: 16px;
+  border-radius: 140px / 90px;
+  background:
+    linear-gradient(180deg, rgba(255,220,170,.14), transparent 30%, rgba(0,0,0,.35)),
+    url("../img/Fond/bois.svg") 0 0 / 300px 300px,
+    #3b2616;
+  box-shadow:
+    inset 0 2px 0 rgba(255,220,170,.25),
+    inset 0 -3px 0 rgba(0,0,0,.5),
+    0 0 0 2px #1a0f08,
+    0 30px 60px rgba(0,0,0,.75),
+    0 0 80px rgba(130,80,210,.15);
+  transform: rotateX(14deg);
+  transform-origin: 50% 100%;
+}
+.tg-tapis {
+  position: relative;
+  display: flex; flex-direction: column; gap: 6px;
+  padding: 18px 26px;
+  border-radius: 124px / 76px;
+  background:
+    radial-gradient(ellipse 70% 60% at 50% 45%, rgba(110,130,190,.16), transparent 75%),
+    repeating-linear-gradient(45deg, rgba(217,164,65,.035) 0 2px, transparent 2px 26px),
+    repeating-linear-gradient(-45deg, rgba(217,164,65,.035) 0 2px, transparent 2px 26px),
+    linear-gradient(180deg, #1a2338, #0f1524);
+  box-shadow:
+    inset 0 0 0 5px #121a2b,
+    inset 0 0 0 6px rgba(217,164,65,.45),     /* broderie d'or */
+    inset 0 0 0 10px #121a2b,
+    inset 0 0 0 11px rgba(217,164,65,.2),
+    inset 0 8px 30px rgba(0,0,0,.6);
+}
+.page-jeu .tg-tapis .centre {
+  min-height: 58px;
+  margin: 2px 0;
+  border: 0;
+  background: linear-gradient(90deg, transparent 5%, rgba(217,164,65,.45) 30%, rgba(217,164,65,.45) 70%, transparent 95%) center / 100% 1px no-repeat;
+}
+.tg-tapis .d20 { filter: drop-shadow(0 4px 6px rgba(0,0,0,.7)); }
+.tg-tapis .d20 polygon { fill: #232a3a; }
+.tg-tapis .centre__resultat { min-width: 0; padding: 2px 12px; background: #121a2b; }
+.tg-tapis .dc-place { background: rgba(217,164,65,.06); }
+
+/* --- Bougies --- */
+.tg-bougie {
+  position: absolute; bottom: 18%; z-index: 2;
+  width: 16px; height: 56px;
+  border-radius: 3px 3px 2px 2px;
+  background: linear-gradient(90deg, #cfc4ab, #f3ead6 45%, #bfb39a);
+  box-shadow: 0 6px 8px rgba(0,0,0,.6);
+  pointer-events: none;
+}
+.tg-bougie--g { left: -8px; }
+.tg-bougie--d { right: 150px; }
+.tg-bougie::before {   /* flamme */
+  content: "";
+  position: absolute; left: 50%; bottom: 100%;
+  width: 10px; height: 18px;
+  margin-left: -5px;
+  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+  background: radial-gradient(circle at 50% 75%, #fff8e0 0 20%, #ffd27a 45%, #ff8a3d 80%);
+  box-shadow: 0 0 12px 4px rgba(255,170,70,.6);
+  transform-origin: 50% 100%;
+  animation: flamme 1.6s ease-in-out infinite alternate;
+}
+.tg-bougie::after {    /* halo */
+  content: "";
+  position: absolute; left: 50%; bottom: 60%;
+  width: 220px; height: 220px;
+  margin-left: -110px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,180,90,.16), transparent 65%);
+  animation: halo 2.4s ease-in-out infinite alternate;
+}
+@keyframes flamme { 0% { transform: scale(1, 1) rotate(-2deg); } 50% { transform: scale(.9, 1.1) rotate(3deg); } 100% { transform: scale(1.05, .95) rotate(-1deg); } }
+@keyframes halo { to { opacity: .7; transform: scale(.94); } }
+
+/* --- Côté de la table : fin du tour, Destin --- */
+.tg-cote { display: flex; flex-direction: column; align-items: stretch; gap: 12px; width: 140px; }
+.btn-fin, .btn-destin {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  border: 0;
+  font-family: "Cinzel","Cinzel Repli", serif; font-weight: 800; letter-spacing: .06em;
+  cursor: pointer;
+  transition: filter .15s, transform .15s;
+}
+.btn-fin small, .btn-destin small { font-family: "EB Garamond", serif; font-size: .72rem; font-weight: 400; letter-spacing: 0; opacity: .75; }
+.btn-fin {
+  min-height: 64px;
+  padding: 10px 14px;
+  clip-path: polygon(14px 0, calc(100% - 14px) 0, 100% 50%, calc(100% - 14px) 100%, 14px 100%, 0 50%);
+  background: linear-gradient(160deg, #f6d995 0 40%, var(--ambre) 40.1% 75%, #b8862e 75.1%);
+  color: #1b1408;
+  font-size: .95rem;
+  filter: drop-shadow(0 0 14px rgba(217,164,65,.55));
+}
+.btn-fin:hover:not(:disabled) { filter: brightness(1.12) drop-shadow(0 0 22px rgba(217,164,65,.8)); transform: translateY(-2px); }
+.btn-fin:disabled { background: linear-gradient(160deg, #4a4f5c 0 40%, #353a46 40.1%); color: #9aa1ad; filter: none; cursor: not-allowed; }
+.btn-destin {
+  flex-direction: row; gap: 10px;
+  padding: 8px 12px;
+  clip-path: polygon(10px 0, calc(100% - 10px) 0, 100% 50%, calc(100% - 10px) 100%, 10px 100%, 0 50%);
+  background: linear-gradient(160deg, rgba(154,108,240,.35) 0 40%, rgba(90,60,160,.35) 40.1%), #171a26;
+  box-shadow: inset 0 0 0 1px rgba(201,178,251,.5);
+  color: #e6dcff;
+  font-size: .8rem;
+}
+.btn-destin span { display: flex; flex-direction: column; align-items: flex-start; }
+.btn-destin svg { width: 30px; height: 30px; flex-shrink: 0; }
+.btn-destin polygon { fill: #2a2140; stroke: #c9b2fb; stroke-width: 5; }
+.btn-destin path { fill: none; stroke: #c9b2fb; stroke-width: 4; }
+.btn-destin:hover:not(:disabled) { filter: brightness(1.3) drop-shadow(0 0 12px rgba(154,108,240,.7)); }
+.btn-destin:disabled { opacity: .4; cursor: not-allowed; }
+
+/* --- Orbe d'énergie --- */
+.orbe {
+  position: relative;
+  display: flex; align-items: baseline; justify-content: center; gap: 2px;
+  width: 78px; height: 78px; padding-top: 18px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 35% 30%, rgba(255,255,255,.55) 0 8%, transparent 25%),
+    radial-gradient(circle at 50% 55%, #b48cff, #6a3fd0 55%, #2a1660 100%);
+  box-shadow:
+    0 0 0 3px #1a1230,
+    0 0 0 5px rgba(201,178,251,.6),
+    0 0 26px 6px rgba(154,108,240,.55),
+    inset 0 -8px 16px rgba(20,8,50,.6);
+  animation: orbe 3s ease-in-out infinite;
+}
+.orbe strong { font-family: "Cinzel","Cinzel Repli", serif; font-size: 1.9rem; font-weight: 800; color: #fff; text-shadow: 0 0 10px rgba(255,255,255,.6), 0 2px 3px rgba(30,10,70,.8); line-height: 1; }
+.orbe small { font-family: "Cinzel","Cinzel Repli", serif; font-size: .75rem; color: #e6dcff; }
+@keyframes orbe { 50% { box-shadow: 0 0 0 3px #1a1230, 0 0 0 5px rgba(201,178,251,.6), 0 0 38px 10px rgba(154,108,240,.7), inset 0 -8px 16px rgba(20,8,50,.6); } }
+.tg-energie .energie { flex-wrap: wrap; max-width: 130px; }
+.tg-energie .energie__texte { display: none; }
+
+/* --- Mains en éventail --- */
+.page-jeu .main { padding-top: 22px; min-height: calc(clamp(78px, 8vw, 108px) * 1.5 + 34px); }
+.page-jeu .main .dc-carte {
+  rotate: calc(var(--k, 0) * 5deg);
+  top: calc(var(--k, 0) * var(--k, 0) * 4px);
+  transform-origin: 50% 120%;
+}
+.page-jeu .main .dc-carte + .dc-carte { margin-left: calc(var(--carte-l) * -0.24); }
+.page-jeu .main .dc-carte:hover, .page-jeu .main .dc-carte:focus-visible, .page-jeu .main .dc-carte.est-choisie { rotate: 0deg; top: 0; }
+.page-jeu .main-adverse { padding-top: 4px; }
+.page-jeu .main-adverse .dos {
+  width: 30px;
+  rotate: calc(var(--k, 0) * -6deg);
+  margin-top: calc(var(--k, 0) * var(--k, 0) * -2px);
+  transform-origin: 50% -40%;
+  box-shadow: inset 0 0 0 1px rgba(217,164,65,.45), 0 3px 6px rgba(0,0,0,.6);
+}
+.page-jeu .main-adverse .dos + .dos { margin-left: -16px; }
+
+/* --- Écrans moyens : boutons sous la table --- */
+@media (max-width: 1100px) {
+  .tg-table { grid-template-columns: minmax(0, 1fr); }
+  .tg-cote { flex-direction: row; width: auto; justify-content: center; }
+  .tg-cote .btn-fin, .tg-cote .btn-destin { min-width: 160px; }
+  .tg-bougie--d { right: -8px; }
+}
+/* --- Téléphones : pas de perspective ni de bougies --- */
+@media (max-width: 600px) {
+  .tg-bord { transform: none; padding: 8px; border-radius: 40px / 30px; }
+  .tg-tapis { padding: 10px 8px; border-radius: 32px / 24px; }
+  .tg-bougie { display: none; }
+  .tg-haut, .tg-bas { grid-template-columns: auto 1fr auto; gap: 8px; }
+  .dc-heros__cadre { width: 60px; height: 68px; }
+  .page-jeu .dc-heros__portrait { width: 54px; height: 62px; }
+  .page-jeu .dc-heros__pv { width: 28px; height: 28px; font-size: .85rem; right: -10px; bottom: 12px; }
+  .orbe { width: 58px; height: 58px; padding-top: 13px; }
+  .orbe strong { font-size: 1.4rem; }
+  .tg-energie .energie { display: none; }
+  .tg-pile .centre__consigne { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tg-bougie::before, .tg-bougie::after, .orbe, .dc-heros.est-en-danger .dc-heros__pv { animation: none; }
+}
+
+/* --- Tout le plateau tient dans l'écran --- */
+.jeu-wrap .table { margin-top: 20px; }
+.page-jeu .terrain { --unite-l: clamp(54px, 5.6vw, 80px); }
+.tg-tapis { padding: 14px 24px; }
+.page-jeu .tg-tapis .centre { min-height: 50px; }
+.page-jeu .tg-tapis .d20 { width: 52px; height: 52px; }
+.dc-heros__cadre { width: 72px; height: 80px; }
+.page-jeu .dc-heros__portrait { width: 64px; height: 72px; }
+.tg-haut { margin-bottom: -6px; }
+.page-jeu .main { margin-top: -10px; padding-top: 16px; min-height: calc(clamp(74px, 7vw, 100px) * 1.5 + 26px); }
+.page-jeu .main .dc-carte { --carte-l: clamp(74px, 7vw, 100px); }
+.page-jeu .main-adverse .dos { width: 24px; }
+.page-jeu .main-adverse .dos + .dos { margin-left: -12px; }
+@media (max-width: 600px) {
+  .tg-infos .energie { display: none; }
+  .tg-infos { flex-direction: column; align-items: flex-end; gap: 2px; font-size: .75rem; }
+  .page-jeu .main-adverse .dos { width: 16px; }
+  .page-jeu .main-adverse .dos + .dos { margin-left: -9px; }
+}
+
+
+/* =====================================================================
+   Pendant un duel : le jeu prend tout l'écran (body.en-duel, posé par JS/jeu-cartes.js)
+   Plus de barre du site ni de défilement ; les tailles suivent la hauteur
+   de la fenêtre ; la main dépasse du bas de l'écran comme dans un jeu.
+   ===================================================================== */
+body.en-duel { overflow: hidden; padding: 0 !important; }
+.en-duel .topbar, .en-duel .rail { display: none !important; }
+.en-duel .jeu-wrap { max-width: none; padding: 0; }
+.en-duel .table {
+  position: fixed; inset: 0; z-index: 2;
+  display: block;
+  margin: 0 !important;
+}
+.en-duel .table__plateau {
+  position: absolute; inset: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 0;
+  padding: 1.2vh 24px 0;
+}
+.en-duel .tg-haut { width: min(1200px, 100%); justify-self: center; margin: 0; }
+.en-duel .tg-table { width: min(1260px, 100%); justify-self: center; align-self: center; }
+.en-duel .tg-bas { width: min(1200px, 100%); justify-self: center; margin: 0; }
+
+/* Tailles réglées sur la hauteur de la fenêtre */
+.en-duel .terrain { --unite-l: min(6.4vw, 11.5vh); gap: min(1.2vw, 1.6vh); }
+.en-duel .tg-tapis { padding: 1.6vh 30px; }
+.en-duel .dc-heros__cadre { width: min(88px, 9.5vh); height: min(98px, 10.6vh); }
+.en-duel .dc-heros__portrait { width: min(80px, 8.6vh); height: min(90px, 9.7vh); }
+.en-duel .orbe { width: min(86px, 9.5vh); height: min(86px, 9.5vh); padding-top: min(20px, 2.2vh); }
+.en-duel .orbe strong { font-size: min(2.1rem, 3.6vh); }
+.en-duel .tg-tapis .d20 { width: min(58px, 6.4vh); height: min(58px, 6.4vh); }
+
+/* La main sort du bas de l'écran ; une carte survolée remonte en entier */
+.en-duel .main {
+  --carte-l: min(8.4vw, 16vh);
+  min-height: 0;
+  height: calc(var(--carte-l) * 1.5 * .62);
+  margin: 0;
+  padding: 0;
+  align-items: flex-start;
+  overflow: visible;
+}
+.en-duel .main .dc-carte { --carte-l: min(8.4vw, 16vh); }
+.en-duel .main .dc-carte:hover, .en-duel .main .dc-carte:focus-visible { translate: 0 calc(var(--carte-l) * -0.55); }
+.en-duel .main .dc-carte.est-choisie { translate: 0 calc(var(--carte-l) * -0.6); }
+.en-duel .main .dc-carte.est-jouable:not(:hover):not(.est-choisie) { translate: 0 -6px; }
+
+/* Historique : petit panneau en haut à droite, défilant */
+.en-duel .historique {
+  position: absolute; top: 12px; right: 12px; z-index: 6;
+  width: 210px;
+  max-height: 34vh;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  padding: 10px 12px;
+}
+.en-duel .historique__titre { margin-bottom: 6px; font-size: .7rem; }
+.en-duel .jet { font-size: .76rem; }
+.en-duel .jet b { width: 24px; height: 24px; font-size: .8rem; }
+.en-duel .historique__outils { position: sticky; bottom: -10px; margin: 10px -12px -10px; padding: 8px 12px; background: rgba(14,17,24,.95); }
+.btn-outil svg { width: 16px; height: 16px; fill: none; stroke: var(--blanc); stroke-width: 2; stroke-linecap: round; }
+.btn-outil.est-actif { background: rgba(217,164,65,.35); }
+
+/* Bannière et aperçu au centre de la table */
+.en-duel .banniere { top: 46%; }
+
+@media (max-width: 1100px) {
+  .en-duel .historique { width: 170px; max-height: 24vh; }
+}
+@media (max-width: 600px) {
+  .en-duel .table__plateau { padding: 6px 6px 0; }
+  .en-duel .terrain { --unite-l: auto; }
+  .en-duel .main { --carte-l: 19vw; overflow-x: auto; }
+  .en-duel .main .dc-carte { --carte-l: 19vw; }
+  /* Sur téléphone, l'historique se réduit aux boutons */
+  .en-duel .historique { width: auto; max-height: none; padding: 0; background: none; box-shadow: none; clip-path: none; }
+  .en-duel .historique__titre, .en-duel .historique__liste { display: none; }
+  .en-duel .historique__outils { position: static; margin: 0; padding: 0; border: 0; background: none; }
+}
+/* L'animation d'apparition de <main> (CSS/index.css) lui laisse une transformation :
+   elle servirait de repère au plateau en position fixe, qui n'aurait alors aucune hauteur */
+.en-duel main { animation: none; opacity: 1; transform: none; }
+/* Les infos de l'adversaire restent à gauche du panneau des jets */
+@media (min-width: 601px) { .en-duel .tg-haut { padding-right: 230px; } }
+@media (min-width: 601px) and (max-width: 1100px) { .en-duel .tg-haut { padding-right: 190px; } }
+
+
+/* =====================================================================
+   Habillage du duel : lumière de cinéma, table ouvragée, HUD regroupés
+   (vient après tout le reste : ces règles l'emportent)
+   ===================================================================== */
+
+/* --- La pièce : une salle plongée dans l'ombre, montagnes lointaines, brume --- */
+.en-duel .scene__fond {
+  background:
+    radial-gradient(ellipse 60% 55% at 50% 52%, rgba(255,190,110,.10), transparent 70%),
+    radial-gradient(ellipse 38% 30% at 18% 18%, rgba(130,80,210,.16), transparent 70%),
+    radial-gradient(ellipse 34% 26% at 84% 14%, rgba(70,110,220,.13), transparent 70%),
+    radial-gradient(ellipse 100% 80% at 50% 50%, transparent 35%, rgba(3,4,7,.92) 100%),
+    linear-gradient(180deg, rgba(8,10,16,.55), rgba(8,10,16,.85) 60%, #05060a),
+    url("../img/Fond/profil-lowpoly.svg") center 30% / cover no-repeat,
+    #07080d;
+  filter: saturate(.9);
+}
+.en-duel .scene__brume { opacity: .55; }
+
+/* --- Lumière : un grand halo chaud tombe sur la table --- */
+.tg-lumiere {
+  position: absolute; left: 50%; top: 50%; z-index: -1;
+  width: 120%; height: 160%;
+  translate: -50% -50%;
+  background:
+    radial-gradient(ellipse 45% 42% at 50% 50%, rgba(255,196,120,.16), rgba(255,170,90,.06) 45%, transparent 70%);
+  pointer-events: none;
+}
+
+/* --- La table : plus grande, bois épais, liseré d'or, coins en laiton --- */
+.en-duel .tg-table { display: block; width: min(1500px, 100%); }
+.en-duel .tg-perspective { margin: 0 clamp(150px, 12vw, 200px); perspective: 1600px; perspective-origin: 50% 0%; }
+.page-jeu .tg-bord {
+  position: relative;
+  padding: clamp(14px, 1.8vh, 22px);
+  border-radius: 46% 46% 46% 46% / 22% 22% 22% 22%;
+  border-radius: 180px / 110px;
+  background:
+    radial-gradient(ellipse 60% 40% at 50% 0%, rgba(255,220,170,.18), transparent 70%),
+    linear-gradient(180deg, rgba(255,210,150,.10), transparent 35%, rgba(0,0,0,.45)),
+    url("../img/Fond/bois.svg") 0 0 / 320px 320px,
+    #3a2414;
+  box-shadow:
+    inset 0 2px 0 rgba(255,225,180,.35),
+    inset 0 0 0 4px #2a180c,
+    inset 0 0 0 6px rgba(217,164,65,.55),          /* liseré d'or dans le bois */
+    inset 0 0 0 7px #1d1008,
+    inset 0 -6px 12px rgba(0,0,0,.55),
+    0 0 0 2px #0e0805,
+    0 40px 70px rgba(0,0,0,.85),
+    0 0 120px rgba(255,180,100,.10);
+  transform: rotateX(16deg);
+}
+/* Coins en laiton (gauche et droite) */
+.page-jeu .tg-bord::before,
+.page-jeu .tg-bord::after {
+  content: "";
+  position: absolute; top: 50%; z-index: 2;
+  width: 26px; height: 46px;
+  translate: 0 -50%;
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+  background: linear-gradient(160deg, #fbe3a6, #b8862e 40%, #f3d491 55%, #7a5418);
+  filter: drop-shadow(0 3px 4px rgba(0,0,0,.6));
+}
+.page-jeu .tg-bord::before { left: -6px; }
+.page-jeu .tg-bord::after { right: -6px; }
+
+/* --- Le tapis : velours bleu nuit, grande couronne brodée au centre --- */
+.page-jeu .tg-tapis {
+  border-radius: 164px / 96px;
+  padding: clamp(14px, 2.2vh, 26px) clamp(26px, 4vw, 70px);
+  gap: clamp(4px, 1vh, 12px);
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5 0 0 0 0 .6 0 0 0 0 .9 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E"),
+    radial-gradient(ellipse 60% 55% at 50% 45%, #22325a, #16213d 55%, #0c1326 100%);
+  box-shadow:
+    inset 0 0 0 3px #0a0f1d,
+    inset 0 0 0 4px rgba(217,164,65,.55),
+    inset 0 0 0 9px #0d1426,
+    inset 0 0 0 10px rgba(217,164,65,.22),
+    inset 0 14px 40px rgba(0,0,0,.65),
+    inset 0 -10px 30px rgba(0,0,0,.4);
+}
+/* Couronne brodée en filigrane */
+.page-jeu .tg-tapis::before {
+  content: "";
+  position: absolute; left: 50%; top: 50%;
+  width: 34%; aspect-ratio: 1;
+  translate: -50% -50%;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='none' stroke='%23d9a441' stroke-width='1.2'%3E%3Ccircle cx='50' cy='50' r='46'/%3E%3Ccircle cx='50' cy='50' r='40' stroke-dasharray='2 3'/%3E%3Cpath d='M26 62 L30 36 L41 48 L50 30 L59 48 L70 36 L74 62 Z'/%3E%3Cpath d='M28 68 H72'/%3E%3Ccircle cx='30' cy='35' r='2'/%3E%3Ccircle cx='50' cy='29' r='2'/%3E%3Ccircle cx='70' cy='35' r='2'/%3E%3Cpath d='M50 4 V12 M50 88 V96 M4 50 H12 M88 50 H96'/%3E%3C/svg%3E") center / contain no-repeat;
+  opacity: .14;
+  pointer-events: none;
+}
+
+/* --- Emplacements : fins contours dorés en forme de carte --- */
+.page-jeu .tg-tapis .dc-place {
+  position: relative;
+  background: rgba(217,164,65,.22);
+}
+.page-jeu .tg-tapis .dc-place::after {
+  content: "";
+  position: absolute; inset: 1.5px;
+  clip-path: inherit;
+  background: radial-gradient(ellipse at 50% 40%, #1d2a4b, #121b33);
+}
+.page-jeu .terrain { position: relative; z-index: 1; }
+
+/* --- Ligne centrale : d20, résultat, consigne --- */
+.page-jeu .tg-tapis .centre { position: relative; z-index: 1; background: none; min-height: 0; flex-wrap: wrap; }
+.page-jeu .tg-tapis .centre::before,
+.page-jeu .tg-tapis .centre::after {
+  content: ""; flex: 1; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(217,164,65,.5));
+}
+.page-jeu .tg-tapis .centre::after { transform: scaleX(-1); }
+.page-jeu .tg-tapis .centre__resultat:empty { display: none; }
+.page-jeu .tg-tapis .centre__resultat {
+  order: 0;
+  padding: 4px 16px;
+  clip-path: polygon(10px 0, calc(100% - 10px) 0, 100% 50%, calc(100% - 10px) 100%, 10px 100%, 0 50%);
+  background: rgba(8,12,24,.85);
+}
+.page-jeu .tg-tapis .d20 polygon { fill: #1b2440; stroke: rgba(217,164,65,.7); }
+.page-jeu .tg-tapis .d20 path { stroke: rgba(217,164,65,.3); }
+.page-jeu .tg-tapis > .centre__consigne {
+  position: relative; z-index: 1;
+  margin: 0 auto;
+  max-width: none;
+  min-height: 1.3em;
+  text-align: center;
+  font-size: .82rem;
+  color: rgba(214,220,232,.6);
+}
+
+/* --- Fin du tour / Destin accrochés au bord droit de la table --- */
+.en-duel .tg-cote {
+  position: absolute; right: 0; top: 50%; z-index: 4;
+  width: clamp(130px, 10vw, 170px);
+  translate: 0 -50%;
+}
+.en-duel .tg-bougie--d { right: clamp(150px, 12vw, 200px); }
+.en-duel .tg-bougie--g { left: calc(clamp(150px, 12vw, 200px) - 30px); }
+.en-duel .btn-fin { min-height: 74px; font-size: 1rem; }
+
+/* --- Barres des joueurs : regroupées sur une plaque sous / sur la table --- */
+.en-duel .tg-haut, .en-duel .tg-bas {
+  grid-template-columns: auto auto auto;
+  justify-content: center;
+  gap: clamp(20px, 3vw, 54px);
+  width: auto;
+  padding: 6px 34px;
+  justify-self: center;
+}
+.en-duel .tg-haut { padding-right: 34px; }
+.en-duel .tg-bas::before, .en-duel .tg-haut::before {
+  content: "";
+  position: absolute; inset: 18% 0;
+  z-index: -1;
+  clip-path: polygon(30px 0, calc(100% - 30px) 0, 100% 50%, calc(100% - 30px) 100%, 30px 100%, 0 50%);
+  background: linear-gradient(180deg, rgba(20,24,34,.92), rgba(8,10,16,.92));
+  box-shadow: inset 0 0 0 1px rgba(217,164,65,.4);
+}
+.en-duel .tg-haut::before { background: linear-gradient(180deg, rgba(8,10,16,.92), rgba(20,24,34,.92)); }
+.en-duel .tg-energie, .en-duel .tg-pile, .en-duel .tg-infos, .en-duel .tg-haut .main-adverse { justify-self: center; }
+.en-duel .tg-bas { margin-top: -1.2vh; }
+.en-duel .tg-haut { margin-bottom: -1.2vh; }
+
+/* --- Pile du deck : vrais dos de cartes empilés --- */
+.pile-deck {
+  position: relative;
+  display: inline-block;
+  width: 40px; aspect-ratio: 2 / 3;
+}
+.pile-deck i {
+  position: absolute; inset: 0;
+  background: url("../img/Cartes/Verso-Carte.webp") center / contain no-repeat;
+  filter: drop-shadow(0 2px 2px rgba(0,0,0,.6));
+}
+.pile-deck i:nth-child(2) { translate: 2px -3px; }
+.pile-deck i:nth-child(3) { translate: 4px -6px; }
+.pile-deck b {
+  position: absolute; right: -10px; bottom: -6px;
+  display: grid; place-items: center;
+  min-width: 24px; height: 24px; padding: 0 4px;
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+  background: linear-gradient(160deg, #f0c873, #b8862e);
+  color: #1b1408;
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: .75rem; font-weight: 800;
+}
+.page-jeu #pioche-joueur { display: block; }
+.energie--adverse { gap: 2px; }
+.energie--adverse .cristal { width: 7px !important; height: 7px !important; margin: 2px 1px 0 !important; }
+.energie--adverse .energie__texte { font-size: .7rem; margin-left: 4px; }
+
+/* --- Dos des cartes de l'adversaire : le vrai verso du site --- */
+.page-jeu .main-adverse .dos {
+  width: 34px; aspect-ratio: 2 / 3;
+  clip-path: none;
+  background: url("../img/Cartes/Verso-Carte.webp") center / contain no-repeat;
+  box-shadow: none;
+  filter: drop-shadow(0 3px 3px rgba(0,0,0,.7));
+}
+.page-jeu .main-adverse .dos + .dos { margin-left: -18px; }
+
+/* --- Main du joueur : cartes plus grandes --- */
+.en-duel .main, .en-duel .main .dc-carte { --carte-l: min(9.6vw, 18.5vh); }
+.en-duel .main .dc-carte + .dc-carte { margin-left: calc(var(--carte-l) * -0.3); }
+
+/* --- Héros : un peu plus imposants, halo selon le camp --- */
+.en-duel .dc-heros__cadre { filter: drop-shadow(0 0 14px rgba(217,164,65,.35)) drop-shadow(0 6px 10px rgba(0,0,0,.7)); }
+
+/* --- Panneau des jets : plus discret --- */
+.en-duel .historique { background: rgba(8,10,16,.72); box-shadow: inset 0 0 0 1px rgba(217,164,65,.25); }
+
+/* --- Écrans moyens et téléphones --- */
+@media (max-width: 1100px) {
+  .en-duel .tg-perspective { margin: 0 8px; }
+  .en-duel .tg-cote { position: static; translate: none; width: auto; margin-top: 8px; display: flex; flex-direction: row; justify-content: center; }
+  .en-duel .tg-bougie--d { right: 0; }
+  .en-duel .tg-bougie--g { left: 0; }
+}
+@media (max-width: 600px) {
+  .page-jeu .tg-tapis::before { width: 60%; }
+  .en-duel .tg-haut, .en-duel .tg-bas { gap: 12px; padding: 4px 18px; }
+  .pile-deck { width: 28px; }
+  .energie--adverse { display: none !important; }
+  .en-duel .main, .en-duel .main .dc-carte { --carte-l: 21vw; }
+}
+/* Emplacements vides : des fantômes de carte, juste suggérés */
+.page-jeu .tg-tapis .dc-place { opacity: .5; }
+/* Le panneau des jets s'arrête au-dessus de « Fin du tour » */
+@media (min-width: 1101px) {
+  .en-duel .historique { max-height: calc(42vh - 110px); }
+  .en-duel .tg-cote { top: 56%; }
+}
+/* Téléphones : une bande en haut pour les boutons du panneau */
+@media (max-width: 600px) {
+  .en-duel .table__plateau { padding-top: 50px; }
+  .en-duel .historique { top: 6px; right: 6px; }
+}
+
+/* --- Main du joueur : cartes entièrement visibles (plus de cartes coupées par le bas) --- */
+.en-duel .main, .en-duel .main .dc-carte { --carte-l: min(8.2vw, 14.5vh); }
+.en-duel .main {
+  height: auto;
+  min-height: calc(var(--carte-l) * 1.5 + 30px);   /* hauteur d'une carte + la courbe de l'éventail */
+  padding: 8px 0 14px;
+  align-items: flex-start;
+}
+.en-duel .main .dc-carte + .dc-carte { margin-left: calc(var(--carte-l) * -0.18); }
+.en-duel .main .dc-carte { translate: 0 0; }
+.en-duel .main .dc-carte.est-jouable:not(:hover):not(.est-choisie) { translate: 0 -4px; }
+/* Au survol, la carte se redresse, monte un peu et grossit pour se lire */
+.en-duel .main .dc-carte:hover, .en-duel .main .dc-carte:focus-visible { translate: 0 -12px; scale: 1.18; }
+.en-duel .main .dc-carte.est-choisie { translate: 0 -14px; scale: 1.18; }
+@media (max-width: 600px) {
+  .en-duel .main, .en-duel .main .dc-carte { --carte-l: 19vw; }
+  .en-duel .main .dc-carte:hover, .en-duel .main .dc-carte.est-choisie { scale: 1.05; }
+}
+
+/* --- Cartes de pouvoir (objets) : cadre ambré, illustration de l'objet sur un fond chaud --- */
+.dc-face--codex.rar-objet { background: linear-gradient(160deg, #fbe3a6, #8a6a2c 32%, #f0d08a 52%, #6e5322 78%, #f6d995); }
+.dc-face__art--objet {
+  display: grid; place-items: center;
+  background: radial-gradient(circle at 50% 55%, rgba(255,200,120,.35), transparent 65%), linear-gradient(180deg, #2a2030, #120e16);
+}
+.dc-face__art--objet img { width: 78%; height: 88%; object-fit: contain; filter: drop-shadow(0 4px 6px rgba(0,0,0,.7)); }
+/* Coût réduit par le Jeton du marchand */
+.dc-cout--reduit { background: linear-gradient(160deg, #b9f5c8 0 45%, #5fbf7a 45.1%); }
+.accueil__note { flex-basis: 100%; margin: 8px 0 0; color: var(--gris); font-style: italic; text-align: center; }
+/* Objets : texte un peu plus petit pour que l'effet tienne en entier */
+.rar-objet .dc-face__art { flex-basis: 55%; }
+.rar-objet .dc-face__nom { font-size: .5rem; }
+.rar-objet .dc-face__texte { font-size: .48rem; line-height: 1.12; }
+
+
+/* ---------- Choix du deck (menu) ---------- */
+.accueil__deck { align-items: center; }
+.deck-place { display: block; position: relative; }
+.deck-place--vide {
+  display: grid; place-items: center;
+  width: var(--carte-l); aspect-ratio: 2 / 3;
+  border: 1px dashed rgba(217,164,65,.35);
+  border-radius: 10px;
+  background: rgba(10,12,20,.35);
+  color: rgba(217,164,65,.5);
+  font-size: 1.6rem;
+}
+.deck-modifier { margin-left: 10px; align-self: center; }
+.accueil__deck-titre.est-invalide { color: #e07a6a; }
+
+/* En mode choix : un clic sur une carte du deck la retire */
+.accueil__deck.est-en-edition .deck-place[data-cle] .dc-carte { cursor: pointer; }
+.accueil__deck.est-en-edition .deck-place[data-cle]::after {
+  content: "×";
+  position: absolute; top: -8px; right: -8px; z-index: 3;
+  display: grid; place-items: center;
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: #7d2630; color: #fff;
+  font-size: 15px; line-height: 1;
+  box-shadow: 0 2px 6px rgba(0,0,0,.6);
+  pointer-events: none;
+}
+
+.choix-deck {
+  max-width: 1100px;
+  margin: 26px auto 0;
+  padding: 18px 22px 22px;
+  border: 1px solid rgba(217,164,65,.25);
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(20,22,34,.85), rgba(12,13,20,.9));
+  box-shadow: 0 18px 40px rgba(0,0,0,.45);
+}
+.choix-deck__aide { max-width: none; margin: 0 auto 14px; color: var(--gris); font-style: italic; text-align: center; }
+.choix-deck__groupe + .choix-deck__groupe { margin-top: 18px; }
+.choix-deck__titre {
+  margin: 0 0 12px;
+  font-family: "Cinzel","Cinzel Repli", serif;
+  font-size: .8rem; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--ambre);
+}
+.choix-deck__titre span { color: var(--gris); margin-left: 4px; }
+.choix-deck__cartes {
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 14px;
+  --carte-l: 96px;
+}
+.choix-deck .dc-carte { cursor: pointer; transition: transform .15s, filter .15s, opacity .15s; }
+.choix-deck .dc-carte:hover { transform: translateY(-4px); }
+.choix-deck .dc-carte.est-choisie { transform: translateY(-6px); filter: drop-shadow(0 0 4px #f6d995) drop-shadow(0 0 14px var(--ambre)); }
+.choix-deck .deck-place:has(.est-choisie)::after {
+  content: "✓";
+  position: absolute; top: -10px; right: -6px; z-index: 3;
+  display: grid; place-items: center;
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--ambre); color: #1a1208; font-weight: 700; font-size: 13px;
+  box-shadow: 0 2px 6px rgba(0,0,0,.6);
+}
+.choix-deck .deck-place.est-bloquee .dc-carte { opacity: .4; filter: grayscale(.6); }
+@media (max-width: 600px) {
+  .deck-modifier { margin: 6px 0 0; flex-basis: 100%; }
+  .choix-deck { padding: 14px 10px; }
+  .choix-deck__cartes { --carte-l: 80px; gap: 10px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .choix-deck .dc-carte { transition: none; }
+}
+
+
+.accueil { position: relative; }
+
+
+/* =====================================================================
+   Menu du jeu (refonte) : colonne de menu à gauche, deck en éventail
+   sur un piédestal éclairé à droite, sous la forteresse.
+   ===================================================================== */
+.accueil {
+  position: relative;
+  min-height: calc(100vh - 40px);
+  padding: 96px 0 24px;
+  text-align: left;
+}
+/* Lueurs : ambre derrière le titre, violette derrière le deck */
+.accueil::before {
+  content: "";
+  position: absolute; inset: -40px -10vw auto;
+  height: 900px;
+  z-index: -1;
+  background:
+    radial-gradient(ellipse 34% 40% at 22% 30%, rgba(217,164,65,.10), transparent 70%),
+    radial-gradient(ellipse 30% 36% at 76% 46%, rgba(154,108,240,.10), transparent 70%);
+  pointer-events: none;
+}
+.menu {
+  display: grid;
+  grid-template-columns: minmax(0, 500px) minmax(0, 1fr);
+  gap: clamp(30px, 5vw, 80px);
+  align-items: center;
+}
+
+/* ---------- Tête : titre, accroche ---------- */
+.menu__tete { position: relative; margin-bottom: 22px; }
+.menu .accueil__sur { display: block; letter-spacing: .34em; color: #b5bcc8; }
+.menu .accueil__titre {
+  margin: 8px 0 14px;
+  font-size: clamp(2.4rem, 4.3vw, 4rem);
+  line-height: 1.02;
+  letter-spacing: .01em;
+}
+.menu .accueil__titre span {
+  display: block;
+  background: linear-gradient(180deg, #ffe6a8, #e2b24f 55%, #a8741f);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 4px 18px rgba(217,164,65,.35));
+}
+/* Filet décoratif (losange et trait doré) au-dessus de l'accroche */
+.menu__tete .accueil__texte::before {
+  content: "";
+  display: block;
+  width: 180px; height: 9px;
+  margin-bottom: 16px;
+  background:
+    linear-gradient(90deg, var(--ambre), rgba(217,164,65,0)) 14px 4px / calc(100% - 14px) 1px no-repeat,
+    linear-gradient(45deg, transparent 32%, var(--ambre) 33% 67%, transparent 68%) 0 0 / 9px 9px no-repeat;
+}
+.menu .accueil__texte { max-width: 46ch; margin: 0; color: #c9ced8; font-size: 1.08rem; line-height: 1.6; }
+
+/* ---------- Modes de jeu : grandes lignes de menu ---------- */
+.menu .modes {
+  display: flex; flex-direction: column; gap: 10px;
+  margin: 0 0 22px;
+  clip-path: none;
+  background: none;
+  box-shadow: none;
+}
+.menu .mode {
+  display: grid;
+  grid-template-columns: 46px 1fr auto;
+  align-items: center;
+  gap: 16px;
+  padding: 11px 20px 11px 14px;
+  text-align: left;
+  clip-path: var(--facette);
+  background: linear-gradient(100deg, rgba(22,26,36,.88), rgba(14,17,24,.72));
+  box-shadow: inset 0 0 0 1px var(--ligne);
+  transition: transform .2s, background .2s, box-shadow .2s, color .2s;
+}
+.menu .mode + .mode { border-left: 0; }
+.menu .mode:hover { transform: translateX(4px); background: linear-gradient(100deg, rgba(30,35,48,.92), rgba(18,22,30,.78)); }
+.mode__ico {
+  display: grid; place-items: center;
+  width: 46px; height: 46px;
+  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+  background: rgba(255,255,255,.05);
+  color: var(--gris);
+  transition: background .2s, color .2s;
+}
+.mode__ico svg { width: 22px; height: 22px; }
+.mode__corps { display: flex; flex-direction: column; gap: 2px; }
+.menu .mode__titre { font-size: 1rem; letter-spacing: .1em; }
+.menu .mode__texte { font-size: .9rem; }
+.mode__fleche { font-size: 1.6rem; line-height: 1; color: var(--ligne-forte); transition: transform .2s, color .2s; }
+.menu .mode:hover .mode__fleche { transform: translateX(3px); color: var(--gris); }
+.menu .mode.est-actif {
+  background: linear-gradient(100deg, rgba(217,164,65,.22), rgba(217,164,65,.05) 70%), rgba(18,20,28,.85);
+  box-shadow: inset 3px 0 0 var(--ambre), inset 0 0 0 1px rgba(217,164,65,.45);
+}
+.menu .mode.est-actif .mode__ico { background: var(--ambre); color: #1b1408; }
+.menu .mode.est-actif .mode__fleche { color: var(--ambre); }
+
+/* ---------- Actions ---------- */
+.menu .accueil__actions { justify-content: flex-start; align-items: center; gap: 14px; margin: 0 0 22px; }
+.menu__jouer {
+  min-height: 58px;
+  padding: 0 48px;
+  font-size: 1rem;
+  letter-spacing: .18em;
+  clip-path: polygon(14px 0, calc(100% - 14px) 0, 100% 50%, calc(100% - 14px) 100%, 14px 100%, 0 50%);
+}
+/* Halo qui respire autour du bouton principal (sur l'enveloppe, le bouton est découpé) */
+.menu .accueil__actions:has(.menu__jouer:not(:disabled):not([hidden])) .menu__jouer { animation: appel 2.8s ease-in-out infinite; }
+@keyframes appel {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.15) saturate(1.1); }
+}
+.menu__regles { flex-direction: row; gap: 10px; min-height: 48px; }
+.menu__regles-ico { display: grid; width: 18px; height: 18px; }
+.menu__regles-ico svg { width: 18px; height: 18px; }
+.menu .ligne { max-width: none; margin: 0 0 22px; }
+
+/* ---------- Le duel en bref ---------- */
+.menu__atouts {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  margin: 0; padding: 16px 0 0;
+  list-style: none;
+  border-top: 1px solid var(--ligne);
+}
+.menu__atouts li { display: flex; flex-direction: column; gap: 2px; padding: 0 12px; }
+.menu__atouts li:first-child { padding-left: 0; }
+.menu__atouts li + li { border-left: 1px solid var(--ligne); }
+.menu__atouts strong { font-family: "Cinzel","Cinzel Repli", serif; font-size: 1.35rem; color: var(--ambre); line-height: 1.1; }
+.menu__atouts span { font-size: .82rem; color: var(--gris); }
+
+/* ---------- Le piédestal du deck ---------- */
+.menu__autel {
+  position: relative;
+  padding: 10px 0 70px;
+  text-align: center;
+}
+/* Halo derrière les cartes */
+.menu__autel::before {
+  content: "";
+  position: absolute; left: 50%; top: 50%;
+  width: min(640px, 112%); height: 380px;
+  translate: -50% -50%;
+  z-index: -1;
+  background: radial-gradient(ellipse 50% 50% at 50% 50%, rgba(217,164,65,.16), rgba(154,108,240,.07) 50%, transparent 72%);
+  pointer-events: none;
+}
+/* Disque de lumière au sol, sous l'éventail */
+.menu__autel::after {
+  content: "";
+  position: absolute; left: 50%; top: 330px;
+  width: min(500px, 92%); height: 40px;
+  translate: -50% 0;
+  z-index: -1;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(240,200,115,.3), rgba(240,200,115,.08) 55%, transparent 72%);
+  pointer-events: none;
+}
+.menu .accueil__deck-titre {
+  display: inline-block;
+  margin: 0 0 10px;
+  padding: 0 28px;
+  background:
+    linear-gradient(90deg, transparent, var(--ligne-forte)) 0 50% / 20px 1px no-repeat,
+    linear-gradient(90deg, var(--ligne-forte), transparent) 100% 50% / 20px 1px no-repeat;
+  color: #c9ced8;
+  font-size: .82rem;
+}
+.menu .accueil__deck-titre.est-invalide { color: #e07a6a; }
+
+/* L'éventail : 5 places, en arc */
+.menu .accueil__deck {
+  --carte-l: clamp(96px, 9.4vw, 136px);
+  display: grid;
+  grid-template-columns: repeat(5, auto);
+  justify-content: center;
+  align-items: end;
+  gap: 0;
+  padding-top: 34px;
+}
+.menu .accueil__deck > .deck-place,
+.menu .accueil__deck > .dc-carte {
+  margin: 0 calc(var(--carte-l) * -0.03);
+  transform-origin: 50% 100%;
+  transform: translateY(var(--y, 0)) rotate(var(--r, 0deg));
+  transition: transform .35s cubic-bezier(.25,.8,.3,1), filter .25s;
+  filter: drop-shadow(0 14px 14px rgba(0,0,0,.55));
+}
+.menu .accueil__deck > :nth-child(1) { --r: -12deg; --y: 26px; }
+.menu .accueil__deck > :nth-child(2) { --r: -6deg;  --y: 7px; }
+.menu .accueil__deck > :nth-child(3) { --r: 0deg;   --y: 0px; z-index: 1; }
+.menu .accueil__deck > :nth-child(4) { --r: 6deg;   --y: 7px; }
+.menu .accueil__deck > :nth-child(5) { --r: 12deg;  --y: 26px; }
+.menu .accueil__deck > .deck-place:hover,
+.menu .accueil__deck > .dc-carte:hover {
+  z-index: 3;
+  transform: translateY(calc(var(--y, 0px) - 22px)) rotate(var(--r, 0deg)) scale(1.06);
+  filter: drop-shadow(0 0 16px rgba(217,164,65,.4)) drop-shadow(0 18px 16px rgba(0,0,0,.55));
+}
+.menu .deck-place--vide { background: rgba(10,12,20,.55); }
+/* Bouton « Choisir mes cartes » et note : sous l'éventail */
+.menu .accueil__deck > .deck-modifier,
+.menu .accueil__deck > .accueil__note,
+.menu .accueil__deck > .vide {
+  grid-column: 1 / -1;
+  justify-self: center;
+  margin: 56px 0 0;
+}
+.menu .accueil__deck > .accueil__note { margin-top: 14px; max-width: 52ch; }
+
+/* ---------- Écrans moyens et téléphones ---------- */
+@media (max-width: 980px) {
+  .accueil { padding-top: 96px; min-height: 0; }
+  .menu { grid-template-columns: 1fr; gap: 10px; }
+  .menu__tete { text-align: center; }
+  .menu__tete .accueil__texte { margin: 0 auto; }
+  .menu__tete .accueil__texte::before { margin: 0 auto 16px; }
+  .menu .modes { max-width: 560px; margin: 0 auto 22px; }
+  .menu .accueil__actions { justify-content: center; }
+  .menu__atouts { max-width: 560px; margin: 0 auto; }
+  .menu__autel::after { top: auto; bottom: 120px; }
+}
+@media (max-width: 600px) {
+  .accueil { padding-top: 10px; }
+  .menu .accueil__deck { --carte-l: 70px; }
+  .menu__jouer { padding: 0 30px; min-height: 52px; }
+  .menu__atouts { grid-template-columns: repeat(2, 1fr); row-gap: 12px; }
+  .menu__atouts li:nth-child(3) { border-left: 0; padding-left: 0; }
+  .menu .mode { padding: 12px 14px 12px 10px; gap: 12px; grid-template-columns: 40px 1fr auto; }
+  .mode__ico { width: 40px; height: 40px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .menu .accueil__actions .menu__jouer { animation: none; }
+  .menu .mode, .menu .accueil__deck > .deck-place, .menu .accueil__deck > .dc-carte { transition: none; }
+}
+/* Les cartes de personnage ont un cadre décoratif transparent autour : les objets, un peu réduits, paraissent de la même taille */
+.menu .accueil__deck .dc-carte.rar-objet { scale: .86; translate: 0 -4%; }
+/* Mode en ligne : les blocs « Ouvrir » et « Rejoindre un salon » empilés dans la colonne du menu */
+.menu .ligne__accueil { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+.menu .ligne__bloc { min-width: 0; }
+
+/* --- Fond du plateau : la ruelle de Nocthémar (img/Fond/font plateux jeux.png),
+       assombrie sur les bords pour que la table ressorte ; elle suit un peu la souris --- */
+.en-duel .scene__fond {
+  inset: -60px;
+  background:
+    radial-gradient(ellipse 60% 55% at 50% 52%, rgba(255,190,110,.08), transparent 70%),
+    radial-gradient(ellipse 100% 85% at 50% 50%, transparent 40%, rgba(3,4,7,.85) 100%),
+    linear-gradient(180deg, rgba(8,10,16,.35), rgba(8,10,16,.55) 60%, rgba(5,6,10,.8)),
+    url("../img/Fond/font%20plateux%20jeux.png") center / cover no-repeat,
+    #07080d;
+  filter: saturate(.95);
+  transform: translate(calc(var(--px) * -36px), calc(var(--py) * -24px)) scale(1.04);
+  transition: transform .6s ease-out;
+}
+
+/* Le dé et son résultat : cachés au repos, ils apparaissent pendant un lancer (attaque ou Destin) */
+.tg-tapis .d20,
+.tg-tapis .centre__resultat {
+  opacity: 0;
+  scale: .7;
+  pointer-events: none;
+  transition: opacity .35s ease, scale .35s ease;
+}
+.tg-tapis .d20.est-visible,
+.tg-tapis .centre__resultat.est-visible { opacity: 1; scale: 1; }
+@media (prefers-reduced-motion: reduce) {
+  .tg-tapis .d20, .tg-tapis .centre__resultat { transition: none; scale: 1; }
+}
+
+
+/* =====================================================================
+   Grimoire, Tombeau, Défausser, Méditer, renvoi de main
+   ===================================================================== */
+
+/* --- Le Tombeau : une petite pierre tombale cliquable, à côté du Grimoire --- */
+.tombeau {
+  display: inline-flex; align-items: center; gap: 8px;
+  min-width: 0;
+  padding: 4px 10px 4px 6px;
+  border: 0;
+  clip-path: polygon(8px 0, calc(100% - 8px) 0, 100% 50%, calc(100% - 8px) 100%, 8px 100%, 0 50%);
+  background: rgba(14,17,24,.85);
+  box-shadow: inset 0 0 0 1px var(--ligne-forte);
+  color: var(--gris);
+  font: inherit;
+  cursor: pointer;
+  transition: filter .15s, box-shadow .15s;
+}
+.tombeau:hover { filter: brightness(1.3); }
+.tombeau__pierre { display: grid; width: 22px; height: 26px; }
+.tombeau__pierre svg { width: 100%; height: 100%; }
+.tombeau__pierre path:first-child { fill: #3a3f4b; stroke: #9aa1ad; stroke-width: 1.4; }
+.tombeau__pierre path:last-child { fill: none; stroke: #c5cad3; stroke-width: 1.6; stroke-linecap: round; }
+.tombeau__texte { display: flex; flex-direction: column; align-items: flex-start; line-height: 1.1; text-align: left; }
+.tombeau__texte b { font-family: "Cinzel","Cinzel Repli", serif; font-size: .95rem; color: var(--blanc); }
+.tombeau__texte small { max-width: 92px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .7rem; font-style: italic; }
+/* Une carte glissée de la main : le Tombeau s'allume pour la recevoir */
+.tombeau.est-cible { box-shadow: inset 0 0 0 2px var(--ambre), 0 0 18px var(--ambre-lueur); filter: brightness(1.3); }
+
+.tg-pile { flex-direction: row; align-items: center; gap: 10px; }
+.tg-infos--adverse { display: flex; align-items: center; gap: 12px; }
+.tg-infos__contenu { display: contents; }
+
+/* --- Défausser / Méditer : deux petits boutons sous le Destin --- */
+.tg-cote__petits { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.btn-action {
+  display: flex; flex-direction: column; align-items: center; gap: 1px;
+  padding: 6px 4px;
+  border: 0;
+  clip-path: polygon(6px 0, calc(100% - 6px) 0, 100% 50%, calc(100% - 6px) 100%, 6px 100%, 0 50%);
+  background: linear-gradient(160deg, rgba(255,255,255,.08) 0 40%, transparent 40.1%), var(--ardoise-2);
+  box-shadow: inset 0 0 0 1px var(--ligne-forte);
+  color: var(--blanc);
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: .68rem; font-weight: 700; letter-spacing: .04em;
+  cursor: pointer;
+  transition: filter .15s;
+}
+.btn-action small { font-family: "EB Garamond", serif; font-size: .64rem; font-weight: 400; opacity: .7; }
+.btn-action:hover:not(:disabled) { filter: brightness(1.35); }
+.btn-action:disabled { opacity: .4; cursor: not-allowed; }
+.btn-action.est-actif { background: linear-gradient(160deg, #f0c873 0 40%, var(--ambre) 40.1%); color: #1b1408; }
+/* Mode défausse : les cartes de la main se teintent de gris, prêtes à partir */
+.main.en-defausse .dc-carte { filter: grayscale(.5) drop-shadow(0 0 6px rgba(197,202,211,.6)); cursor: pointer; }
+.main .dc-carte[draggable="true"] { cursor: grab; }
+
+/* --- Fenêtres : renvoi de main, Méditer, Tombeau (même habillage que les règles) --- */
+.fenetre-jeu {
+  max-width: 720px; width: calc(100% - 32px);
+  max-height: calc(100vh - 60px);
+  padding: 24px 26px;
+  border: 0;
+  clip-path: polygon(16px 0, calc(100% - 16px) 0, 100% 16px, 100% calc(100% - 16px), calc(100% - 16px) 100%, 16px 100%, 0 calc(100% - 16px), 0 16px);
+  background: #12151c;
+  box-shadow: inset 0 0 0 1px var(--ligne-forte);
+  color: var(--blanc);
+  text-align: center;
+}
+.fenetre-jeu--large { max-width: 960px; }
+.fenetre-jeu::backdrop { background: rgba(5,6,9,.75); backdrop-filter: blur(3px); }
+.fenetre-jeu h2 { margin: 0 0 8px; font-family: "Cinzel","Cinzel Repli", serif; font-size: 1.2rem; color: var(--ambre); }
+.fenetre-jeu__texte { max-width: 56ch; margin: 0 auto 16px; color: var(--gris); font-size: .98rem; }
+.fenetre-jeu__cartes {
+  --carte-l: 112px;
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 12px;
+  margin: 0 0 18px;
+  max-height: 56vh; overflow-y: auto;
+  padding: 10px 4px;
+}
+.fenetre-jeu__cartes .dc-carte { cursor: pointer; transition: transform .15s, filter .15s; }
+.fenetre-jeu__cartes .dc-carte:hover { transform: translateY(-4px); }
+#tombeau-cartes .dc-carte { cursor: default; --carte-l: 96px; }
+/* Renvoi : les cartes choisies sont barrées de rouge, prêtes à repartir */
+#renvoi-main .dc-carte.est-choisie { filter: grayscale(.7) brightness(.75); transform: translateY(6px); }
+#renvoi-main .dc-carte.est-choisie::after {
+  content: "Renvoyée";
+  position: absolute; left: 50%; top: 45%; z-index: 5;
+  translate: -50% -50%; rotate: -14deg;
+  padding: 3px 10px;
+  border: 2px solid var(--sang);
+  color: #ffd2d2; background: rgba(60,10,14,.85);
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: .72rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
+}
+.fenetre-jeu__attente { margin: -6px 0 14px; color: var(--ambre); font-style: italic; }
+.meditation__carte { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.meditation__carte small { color: var(--gris); font-size: .8rem; font-style: italic; }
+
+/* Exemplaires dans le Grimoire (choix des cartes et éventail du menu) */
+.deck-place { position: relative; }
+.deck-place__nb {
+  position: absolute; left: 50%; bottom: -8px; translate: -50% 0; z-index: 4;
+  display: grid; place-items: center;
+  min-width: 26px; height: 22px; padding: 0 5px;
+  clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%);
+  background: var(--ambre); color: #1b1408;
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: .74rem; font-weight: 800;
+  pointer-events: none;
+}
+.choix-deck__aide strong { color: var(--ambre); margin-left: 6px; }
+.choix-deck__vide { margin: -4px 0 12px; color: var(--gris); font-style: italic; text-align: center; }
+
+@media (max-width: 600px) {
+  .fenetre-jeu { padding: 18px 12px; }
+  .fenetre-jeu__cartes { --carte-l: 82px; gap: 8px; }
+  .tombeau__texte small { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fenetre-jeu__cartes .dc-carte { transition: none; }
+}
+#renvoi-main .dc-carte { position: relative; }
+
+
+/* =====================================================================
+   Le tapis de jeu de Nocthémar (img/Plateaux de carte/…, 1952 × 806) : c'est le plateau.
+   Tout y est placé en % de l'image (cqw = % de la largeur du tapis) :
+   - les 10 emplacements peints : les troupes (5 en haut pour l'adversaire, 5 en bas pour toi)
+   - le panneau de gauche : le Grimoire et le Tombeau de l'adversaire
+   - le panneau de droite : les tiens
+   - le grand N au centre : le dé
+   ===================================================================== */
+.page-jeu .tg-bord {
+  container-type: inline-size;
+  aspect-ratio: 1952 / 806;
+  padding: 0;
+  border-radius: 0;
+  background: url("../img/Plateaux%20de%20carte/Plateau%20de%20bataille%20gothique%20au%20cr%C3%A9puscule.png") center / 100% 100% no-repeat;
+  box-shadow: none;
+  transform: none;
+  filter: drop-shadow(0 30px 40px rgba(0,0,0,.7));
+}
+.page-jeu .tg-bord::before,
+.page-jeu .tg-bord::after,
+.page-jeu .tg-tapis::before { content: none; }
+.page-jeu .tg-tapis {
+  position: absolute; inset: 0;
+  display: block;
+  padding: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+}
+.en-duel .tg-perspective { perspective: none; }
+
+/* Les troupes, sur les emplacements peints */
+.page-jeu .tg-bord .terrain {
+  position: absolute;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  justify-items: center;
+  align-items: center;
+  gap: 0;
+}
+.page-jeu .tg-bord #terrain-adverse { left: 22.8%; width: 54.3%; top: 8.7%; height: 21.7%; --unite-l: 5.6cqw; }
+.page-jeu .tg-bord #terrain-joueur  { left: 22.4%; width: 55.5%; top: 62%; height: 24.8%; --unite-l: 6.4cqw; }
+.page-jeu .tg-bord .dc-unite,
+.page-jeu .tg-bord .dc-place { width: var(--unite-l); }
+.page-jeu .tg-bord .dc-place { opacity: 0; }   /* emplacement vide : le cadre peint suffit */
+
+/* Le dé sur le grand N, la consigne juste dessous */
+.page-jeu .tg-bord .centre {
+  position: absolute; left: 49.3%; top: 46.5%;
+  translate: -50% -50%;
+  margin: 0;
+  justify-content: center;
+}
+.page-jeu .tg-bord .centre::before,
+.page-jeu .tg-bord .centre::after { content: none; }
+.page-jeu .tg-tapis > .centre__consigne {
+  position: absolute; left: 49.3%; top: 55%;
+  translate: -50% 0;
+  width: 36%;
+  font-size: clamp(.62rem, .95cqw, .85rem);
+  color: rgba(230,224,214,.8);
+  text-shadow: 0 1px 3px #000, 0 0 8px #000;
+}
+
+/* Les Grimoires : le nombre de cartes posé sur la pile peinte */
+.plateau-pile {
+  position: absolute;
+  display: grid; place-items: center;
+  pointer-events: none;
+}
+.plateau-pile--adverse { left: 5%; width: 16%; top: 14%; height: 14%; }
+.plateau-pile--joueur  { left: 79%; width: 16%; top: 72%; height: 14%; }
+.plateau-pile b {
+  display: grid; place-items: center;
+  min-width: 3.2cqw; height: 2.3cqw; padding: 0 .5cqw;
+  clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%);
+  background: linear-gradient(180deg, #e9e6e0, #9da3ad);
+  color: #1a1416;
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: 1.3cqw; font-weight: 800;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,.8));
+}
+
+/* Les Tombeaux : la dernière carte, face visible, dans le grand cadre peint */
+.page-jeu .tg-bord .tombeau {
+  position: absolute;
+  display: grid; place-items: center;
+  padding: 0;
+  clip-path: none;
+  background: none;
+  box-shadow: none;
+  cursor: pointer;
+}
+.page-jeu .tg-bord .tombeau--adverse { left: 5%; width: 16%; top: 30%; height: 40%; }
+.page-jeu .tg-bord .tombeau--joueur  { left: 79%; width: 16%; top: 30%; height: 40%; }
+.page-jeu .tg-bord .tombeau:hover,
+.page-jeu .tg-bord .tombeau:focus-visible { filter: brightness(1.2); outline: none; }
+.tombeau__carte { --carte-l: 7cqw; display: block; pointer-events: none; filter: grayscale(.35) brightness(.85); }
+.tombeau__carte > * { pointer-events: none; }
+.tombeau__compte {
+  position: absolute; right: 8%; bottom: 0;
+  display: flex; align-items: center; gap: .3cqw;
+  padding: .2cqw .6cqw;
+  background: rgba(10,8,10,.85);
+  box-shadow: inset 0 0 0 1px rgba(220,220,230,.35);
+  color: #e9e6e0;
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: 1.1cqw; font-weight: 800;
+}
+.tombeau__compte svg { width: 1cqw; height: 1.2cqw; }
+.tombeau__compte path:first-child { fill: #3a3f4b; stroke: #c5cad3; stroke-width: 1.6; }
+.tombeau__compte path:last-child { fill: none; stroke: #e9e6e0; stroke-width: 1.8; }
+.page-jeu .tg-bord .tombeau.est-cible { box-shadow: 0 0 0 3px var(--ambre), 0 0 24px var(--ambre-lueur); }
+.tombeau__carte .dc-carte { display: block; position: relative; }

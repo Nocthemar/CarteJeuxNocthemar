@@ -1,0 +1,96 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
+  <!-- Carte provisoire de Pravorn (mode Histoire) : à remplacer par la vraie illustration.
+       Style : parchemin, terres à facettes (low poly), couleurs sobres. -->
+  <defs>
+    <radialGradient id="vignette" cx="50%" cy="50%" r="75%">
+      <stop offset="55%" stop-color="#000" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#2a1a0c" stop-opacity=".55"/>
+    </radialGradient>
+    <filter id="grain"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" stitchTiles="stitch"/><feColorMatrix values="0 0 0 0 .3  0 0 0 0 .2  0 0 0 0 .1  0 0 0 .12 0"/></filter>
+    <g id="sapin"><polygon points="0,-26 13,6 -13,6" fill="#3f5a3a"/><polygon points="0,-26 13,6 0,6" fill="#344c31"/></g>
+  </defs>
+
+  <!-- Mer à l'ouest et au sud -->
+  <rect width="1600" height="900" fill="#6f8f9a"/>
+  <polygon points="0,0 1600,0 1600,900 0,900" fill="#7d9ba4" opacity=".4"/>
+
+  <!-- Le continent : grandes facettes de plaine -->
+  <polygon points="90,0 1600,0 1600,900 230,900 160,780 60,700 110,560 40,430 120,300 70,150" fill="#c9b98c"/>
+  <polygon points="90,0 520,0 430,180 250,240 120,300 70,150" fill="#bfae7f"/>
+  <polygon points="120,300 250,240 430,180 520,420 300,520 110,560 40,430" fill="#cdbf92"/>
+  <polygon points="110,560 300,520 520,420 610,640 430,760 230,900 160,780 60,700" fill="#c2b285"/>
+  <polygon points="520,0 1000,0 960,260 700,330 520,420 430,180" fill="#d2c497"/>
+  <polygon points="520,420 700,330 960,260 1050,520 820,640 610,640" fill="#c6b688"/>
+  <polygon points="610,640 820,640 1050,520 1180,760 980,900 430,760" fill="#cbbc8e"/>
+  <polygon points="430,760 980,900 230,900" fill="#bfaf81"/>
+  <polygon points="1000,0 1600,0 1600,330 1300,380 1100,300 960,260" fill="#b8aa80"/>
+  <polygon points="960,260 1100,300 1300,380 1600,330 1600,640 1180,760 1050,520" fill="#c4b487"/>
+  <polygon points="1180,760 1600,640 1600,900 980,900" fill="#bdad7f"/>
+
+  <!-- Fleuve -->
+  <path d="M1040 0 C 1000 140, 880 210, 820 300 S 640 430, 560 470 S 420 560, 330 640 S 200 760, 150 900"
+        fill="none" stroke="#6f8f9a" stroke-width="16" stroke-linecap="round"/>
+  <path d="M1040 0 C 1000 140, 880 210, 820 300 S 640 430, 560 470 S 420 560, 330 640 S 200 760, 150 900"
+        fill="none" stroke="#9db7bd" stroke-width="5" stroke-linecap="round" opacity=".7"/>
+
+  <!-- Marais du Sud (autour du niveau 4) -->
+  <g opacity=".85">
+    <ellipse cx="800" cy="500" rx="120" ry="55" fill="#8c9a74"/>
+    <ellipse cx="760" cy="520" rx="60" ry="22" fill="#6f8a7c"/>
+    <ellipse cx="850" cy="480" rx="40" ry="15" fill="#6f8a7c"/>
+  </g>
+
+  <!-- Forêts -->
+  <g>
+    <use href="#sapin" x="250" y="420"/><use href="#sapin" x="280" y="440"/><use href="#sapin" x="225" y="455"/>
+    <use href="#sapin" x="310" y="415"/><use href="#sapin" x="265" y="470"/><use href="#sapin" x="335" y="455"/>
+    <use href="#sapin" x="520" y="700"/><use href="#sapin" x="550" y="720"/><use href="#sapin" x="500" y="735"/>
+    <use href="#sapin" x="580" y="700"/><use href="#sapin" x="535" y="755"/>
+    <use href="#sapin" x="1150" y="560"/><use href="#sapin" x="1180" y="580"/><use href="#sapin" x="1125" y="595"/>
+    <use href="#sapin" x="1210" y="555"/><use href="#sapin" x="1165" y="615"/>
+  </g>
+
+  <!-- Montagnes du nord-est -->
+  <g>
+    <polygon points="1230,230 1300,110 1370,230" fill="#9b937e"/><polygon points="1300,110 1370,230 1300,230" fill="#857d69"/>
+    <polygon points="1300,110 1322,150 1278,150" fill="#eee8da"/>
+    <polygon points="1350,240 1440,80 1530,240" fill="#a39b85"/><polygon points="1440,80 1530,240 1440,240" fill="#8a826d"/>
+    <polygon points="1440,80 1468,130 1412,130" fill="#f2ede1"/>
+    <polygon points="1150,250 1210,160 1270,250" fill="#9f977f"/><polygon points="1210,160 1270,250 1210,250" fill="#888069"/>
+  </g>
+
+  <!-- La capitale et ses lices (boss) -->
+  <g transform="translate(1408 250)">
+    <rect x="-46" y="-30" width="92" height="40" fill="#8a7a62"/>
+    <rect x="-58" y="-52" width="22" height="62" fill="#7d6d56"/><polygon points="-62,-52 -47,-74 -32,-52" fill="#5d4a3a"/>
+    <rect x="36" y="-52" width="22" height="62" fill="#7d6d56"/><polygon points="32,-52 47,-74 62,-52" fill="#5d4a3a"/>
+    <rect x="-12" y="-70" width="24" height="80" fill="#857560"/><polygon points="-16,-70 0,-96 16,-70" fill="#6b2a2a"/>
+    <path d="M0 -96 v-18 l14 6 -14 6" fill="#9a2b2b" stroke="#3b2a1c" stroke-width="1.5"/>
+  </g>
+
+  <!-- Remparts (niveau 5) et pont (niveau 2) -->
+  <g transform="translate(1010 630)" fill="#857560">
+    <rect x="-40" y="-14" width="80" height="18"/><rect x="-46" y="-28" width="16" height="32"/><rect x="30" y="-28" width="16" height="32"/>
+  </g>
+  <g transform="translate(372 538)">
+    <rect x="-30" y="-6" width="60" height="12" fill="#7a6a54"/><rect x="-26" y="-12" width="6" height="18" fill="#6a5a46"/><rect x="20" y="-12" width="6" height="18" fill="#6a5a46"/>
+  </g>
+  <!-- Camp des mercenaires (niveau 3) -->
+  <g transform="translate(600 690)">
+    <polygon points="-34,10 -18,-18 -2,10" fill="#9a6a3a"/><polygon points="0,10 16,-22 32,10" fill="#8a5a30"/>
+  </g>
+
+  <!-- Rose des vents -->
+  <g transform="translate(150 120)" opacity=".75">
+    <circle r="46" fill="none" stroke="#5a4630" stroke-width="2"/>
+    <polygon points="0,-58 9,0 0,58 -9,0" fill="#5a4630"/>
+    <polygon points="-58,0 0,-9 58,0 0,9" fill="#7a6650"/>
+    <text y="-66" text-anchor="middle" font-family="Georgia, serif" font-size="22" fill="#5a4630">N</text>
+  </g>
+
+  <!-- Nom du pays -->
+  <text x="800" y="860" text-anchor="middle" font-family="Georgia, serif" font-size="46" letter-spacing="18" fill="#4a3826" opacity=".6">PRAVORN</text>
+
+  <rect width="1600" height="900" filter="url(#grain)"/>
+  <rect width="1600" height="900" fill="url(#vignette)"/>
+</svg>
