@@ -633,6 +633,8 @@
 /* --- Face de la carte --- */
 .dc-face { position: absolute; inset: 0; width: 100%; height: 100%; }
 .dc-face--image { display: block; object-fit: contain; pointer-events: none; }
+/* Vraie carte : l'image + le texte de son cadre noir (CSS/carte-infos.css, tailles en % de la carte) */
+.dc-face--hote { display: block; container: carte / inline-size; pointer-events: none; }
 /* Silhouette des vraies cartes, reprise pour les cartes du Codex */
 .dc-face--codex, .dc-place {
   --silhouette: polygon(50% 0, 64% 2.5%, 80% 4%, 92% 7%, 97% 12%, 100% 20%, 100% 82%, 95% 89%, 80% 93%, 60% 95.5%, 50% 100%,

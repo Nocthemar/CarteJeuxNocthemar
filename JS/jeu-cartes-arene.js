@@ -5,6 +5,7 @@
 // =====================================================================
 import { SITE_ROOT } from './supabase.js';
 import { $, esc } from './commun.js';
+import { htmlInfos } from './cartes.js';
 import { ENERGIE_MAX, COUT_DESTIN, COUT_DEFAUSSE, COUT_MEDITER, peutJouer, peutAttaquer, peutDestin, peutDefausser, peutMediter, rollInfo, coutDe } from './jeu-cartes-moteur.js';
 import { jouerSon, SM } from './jeu-cartes-son.js';
 import { particules, onde, flash, voile, secousseEcran, eclair, briser } from './jeu-cartes-effets.js';
@@ -74,11 +75,16 @@ const urlImage = (c) => (c.carte?.image ? esc(new URL(c.carte.image, SITE_ROOT))
 const texteCarte = (c) => (c.t === 's' ? c.d : capacite(c.k));
 
 // Face d'une carte, la même partout (main, terrain, aperçu, accueil) :
-// - vraie carte : l'illustration originale en entier (son cadre, son nom, sa rareté)
+// - vraie carte : l'illustration originale en entier, avec dans son cadre noir le nom, le rang,
+//   les attaques et la rareté (comme dans la Collection : htmlInfos de JS/cartes.js)
 // - carte du Codex : la même silhouette, cadre argenté, fond low poly et bandeau noir
 function faceCarte(c) {
   const url = urlImage(c);
-  if (url) return `<img class="dc-face dc-face--image" src="${url}" alt="" draggable="false" loading="lazy">`;
+  if (url) return `
+    <span class="dc-face dc-face--hote">
+      <img class="dc-face dc-face--image" src="${url}" alt="" draggable="false" loading="lazy">
+      ${htmlInfos(c.carte)}
+    </span>`;
   return `
     <span class="dc-face dc-face--codex rar-${c.image ? 'objet' : rarete(c)}">
       <span class="dc-face__cadre">
