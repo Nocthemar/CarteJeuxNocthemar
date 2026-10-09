@@ -1,0 +1,450 @@
+/* =====================================================================
+   Page profil.html — style « vitrail de cathédrale »
+   Chaque bloc est un vitrail : bordure de verre en mosaïque sertie de plomb,
+   panneau de verre fumé au centre pour le texte. Le verre prend les couleurs
+   du thème équipé (--vif, --vif2, posées par profil.js) et s'illumine comme
+   éclairé de l'extérieur. Sans thème : rubis et bleu, les couleurs classiques.
+
+   Chargé uniquement par profil.html, après CSS/compte.css et CSS/cartes-jeu.css.
+   Tout est rangé sous .page-fiche : la boutique, la collection, le jeu et la
+   page MJ (qui partagent .page-profil) ne sont pas touchés.
+   Autres styles gardés : CSS/profil-nuit.css, CSS/profil-forteresse.css,
+   CSS/profil-ecran.css, CSS/profil-grimoire.css
+   (il suffit de changer le lien dans profil.html).
+   ===================================================================== */
+
+.page-fiche {
+  --vif: #a3222f;                  /* verre n°1 (rubis par défaut) */
+  --vif2: #2b4fa3;                 /* verre n°2 (bleu par défaut) */
+  --plomb: #0b0b0d;
+  --fume: rgba(12,11,14,.96);      /* verre fumé du centre des panneaux */
+  --blanc: #f4f0e8;
+  --gris: #a9a3b0;
+  --lueur: color-mix(in srgb, var(--vif) 55%, transparent);
+  --lueur2: color-mix(in srgb, var(--vif2) 45%, transparent);
+  --verre: url("../img/Fond/vitrail.svg");
+  --bande: 24px;                   /* largeur de la bordure de vitrail */
+
+  --texte: var(--blanc);
+  --texte-doux: var(--gris);
+  --bord: rgba(255,255,255,.12);
+
+  color: var(--blanc);
+  /* Nef de cathédrale dans le noir : rayons de lumière colorée qui tombent des vitraux */
+  background:
+    linear-gradient(105deg, transparent 0 22%, color-mix(in srgb, var(--vif) 10%, transparent) 26% 30%, transparent 36%),
+    linear-gradient(75deg, transparent 0 60%, color-mix(in srgb, var(--vif2) 10%, transparent) 64% 69%, transparent 75%),
+    linear-gradient(95deg, transparent 0 44%, rgba(255,240,210,.04) 47% 52%, transparent 56%),
+    radial-gradient(ellipse 70% 45% at 50% -5%, color-mix(in srgb, var(--vif) 22%, transparent), transparent 70%),
+    radial-gradient(ellipse 120% 90% at 50% 45%, transparent 45%, rgba(0,0,0,.8) 100%),
+    #070709;
+  background-attachment: fixed;
+}
+
+.page-fiche .profil-wrap { max-width: 960px; padding-top: 22px; }
+.page-fiche .fiche-sur { display: none; }
+
+
+/* ---------- Panneaux de vitrail ----------
+   Le panneau = bordure de verre (motif au plomb sur un dégradé des couleurs du thème) ;
+   ::before = verre fumé au centre, serti d'un plomb épais. */
+.page-fiche .carte,
+.page-fiche .entete {
+  position: relative;
+  isolation: isolate;
+  border: 3px solid var(--plomb);
+  border-radius: 0;
+  background:
+    var(--verre) 0 0 / 120px 120px,
+    linear-gradient(135deg, var(--vif), var(--vif2) 50%, var(--vif));
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,.08),
+    0 0 60px var(--lueur),                         /* la lumière qui traverse le verre */
+    0 30px 60px rgba(0,0,0,.7);
+}
+.page-fiche .carte { margin-top: 40px; padding: calc(var(--bande) + 26px) calc(var(--bande) + 30px); }
+.page-fiche .carte::before {
+  content: "";
+  position: absolute;
+  inset: var(--bande);
+  z-index: -1;
+  pointer-events: none;
+  -webkit-mask-image: none;
+          mask-image: none;
+  opacity: 1;
+  border: 3px solid var(--plomb);
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 0%, color-mix(in srgb, var(--vif) 14%, transparent), transparent 75%),
+    var(--fume);
+  box-shadow: inset 0 0 40px rgba(0,0,0,.7), 0 0 0 1px rgba(255,255,255,.06);
+}
+.page-fiche .carte::after { content: none; }
+
+/* Titres : lettres claires qui rayonnent de la couleur du verre */
+.page-fiche .carte > h2,
+.page-fiche .carte .deck-nom,
+.page-fiche .carte .duel__titre {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 0 0 24px;
+  font-family: "Cinzel","Cinzel Repli", serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: .24em;
+  text-transform: uppercase;
+  color: var(--blanc);
+  text-shadow: 0 0 14px var(--lueur), 0 0 2px rgba(0,0,0,.8);
+}
+/* Petit losange de verre avant le titre */
+.page-fiche .carte > h2::before,
+.page-fiche .carte .duel__titre::before {
+  content: "";
+  flex-shrink: 0;
+  width: 12px;
+  height: 12px;
+  transform: rotate(45deg);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--vif2) 60%, #fff), var(--vif2));
+  box-shadow: 0 0 0 2px var(--plomb), 0 0 12px var(--lueur2);
+}
+.page-fiche .carte > h2::after,
+.page-fiche .carte .duel__titre::after {
+  content: "";
+  flex: 1;
+  height: 2px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--vif) 70%, #fff), transparent);
+  opacity: .5;
+}
+#prive .carte > h2 { font-size: 1rem; color: var(--blanc); }
+
+
+/* ---------- En-tête : fenêtre en arc brisé, rosace ---------- */
+.page-fiche .entete {
+  display: block;
+  aspect-ratio: auto !important;
+  padding: var(--bande) var(--bande) 30px;
+  overflow: visible;
+  /* sommet en arc brisé, taillé en facettes */
+  clip-path: polygon(0 100%, 0 14%, 6% 9%, 16% 4.5%, 30% 1.4%, 50% 0, 70% 1.4%, 84% 4.5%, 94% 9%, 100% 14%, 100% 100%);
+  border-top: 0;
+}
+.page-fiche .entete::before {
+  content: "";
+  position: absolute;
+  inset: auto var(--bande) var(--bande);
+  top: 40%;
+  z-index: -1;
+  border: 3px solid var(--plomb);
+  background: var(--fume);
+}
+.page-fiche .entete__banniere {
+  position: relative;
+  inset: auto;
+  aspect-ratio: 3 / 1;
+  background-size: cover;
+  background-position: center;
+  border: 3px solid var(--plomb);
+  clip-path: polygon(0 100%, 0 13%, 6% 8%, 16% 3.8%, 30% 1%, 50% 0, 70% 1%, 84% 3.8%, 94% 8%, 100% 13%, 100% 100%);
+}
+.page-fiche .entete__banniere::after {
+  background: linear-gradient(180deg, transparent 55%, rgba(7,7,9,.75) 100%);
+}
+.page-fiche .entete__infos {
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 0;
+  margin-top: -70px;
+  text-align: center;
+}
+/* Rosace : anneau de verre à pétales autour de l'avatar */
+.entete__medaillon {
+  padding: 13px;
+  border-radius: 50%;
+  background:
+    repeating-conic-gradient(from 0deg, var(--plomb) 0 1.6deg, transparent 1.6deg 30deg),
+    radial-gradient(circle, transparent 0 60%, var(--plomb) 60% 62%, transparent 62%),
+    conic-gradient(from 15deg, var(--vif), var(--vif2), color-mix(in srgb, var(--vif) 50%, #fff), var(--vif2), var(--vif), var(--vif2), color-mix(in srgb, var(--vif2) 50%, #fff), var(--vif2), var(--vif));
+  box-shadow: 0 0 0 3px var(--plomb), 0 0 34px var(--lueur), 0 10px 24px rgba(0,0,0,.7);
+}
+.entete__medaillon:has(img[hidden]) { display: none; }
+.page-fiche .entete__avatar {
+  display: block;
+  width: 104px;
+  height: 104px;
+  border: 3px solid var(--plomb);
+  border-radius: 50%;
+  outline: 0;
+  object-fit: cover;
+}
+.page-fiche .entete h1 {
+  margin-top: 4px;
+  font-family: "Cinzel Decorative","Cinzel","Cinzel Repli", serif;
+  font-size: clamp(1.9rem, 5vw, 2.8rem);
+  line-height: 1.1;
+  color: var(--blanc);
+  text-shadow: 0 0 22px var(--lueur), 0 2px 4px rgba(0,0,0,.9);
+}
+.page-fiche .entete__titre {
+  margin: 0;
+  font-family: "Cinzel","Cinzel Repli", serif;
+  font-size: .9rem;
+  font-style: normal;
+  letter-spacing: .26em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--vif) 45%, #fff);
+  text-shadow: 0 0 12px var(--lueur), 0 1px 2px #000;
+}
+.page-fiche .entete__titre:empty { display: none; }
+
+
+/* ---------- Personnage ---------- */
+.page-fiche .perso__entete {
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  text-align: center;
+  border-bottom: 2px solid var(--plomb);
+  box-shadow: 0 1px 0 rgba(255,255,255,.06);
+}
+.page-fiche .perso__nom {
+  font-size: clamp(1.5rem, 3.5vw, 2rem);
+  color: var(--blanc);
+  text-shadow: 0 0 16px var(--lueur);
+}
+.page-fiche .perso__sous-titre { font-size: 1.05rem; color: var(--gris); }
+
+/* Pièces de verre sous plomb (CA, attributs) : ::before = plomb, ::after = verre */
+.page-fiche .jauge--badge,
+.page-fiche .attribut {
+  position: relative;
+  isolation: isolate;
+  border: 0;
+  background: none;
+}
+.page-fiche .jauge--badge::before,
+.page-fiche .jauge--badge::after,
+.page-fiche .attribut::before,
+.page-fiche .attribut::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  clip-path: var(--forme);
+}
+.page-fiche .jauge--badge::before,
+.page-fiche .attribut::before { inset: 0; background: var(--plomb); }
+.page-fiche .jauge--badge::after,
+.page-fiche .attribut::after {
+  inset: 3px;
+  background:
+    linear-gradient(160deg, rgba(255,255,255,.28) 0 22%, transparent 22.1%),
+    linear-gradient(200deg, transparent 0 60%, rgba(0,0,0,.25) 60.1%),
+    var(--verre-piece, var(--vif));
+}
+
+/* CA : petite rosace */
+.page-fiche .perso__jauges { align-items: center; gap: 20px; margin-bottom: 26px; }
+.page-fiche .jauge--badge {
+  --forme: circle(50%);
+  --verre-piece: radial-gradient(circle, color-mix(in srgb, var(--vif2) 70%, #000) 0 45%, var(--vif2) 46%);
+  width: 70px;
+  height: 70px;
+  padding: 0;
+  filter: drop-shadow(0 0 10px var(--lueur2));
+}
+.page-fiche .jauge--badge .jauge__label { font-size: .62rem; color: rgba(255,255,255,.75); }
+.page-fiche .jauge--badge .jauge__valeur { font-size: 1.35rem; line-height: 1; color: #fff; text-shadow: 0 1px 3px #000; }
+
+/* PV / XP : tubes de verre sertis de plomb */
+.page-fiche .jauge__tete .jauge__label {
+  font-family: "Cinzel","Cinzel Repli", serif;
+  font-size: .74rem;
+  letter-spacing: .18em;
+  color: var(--gris);
+}
+.page-fiche .jauge__piste {
+  height: 14px;
+  padding: 0;
+  border: 3px solid var(--plomb);
+  border-radius: 0;
+  background: rgba(255,255,255,.05);
+  box-shadow: 0 0 0 1px rgba(255,255,255,.06);
+}
+.page-fiche .jauge__remplissage { box-shadow: inset 0 2px 0 rgba(255,255,255,.3); }
+.page-fiche .jauge--pv .jauge__remplissage {
+  background: linear-gradient(90deg, #7d1621, #d1404c);
+  filter: drop-shadow(0 0 6px rgba(209,64,76,.6));
+}
+.page-fiche .jauge--xp .jauge__remplissage {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--vif2) 70%, #000), color-mix(in srgb, var(--vif2) 70%, #fff));
+  filter: drop-shadow(0 0 6px var(--lueur2));
+}
+
+/* Attributs : six lancettes de verre (fenêtres en arc brisé) */
+.page-fiche .perso__attributs {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 26px;
+  border: 0;
+}
+.page-fiche .attribut {
+  --forme: polygon(0 100%, 0 30%, 12% 14%, 30% 4%, 50% 0, 70% 4%, 88% 14%, 100% 30%, 100% 100%);
+  justify-content: flex-end;
+  aspect-ratio: 3 / 4;
+  max-width: 92px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 0 12%;
+  border: 0 !important;
+  transition: transform .2s ease, filter .2s ease;
+  filter: drop-shadow(0 0 8px var(--lueur));
+}
+.page-fiche .attribut:nth-child(even) { --verre-piece: var(--vif2); filter: drop-shadow(0 0 8px var(--lueur2)); }
+.page-fiche .attribut:hover { transform: translateY(-3px); filter: drop-shadow(0 0 16px var(--lueur)); }
+.page-fiche .attribut__valeur { font-size: 1.45rem; line-height: 1.1; color: #fff; text-shadow: 0 1px 3px #000, 0 0 8px rgba(0,0,0,.6); }
+.page-fiche .attribut__label {
+  font-family: "Cinzel","Cinzel Repli", serif;
+  font-size: .66rem;
+  letter-spacing: .16em;
+  color: rgba(255,255,255,.85);
+  text-shadow: 0 1px 2px #000;
+}
+.page-fiche .attribut--pos .attribut__valeur,
+.page-fiche .attribut--neg .attribut__valeur { color: #fff; }
+.page-fiche .attribut--pos .attribut__valeur::before { content: none; }
+
+/* Veine : pièce de verre allongée */
+.page-fiche .chip {
+  gap: 10px;
+  padding: 6px 18px;
+  border: 3px solid var(--plomb);
+  border-radius: 999px;
+  background:
+    linear-gradient(170deg, rgba(255,255,255,.18) 0 40%, transparent 40.1%),
+    color-mix(in srgb, var(--vif2) 55%, #0b0b0d);
+  box-shadow: 0 0 14px var(--lueur2);
+}
+.page-fiche .chip__label { font-family: "Cinzel","Cinzel Repli", serif; color: rgba(255,255,255,.75); }
+.page-fiche .chip__valeur { color: #fff; }
+
+/* Champs divers */
+.page-fiche .stats--autres { border-top: 2px solid var(--plomb); }
+.page-fiche .stat dt { font-family: "Cinzel","Cinzel Repli", serif; color: var(--gris); }
+
+/* Inventaire : carreaux de verre sombre */
+.page-fiche .perso__inventaire {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+}
+.page-fiche .perso__inventaire > dt {
+  font-family: "Cinzel","Cinzel Repli", serif;
+  letter-spacing: .18em;
+  color: var(--gris);
+}
+.page-fiche .objet-image {
+  aspect-ratio: 1;
+  border: 3px solid var(--plomb);
+  border-radius: 0;
+  background:
+    linear-gradient(160deg, rgba(255,255,255,.08) 0 30%, transparent 30.1%),
+    radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--vif) 22%, transparent), transparent 70%),
+    rgba(255,255,255,.03);
+  transition: box-shadow .15s;
+}
+.page-fiche .objet-image:hover { box-shadow: 0 0 14px var(--lueur); }
+.page-fiche .objet-image--choisi { box-shadow: 0 0 0 2px color-mix(in srgb, var(--vif) 60%, #fff), 0 0 18px var(--lueur); }
+.page-fiche .objet-fiche { border-top: 2px solid var(--plomb); }
+
+/* Bourse */
+.page-fiche .perso__bourse-label {
+  font-family: "Cinzel","Cinzel Repli", serif;
+  letter-spacing: .2em;
+  color: var(--gris);
+}
+.page-fiche .perso__bourse-valeur #solde { color: #fff; }
+
+
+/* ---------- Deck ---------- */
+.page-fiche .deck .deck-tete { margin-bottom: 24px; }
+.page-fiche .deck .deck-tete .btn-petit--lien { color: var(--gris); }
+.page-fiche .deck .deck-tete .btn-petit--lien:hover { color: #fff; }
+.page-fiche .deck-emplacement:not(.deck-emplacement--plein) {
+  border: 3px solid var(--plomb);
+  background: rgba(255,255,255,.03);
+}
+
+/* Boutons : verre coloré serti, qui s'allume au survol */
+.page-fiche .btn-collection,
+.page-fiche .duel__btn--plein {
+  border: 3px solid var(--plomb);
+  color: #fff;
+  text-shadow: 0 1px 2px #000;
+  background:
+    linear-gradient(170deg, rgba(255,255,255,.22) 0 35%, transparent 35.1%),
+    linear-gradient(135deg, var(--vif), color-mix(in srgb, var(--vif) 60%, #000));
+  box-shadow: 0 0 16px var(--lueur);
+  transition: box-shadow .2s, filter .2s;
+}
+.page-fiche .btn-collection { margin-top: 24px; padding: 8px 22px; }
+.page-fiche .btn-collection:hover,
+.page-fiche .duel__btn--plein:hover {
+  color: #fff;
+  background:
+    linear-gradient(170deg, rgba(255,255,255,.22) 0 35%, transparent 35.1%),
+    linear-gradient(135deg, var(--vif), color-mix(in srgb, var(--vif) 60%, #000));
+  filter: brightness(1.2);
+  box-shadow: 0 0 28px var(--lueur);
+}
+
+
+/* ---------- Duel ---------- */
+.page-fiche .carte.duel { padding: calc(var(--bande) + 28px) calc(var(--bande) + 30px); }
+.page-fiche .duel__sur { color: var(--gris); }
+.page-fiche .duel__accroche strong { color: color-mix(in srgb, var(--vif) 45%, #fff); }
+.page-fiche .duel__regles li { border: 2px solid var(--plomb); background: rgba(255,255,255,.04); color: var(--gris); }
+.page-fiche .duel__regles span { color: color-mix(in srgb, var(--vif2) 50%, #fff); }
+.page-fiche .duel__btn:not(.duel__btn--plein) {
+  border: 3px solid var(--plomb);
+  color: #fff;
+  background: color-mix(in srgb, var(--vif2) 40%, #0b0b0d);
+  box-shadow: 0 0 14px var(--lueur2);
+}
+.page-fiche .duel__btn:not(.duel__btn--plein):hover { filter: brightness(1.2); background: color-mix(in srgb, var(--vif2) 40%, #0b0b0d); }
+
+
+/* ---------- Collection / Historique ---------- */
+.page-fiche .grille { gap: 0 30px; }
+.page-fiche .liste > li { border-bottom: 2px solid var(--plomb); box-shadow: 0 1px 0 rgba(255,255,255,.05); }
+.page-fiche .objet__type,
+.page-fiche .transac small { font-family: "Cinzel","Cinzel Repli", serif; font-size: .68rem; letter-spacing: .12em; color: var(--gris); }
+.page-fiche .btn-petit--equiper { border-color: rgba(255,255,255,.6); color: #fff; }
+.page-fiche .btn-petit--equiper:hover { background: #fff; color: #0b0b0d; }
+.page-fiche .gain { color: #9fd3ac; }
+.page-fiche .perte { color: #f08d93; }
+
+
+/* ---------- Non connecté / chargement ---------- */
+.page-fiche #non-connecte { padding: 50px 40px; }
+.page-fiche #non-connecte p { margin-left: auto; margin-right: auto; color: var(--gris); }
+.page-fiche #chargement { margin-top: 60px; text-align: center; max-width: none; }
+
+
+/* ---------- Téléphones ---------- */
+@media (max-width: 600px) {
+  .page-fiche { --bande: 16px; }
+  .page-fiche .carte,
+  .page-fiche .carte.duel { padding: calc(var(--bande) + 20px) calc(var(--bande) + 16px); }
+  .page-fiche .entete__banniere { aspect-ratio: 16 / 9; }
+  .page-fiche .entete__infos { margin-top: -56px; }
+  .page-fiche .entete__avatar { width: 84px; height: 84px; }
+  .page-fiche .perso__attributs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .page-fiche .perso__bourse-contenu { margin-top: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-fiche .attribut { transition: none; }
+}

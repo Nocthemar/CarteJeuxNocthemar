@@ -1,0 +1,497 @@
+/* =====================================================================
+   Page profil.html — style « grimoire »
+   Chaque section est un feuillet de parchemin enluminé : titres rubriqués,
+   lettrines peintes, filets de marge, jauges hachurées à l'encre, signet de
+   tissu. Le thème équipé par le joueur (--vif, --vif2, posés par profil.js)
+   colore tout ce qui est peint ; sans thème, c'est le rouge des manuscrits.
+
+   Chargé uniquement par profil.html, après CSS/compte.css et CSS/cartes-jeu.css.
+   Tout est rangé sous .page-fiche : la boutique, la collection, le jeu et la
+   page MJ (qui partagent .page-profil) ne sont pas touchés.
+   Autres styles gardés : CSS/profil-nuit.css, CSS/profil-forteresse.css,
+   CSS/profil-ecran.css (il suffit de changer le lien dans profil.html).
+   ===================================================================== */
+
+.page-fiche {
+  --vif: #8e2a2c;                 /* couleur du thème (rouge des manuscrits par défaut) */
+  --vif2: var(--vif);             /* 2e couleur du thème */
+  /* La couleur du thème, assombrie pour rester lisible sur le parchemin (thèmes clairs) */
+  --rubrique: color-mix(in srgb, var(--vif) 62%, #140d07);
+  --rubrique2: color-mix(in srgb, var(--vif2) 62%, #140d07);
+
+  /* parchemin légèrement teinté par le thème */
+  /* blanc parchemin (couleur de tous les feuillets : changer ces deux valeurs suffit) */
+  --velin: color-mix(in srgb, #ddd3bd 96%, var(--vif));
+  --velin-2: color-mix(in srgb, #cbbfa3 95%, var(--vif));
+  --encre: #1f1912;
+  --encre-douce: #4a3f31;
+  --trait: rgba(48,34,20,.34);
+
+  /* Grain du vélin */
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .25 0 0 0 0 .12 0 0 0 .16 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+
+  /* Bureau dans le noir, chandelle en haut, lueur teintée par le thème */
+  background:
+    radial-gradient(ellipse 55% 40% at 50% 0%, color-mix(in srgb, var(--vif) 22%, transparent), transparent 75%),
+    radial-gradient(ellipse 40% 30% at 15% 5%, rgba(214,170,100,.12), transparent 70%),
+    radial-gradient(ellipse 120% 90% at 50% 40%, transparent 50%, rgba(0,0,0,.7) 100%),
+    linear-gradient(180deg, rgba(10,9,8,.7), rgba(10,9,8,.95)),
+    url("../img/Fond/profil-lowpoly.svg") center bottom / cover no-repeat,
+    #0b0a09;
+  background-attachment: fixed;
+}
+
+/* Sur le parchemin, l'« encre » remplace le texte clair du reste du site */
+.page-fiche .profil-wrap {
+  --texte: var(--encre);
+  --texte-doux: var(--encre-douce);
+  --bord: var(--trait);
+  --fond: var(--velin);
+  --carte: var(--velin);
+  max-width: 920px;
+  padding-top: 22px;
+  color: var(--encre);
+  font-family: "EB Garamond","EB Garamond Repli", serif;
+}
+.page-fiche .fiche-sur { display: none; }
+
+
+/* ---------- Feuillets de parchemin ---------- */
+.page-fiche .carte,
+.page-fiche .entete {
+  position: relative;
+  border: 0;
+  border-radius: 0;
+  color: var(--encre);
+  background:
+    var(--grain),
+    radial-gradient(ellipse 40% 30% at 85% 15%, rgba(120,85,40,.1), transparent 70%),     /* taches */
+    radial-gradient(ellipse 30% 25% at 12% 80%, rgba(120,85,40,.08), transparent 70%),
+    linear-gradient(175deg, var(--velin), var(--velin-2));
+  box-shadow:
+    inset 0 7px 0 var(--vif),                    /* bande enluminée aux couleurs du thème */
+    inset 0 9px 0 var(--velin),
+    inset 0 11px 0 var(--vif2),
+    inset 0 0 70px rgba(90,64,32,.38),           /* bords brunis */
+    inset 0 0 0 1px rgba(90,64,34,.25),
+    0 2px 0 #b0a386, 0 4px 0 #94886d,            /* tranche : feuillets empilés */
+    0 26px 50px rgba(0,0,0,.65);
+}
+.page-fiche .carte { margin-top: 40px; padding: 38px 52px 36px 64px; }
+/* Filets de marge, à gauche, à la couleur du thème */
+.page-fiche .carte::before {
+  content: "";
+  position: absolute;
+  top: 22px; bottom: 22px; left: 30px;
+  inset-inline-end: auto;
+  width: 5px;
+  z-index: 0;
+  pointer-events: none;
+  -webkit-mask-image: none;
+          mask-image: none;
+  border-left: 1px solid var(--rubrique);
+  border-right: 1px solid var(--rubrique2);
+  opacity: .55;
+  background: none;
+}
+.page-fiche .carte::after { content: none; }
+
+/* Titres rubriqués : couleur du thème, première lettre agrandie (sans cadre) */
+.page-fiche .carte > h2,
+.page-fiche .carte .deck-nom,
+.page-fiche .carte .duel__titre {
+  margin: 0 0 22px;
+  font-family: "IM Fell English","Cinzel","Cinzel Repli", serif;
+  font-size: 1.9rem;
+  font-weight: 400;
+  letter-spacing: .01em;
+  text-transform: none;
+  line-height: 1.1;
+  color: var(--rubrique);
+  text-shadow: none;
+}
+.page-fiche .carte > h2::first-letter,
+.page-fiche .carte .deck-nom::first-letter,
+.page-fiche .carte .duel__titre::first-letter {
+  font-size: 1.35em;
+  color: var(--rubrique2);
+}
+/* Fin de titre : filet d'encre */
+.page-fiche .carte > h2::after {
+  content: "";
+  display: block;
+  clear: both;
+  height: 1px;
+  margin-top: 12px;
+  background: linear-gradient(90deg, var(--rubrique), transparent 80%);
+  opacity: .5;
+}
+#prive .carte > h2 { font-size: 1.6rem; color: var(--rubrique); }
+
+
+/* ---------- Frontispice : miniature enluminée, signet ---------- */
+.page-fiche .entete {
+  display: block;
+  aspect-ratio: auto !important;
+  padding: 22px 22px 30px;
+  overflow: visible;
+}
+/* Signet de tissu qui pend du haut de la page (deux couleurs du thème) */
+.page-fiche .entete::after {
+  content: "";
+  position: absolute;
+  top: -10px;
+  right: 46px;
+  z-index: 3;
+  width: 30px;
+  height: 150px;
+  background:
+    linear-gradient(90deg, transparent 0 38%, var(--vif2) 38% 62%, transparent 62%),
+    linear-gradient(90deg, rgba(0,0,0,.25), rgba(255,255,255,.12) 40%, rgba(0,0,0,.2)),
+    var(--vif);
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% calc(100% - 14px), 0 100%);
+  filter: drop-shadow(2px 4px 3px rgba(0,0,0,.4));
+}
+/* La miniature : la bannière, encadrée d'un double filet du thème */
+.page-fiche .entete__banniere {
+  position: relative;
+  inset: auto;
+  aspect-ratio: 3 / 1;
+  background-size: cover;
+  background-position: center;
+  background-color: var(--velin-2);
+  box-shadow:
+    0 0 0 3px var(--velin),
+    0 0 0 5px var(--rubrique),
+    0 0 0 8px var(--velin),
+    0 0 0 9px var(--rubrique2);
+}
+.page-fiche .entete__banniere::after {
+  background: radial-gradient(ellipse 110% 100% at 50% 50%, transparent 60%, rgba(90,60,30,.35) 100%);
+}
+.page-fiche .entete__infos {
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 0;
+  margin-top: -58px;
+  text-align: center;
+}
+/* Avatar : médaillon peint, anneau à la couleur du thème */
+.entete__medaillon {
+  padding: 4px;
+  border-radius: 50%;
+  background: var(--velin);
+  box-shadow: 0 0 0 3px var(--vif), 0 0 0 5px var(--velin), 0 0 0 6px var(--rubrique2), 0 6px 14px rgba(0,0,0,.35);
+}
+.entete__medaillon:has(img[hidden]) { display: none; }
+.page-fiche .entete__avatar {
+  display: block;
+  width: 104px;
+  height: 104px;
+  border: 0;
+  border-radius: 50%;
+  outline: 0;
+  object-fit: cover;
+}
+.page-fiche .entete h1 {
+  margin-top: 6px;
+  font-family: "IM Fell English","Cinzel Decorative","Cinzel Repli", serif;
+  font-size: clamp(2.1rem, 6vw, 3.2rem);
+  font-weight: 400;
+  line-height: 1.05;
+  color: var(--encre);
+  text-shadow: none;
+}
+/* Titre équipé : rubrique en italique, entre deux tirets peints */
+.page-fiche .entete__titre {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: 4px 0 0;
+  font-family: "IM Fell English","EB Garamond", serif;
+  font-size: 1.25rem;
+  font-style: italic;
+  color: var(--rubrique);
+  text-shadow: none;
+}
+.page-fiche .entete__titre::before,
+.page-fiche .entete__titre::after {
+  content: "";
+  width: 36px;
+  height: 2px;
+  background: var(--vif2);
+}
+.page-fiche .entete__titre:empty { display: none; }
+
+
+/* ---------- Personnage ---------- */
+.page-fiche .perso__entete {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+  margin-bottom: 22px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--trait);
+}
+.page-fiche .perso__nom {
+  font-family: "IM Fell English","Cinzel Decorative","Cinzel Repli", serif;
+  font-size: clamp(1.7rem, 4vw, 2.3rem);
+  font-weight: 400;
+  color: var(--encre);
+}
+.page-fiche .perso__nom::first-letter { color: var(--rubrique); }
+.page-fiche .perso__sous-titre { font-size: 1.1rem; color: var(--encre-douce); }
+
+/* CA : chiffre dans un cercle tracé à l'encre */
+.page-fiche .perso__jauges { align-items: center; gap: 22px; margin-bottom: 26px; }
+.page-fiche .jauge--badge {
+  width: 66px;
+  height: 66px;
+  min-width: 0;
+  padding: 0;
+  border: 2px solid var(--rubrique);
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: inset 0 0 0 3px var(--velin), inset 0 0 0 4px var(--rubrique2);
+}
+.page-fiche .jauge--badge .jauge__label { font-family: "IM Fell English SC", serif; font-size: .7rem; color: var(--encre-douce); }
+.page-fiche .jauge--badge .jauge__valeur { font-family: "IM Fell English", serif; font-size: 1.5rem; font-weight: 400; line-height: 1; color: var(--encre); }
+
+/* PV / XP : barres tracées à l'encre, remplies de hachures */
+.page-fiche .jauge__tete .jauge__label {
+  font-family: "IM Fell English SC", serif;
+  font-size: .95rem;
+  letter-spacing: .06em;
+  text-transform: none;
+  color: var(--encre);
+}
+.page-fiche .jauge__tete .jauge__valeur { font-family: "IM Fell English", serif; font-size: 1rem; font-weight: 400; }
+.page-fiche .jauge__piste {
+  height: 14px;
+  padding: 2px;
+  border: 1.5px solid var(--encre);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.page-fiche .jauge--pv .jauge__remplissage {
+  background: repeating-linear-gradient(-45deg, #7d2326 0 2px, transparent 2px 5px), rgba(125,35,38,.18);
+}
+.page-fiche .jauge--xp .jauge__remplissage {
+  background: repeating-linear-gradient(-45deg, var(--rubrique) 0 2px, transparent 2px 5px), color-mix(in srgb, var(--vif) 20%, transparent);
+}
+
+/* Attributs : deux colonnes de registre, libellé … valeur */
+.page-fiche .perso__attributs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-auto-flow: row;
+  gap: 4px 44px;
+  margin-bottom: 24px;
+  padding: 14px 0;
+  border-top: 1px solid var(--trait);
+  border-bottom: 1px solid var(--trait);
+}
+.page-fiche .attribut {
+  flex-direction: row;
+  align-items: baseline;
+  gap: 8px;
+  padding: 4px 0;
+  border: 0 !important;
+  background: none;
+}
+/* libellé … pointillés … valeur */
+.page-fiche .attribut__label { order: 1; }
+.page-fiche .attribut::after {
+  content: "";
+  order: 2;
+  flex: 1;
+  border-bottom: 2px dotted rgba(64,46,28,.4);
+  transform: translateY(-4px);
+}
+.page-fiche .attribut__valeur { order: 3; }
+.page-fiche .attribut__label {
+  font-family: "IM Fell English SC", serif;
+  font-size: 1.05rem;
+  letter-spacing: .06em;
+  text-transform: none;
+  color: var(--encre);
+}
+.page-fiche .attribut__valeur {
+  font-family: "IM Fell English", serif;
+  font-size: 1.35rem;
+  font-weight: 400;
+  color: var(--encre);
+}
+.page-fiche .attribut--pos .attribut__valeur { color: #3d6346; }
+.page-fiche .attribut--neg .attribut__valeur { color: #8a2a2f; }
+
+/* Veine : rubrique */
+.page-fiche .chip {
+  gap: 10px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  font-size: 1.1rem;
+}
+.page-fiche .chip__label { font-family: "IM Fell English SC", serif; font-size: 1rem; letter-spacing: .06em; text-transform: none; color: var(--rubrique); }
+.page-fiche .chip__label::after { content: " :"; }
+.page-fiche .chip__valeur { font-family: "IM Fell English", serif; font-weight: 400; font-style: italic; color: var(--encre); }
+
+/* Champs divers */
+.page-fiche .stats--autres { border-top-color: var(--trait); }
+.page-fiche .stat dt { font-family: "IM Fell English SC", serif; font-size: .95rem; text-transform: none; color: var(--rubrique); }
+
+/* Inventaire : cases tracées à l'encre */
+.page-fiche .perso__inventaire {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+}
+.page-fiche .perso__inventaire > dt {
+  font-family: "IM Fell English SC", serif;
+  font-size: 1.05rem;
+  letter-spacing: .06em;
+  text-transform: none;
+  color: var(--rubrique);
+}
+.page-fiche .objet-image {
+  aspect-ratio: 1;
+  border: 1.5px dashed rgba(64,46,28,.45);
+  border-radius: 0;
+  background: rgba(40,28,14,.08);
+  transition: border-color .15s, background .15s;
+}
+.page-fiche .objet-image:hover { border-color: var(--encre); }
+.page-fiche .objet-image--choisi { border: 2px solid var(--rubrique); background: color-mix(in srgb, var(--vif) 10%, transparent); }
+.page-fiche .objet-image img { filter: drop-shadow(0 2px 2px rgba(60,40,20,.35)); }
+.page-fiche .objet-fiche { border-top-color: var(--trait); }
+.page-fiche .objet-fiche__nom { font-family: "IM Fell English", serif; font-size: 1.15rem; color: var(--rubrique); }
+.page-fiche .objet-fiche__carac dt { color: var(--encre-douce); }
+.page-fiche .perso__inventaire .perso__inventaire-suite,
+.page-fiche .perso__inventaire .perso__inventaire-suite:hover { color: var(--encre); }
+
+/* Bourse */
+.page-fiche .perso__bourse-label {
+  font-family: "IM Fell English SC", serif;
+  font-size: 1.05rem;
+  letter-spacing: .06em;
+  text-transform: none;
+  color: var(--rubrique);
+}
+.page-fiche .perso__bourse-valeur #solde {
+  font-family: "IM Fell English", serif;
+  font-weight: 400;
+  color: var(--encre);
+  text-shadow: none;
+}
+
+
+/* ---------- Deck ---------- */
+.page-fiche .deck .deck-tete { align-items: flex-start; }
+.page-fiche .deck .deck-tete .btn-petit--lien { margin-top: 10px; color: var(--encre-douce); font-style: italic; }
+.page-fiche .deck .deck-tete .btn-petit--lien:hover { color: var(--rubrique); }
+.page-fiche .deck-emplacement:not(.deck-emplacement--plein) {
+  border: 1.5px dashed rgba(64,46,28,.45);
+  background: rgba(40,28,14,.08);
+}
+.page-fiche .deck-emplacement__ajout { color: var(--encre-douce); }
+.page-fiche .deck-emplacement__ajout:hover { color: var(--rubrique); }
+
+/* Boutons : sceau de cire à la couleur du thème */
+.page-fiche .btn-collection {
+  margin-top: 24px;
+  padding: 8px 22px;
+  border: 0;
+  font-family: "IM Fell English SC", serif;
+  font-size: 1rem;
+  letter-spacing: .06em;
+  color: var(--velin);
+  background: linear-gradient(135deg, rgba(255,255,255,.18), transparent 55%), var(--vif);
+  box-shadow: inset 0 0 0 2px var(--velin), inset 0 0 0 3px var(--rubrique2), 2px 3px 0 rgba(60,40,20,.25);
+}
+.page-fiche .btn-collection:hover { filter: brightness(1.12); background: linear-gradient(135deg, rgba(255,255,255,.18), transparent 55%), var(--vif); color: var(--velin); }
+.page-fiche .deck-renommer input { background: rgba(255,250,235,.5); color: var(--encre); }
+.page-fiche .btn-petit { border-color: var(--rubrique); color: var(--rubrique); }
+.page-fiche .btn-petit:hover { background: var(--rubrique); color: var(--velin); }
+
+
+/* ---------- Duel ---------- */
+.page-fiche .carte.duel { padding: 38px 52px 36px 64px; }
+.page-fiche .duel__sur { font-family: "IM Fell English SC", serif; font-size: .95rem; letter-spacing: .06em; text-transform: none; color: var(--encre-douce); }
+/* flow-root : la lettrine reste dans le titre et ne décale pas la phrase en dessous */
+.page-fiche .carte .duel__titre { display: flow-root; margin: 4px 0 18px; }
+.page-fiche .duel__accroche { font-size: 1.05rem; color: var(--encre); }
+.page-fiche .duel__accroche strong { color: var(--rubrique); }
+/* Règles : cases tracées à l'encre, comme l'inventaire */
+.page-fiche .duel__regles li {
+  border: 1.5px dashed rgba(48,34,20,.45);
+  color: var(--encre);
+  font-family: "IM Fell English SC", serif;
+  font-size: 1rem;
+  letter-spacing: .04em;
+  text-transform: none;
+}
+.page-fiche .duel__regles span { color: var(--rubrique); }
+/* Boutons : même bouton enluminé que « Ouvrir ma collection » */
+.page-fiche .duel__btn {
+  border: 0;
+  color: var(--rubrique);
+  background: rgba(40,28,14,.08);
+  box-shadow: inset 0 0 0 1.5px var(--rubrique);
+}
+.page-fiche .duel__btn--plein {
+  color: var(--velin);
+  background: linear-gradient(135deg, rgba(255,255,255,.18), transparent 55%), var(--vif);
+  box-shadow: inset 0 0 0 2px var(--velin), inset 0 0 0 3px var(--rubrique2), 2px 3px 0 rgba(60,40,20,.25);
+}
+.page-fiche .duel__btn:hover { box-shadow: inset 0 0 0 1.5px var(--rubrique), 0 6px 14px rgba(40,28,14,.3); }
+.page-fiche .duel__btn--plein:hover { filter: brightness(1.12); box-shadow: inset 0 0 0 2px var(--velin), inset 0 0 0 3px var(--rubrique2), 0 6px 14px rgba(40,28,14,.3); }
+.page-fiche .duel__btn-titre { font-family: "IM Fell English SC", serif; font-size: 1.05rem; font-weight: 400; letter-spacing: .04em; }
+.page-fiche .duel__btn-texte { font-style: italic; opacity: .85; }
+
+
+/* ---------- Collection / Historique ---------- */
+.page-fiche .grille { gap: 0 30px; }
+.page-fiche .grille .carte { padding: 34px 32px 30px 52px; }
+.page-fiche .grille .carte::before { left: 22px; }
+.page-fiche .liste > li { border-bottom: 1px solid var(--trait); }
+.page-fiche .liste strong { font-family: "IM Fell English", serif; font-weight: 400; font-size: 1.1rem; }
+.page-fiche .objet__type,
+.page-fiche .transac small { font-family: "IM Fell English SC", serif; font-size: .85rem; letter-spacing: .05em; text-transform: none; color: var(--rubrique); }
+.page-fiche .transac small { color: var(--encre-douce); }
+.page-fiche .btn-petit--equiper { border-color: var(--encre); color: var(--encre); }
+.page-fiche .btn-petit--equiper:hover { background: var(--encre); color: var(--velin); }
+.page-fiche .btn-petit--retirer { border-color: #8a2a2f; color: #8a2a2f; }
+.page-fiche .btn-petit--retirer:hover { background: #8a2a2f; color: var(--velin); }
+.page-fiche .gain { color: #3d6346; }
+.page-fiche .perte { color: #8a2a2f; }
+.page-fiche .liste--defilante { scrollbar-color: var(--trait) transparent; }
+
+
+/* ---------- Non connecté / chargement ---------- */
+.page-fiche #non-connecte { padding: 46px 30px; }
+.page-fiche #non-connecte p { margin-left: auto; margin-right: auto; }
+.page-fiche #chargement { margin-top: 60px; text-align: center; max-width: none; color: #b9ad94; }
+
+
+/* ---------- Téléphones ---------- */
+@media (max-width: 600px) {
+  .page-fiche .carte,
+  .page-fiche .carte.duel,
+  .page-fiche .grille .carte { padding: 30px 18px 26px 34px; }
+  .page-fiche .carte::before,
+  .page-fiche .grille .carte::before { left: 14px; }
+  .page-fiche .entete { padding: 14px 14px 24px; }
+  .page-fiche .entete::after { right: 24px; height: 110px; }
+  .page-fiche .entete__banniere { aspect-ratio: 16 / 9; }
+  .page-fiche .entete__infos { margin-top: -46px; }
+  .page-fiche .entete__avatar { width: 84px; height: 84px; }
+  .page-fiche .perso__attributs { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+  .page-fiche .perso__bourse-contenu { margin-top: 0; }
+  .page-fiche .carte > h2, .page-fiche .carte .deck-nom, .page-fiche .carte .duel__titre { font-size: 1.55rem; }
+}

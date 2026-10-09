@@ -1,0 +1,520 @@
+/* =====================================================================
+   Page profil.html — style « salle de forteresse »
+   Pierre taillée, fer forgé, bois et parchemin ; facettes low poly,
+   couleurs sourdes, une seule couleur vive : la bannière du titre (--vif).
+
+   Chargé uniquement par profil.html, après CSS/compte.css et CSS/cartes-jeu.css.
+   Tout est rangé sous .page-fiche : la boutique, la collection, le jeu et la
+   page MJ (qui partagent .page-profil) ne sont pas touchés.
+   Autre style disponible : CSS/profil-nuit.css (low poly, bleu nuit) —
+   il suffit de changer le lien dans profil.html.
+   ===================================================================== */
+
+.page-fiche {
+  --nuit: #0c0d10;
+  --pierre: #2b2927;
+  --fer: #222327;
+  --fer-clair: #5d6067;
+  --parchemin: #e9e3d6;
+  --gris: #a39d92;
+  --encre: #2a241e;
+  --vif: #c22f38;          /* la bannière du titre ; profil.js la remplace par le thème équipé */
+
+  --texte: var(--parchemin);
+  --texte-doux: var(--gris);
+  --bord: rgba(233,227,214,.14);
+
+  /* Équerres de fer rivetées, une par coin */
+  --equerre-hg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 44 44'%3E%3Cpath d='M1.5 42.5V8A6.5 6.5 0 0 1 8 1.5h34.5v9H10.5v32z' fill='%23232428' stroke='%235b5d63'/%3E%3Cg fill='%23858790'%3E%3Ccircle cx='6' cy='35' r='2.2'/%3E%3Ccircle cx='35' cy='6' r='2.2'/%3E%3Ccircle cx='6' cy='6' r='2.2'/%3E%3C/g%3E%3Cg fill='%23fff' opacity='.45'%3E%3Ccircle cx='5.3' cy='34.3' r='.8'/%3E%3Ccircle cx='34.3' cy='5.3' r='.8'/%3E%3Ccircle cx='5.3' cy='5.3' r='.8'/%3E%3C/g%3E%3C/svg%3E");
+  --equerre-hd: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 44 44'%3E%3Cg transform='translate(44 0) scale(-1 1)'%3E%3Cpath d='M1.5 42.5V8A6.5 6.5 0 0 1 8 1.5h34.5v9H10.5v32z' fill='%23232428' stroke='%235b5d63'/%3E%3Cg fill='%23858790'%3E%3Ccircle cx='6' cy='35' r='2.2'/%3E%3Ccircle cx='35' cy='6' r='2.2'/%3E%3Ccircle cx='6' cy='6' r='2.2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  --equerre-bg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 44 44'%3E%3Cg transform='translate(0 44) scale(1 -1)'%3E%3Cpath d='M1.5 42.5V8A6.5 6.5 0 0 1 8 1.5h34.5v9H10.5v32z' fill='%23232428' stroke='%235b5d63'/%3E%3Cg fill='%23858790'%3E%3Ccircle cx='6' cy='35' r='2.2'/%3E%3Ccircle cx='35' cy='6' r='2.2'/%3E%3Ccircle cx='6' cy='6' r='2.2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  --equerre-bd: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 44 44'%3E%3Cg transform='translate(44 44) scale(-1 -1)'%3E%3Cpath d='M1.5 42.5V8A6.5 6.5 0 0 1 8 1.5h34.5v9H10.5v32z' fill='%23232428' stroke='%235b5d63'/%3E%3Cg fill='%23858790'%3E%3Ccircle cx='6' cy='35' r='2.2'/%3E%3Ccircle cx='35' cy='6' r='2.2'/%3E%3Ccircle cx='6' cy='6' r='2.2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+
+  /* Gravure dans la pierre : ombre au-dessus, reflet en dessous */
+  --grave: 0 -1px 0 rgba(0,0,0,.85), 0 1px 0 rgba(255,255,255,.1);
+
+  color: var(--parchemin);
+  /* Forteresse low poly sous la lune + lueur de torches sur les côtés + vignette */
+  background:
+    radial-gradient(ellipse 120% 90% at 50% 40%, transparent 55%, rgba(0,0,0,.6) 100%),
+    radial-gradient(ellipse 30% 40% at 0% 35%, rgba(184,146,90,.08), transparent 70%),
+    radial-gradient(ellipse 30% 40% at 100% 35%, rgba(184,146,90,.08), transparent 70%),
+    linear-gradient(180deg, rgba(12,13,16,.1) 0%, rgba(12,13,16,.5) 50%, rgba(12,13,16,.85) 100%),
+    url("../img/Fond/profil-forteresse.svg") center bottom / cover no-repeat,
+    var(--nuit);
+  background-attachment: fixed;
+}
+
+.page-fiche .profil-wrap { max-width: 960px; padding-top: 18px; }
+
+
+/* ---------- Linteau du registre : plaque de pierre gravée ---------- */
+.fiche-sur {
+  position: relative;
+  max-width: none;
+  margin: 8px auto 22px;
+  padding: 9px 20px;
+  width: fit-content;
+  font-family: "Cinzel","Cinzel Repli", serif;
+  font-size: .74rem;
+  letter-spacing: .3em;
+  text-transform: uppercase;
+  text-align: center;
+  color: #cfc8bb;
+  text-shadow: var(--grave);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.04), rgba(0,0,0,.35)),
+    url("../img/Fond/pierre.svg") 0 0 / 240px 96px;
+  box-shadow:
+    0 0 0 1px #0b0b0c,
+    inset 0 1px 0 rgba(255,255,255,.1),
+    inset 0 -2px 0 rgba(0,0,0,.5),
+    0 10px 24px rgba(0,0,0,.5);
+}
+.fiche-sur span { display: none; }
+
+
+/* ---------- Dalles de pierre, équerres de fer ---------- */
+.page-fiche .carte,
+.page-fiche .entete {
+  position: relative;
+  isolation: isolate;
+  border: 0;
+  border-radius: 0;
+  clip-path: none;
+  background:
+    linear-gradient(180deg, rgba(20,19,18,.35), rgba(12,12,12,.6)),
+    url("../img/Fond/pierre.svg") 0 0 / 240px 96px,
+    var(--pierre);
+  box-shadow:
+    0 0 0 1px #08080a,
+    inset 0 2px 0 rgba(255,255,255,.07),
+    inset 0 -3px 0 rgba(0,0,0,.5),
+    inset 0 0 60px rgba(0,0,0,.55),
+    0 22px 44px rgba(0,0,0,.6);
+}
+.page-fiche .carte { margin-top: 32px; padding: 34px 34px 30px; }
+.page-fiche .carte::before,
+.page-fiche .entete::before {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  z-index: 3;
+  pointer-events: none;
+  clip-path: none;
+  -webkit-mask-image: none;
+          mask-image: none;
+  opacity: 1;
+  background:
+    var(--equerre-hg) top left / 44px no-repeat,
+    var(--equerre-hd) top right / 44px no-repeat,
+    var(--equerre-bg) bottom left / 44px no-repeat,
+    var(--equerre-bd) bottom right / 44px no-repeat;
+  filter: drop-shadow(0 3px 3px rgba(0,0,0,.6));
+}
+.page-fiche .carte::after { content: none; }
+
+/* Titres de section gravés, entre deux rainures */
+.page-fiche .carte > h2 {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 0 0 24px;
+  font-family: "Cinzel","Cinzel Repli", serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: .24em;
+  text-transform: uppercase;
+  color: #d6cfc2;
+  text-shadow: var(--grave);
+}
+.page-fiche .carte > h2::before,
+.page-fiche .carte > h2::after {
+  content: "";
+  flex: 1;
+  height: 2px;
+  background:
+    linear-gradient(rgba(0,0,0,.8), rgba(0,0,0,.8)) top / 100% 1px no-repeat,
+    linear-gradient(rgba(255,255,255,.1), rgba(255,255,255,.1)) bottom / 100% 1px no-repeat;
+  transform: none;
+  -webkit-mask: none;
+          mask: none;
+}
+#prive .carte > h2 { font-size: .9rem; color: #d6cfc2; }
+
+
+/* ---------- En-tête : fenêtre de pierre, niche en ogive, bannière suspendue ---------- */
+.page-fiche .entete { padding: 0; }
+.page-fiche .entete__banniere {
+  inset: 12px;
+  z-index: -1;
+  clip-path: none;
+  background-color: #141313;
+  box-shadow: 0 0 0 1px #08080a, 0 0 0 3px #3a3835;
+}
+.page-fiche .entete__banniere::after {
+  background:
+    linear-gradient(180deg, rgba(12,12,12,.15) 0%, transparent 30%, rgba(12,12,12,.6) 68%, rgba(12,12,12,.95) 100%);
+}
+.page-fiche .entete__infos {
+  position: static;          /* la bannière du titre se place par rapport à tout l'en-tête */
+  align-items: flex-end;
+  gap: 22px;
+  padding: 140px 40px 30px;
+}
+
+/* Avatar dans une niche en arc brisé (ogive taillée en facettes) */
+.entete__medaillon {
+  --ogive: polygon(0 100%, 0 40%, 7% 22%, 20% 9%, 50% 0, 80% 9%, 93% 22%, 100% 40%, 100% 100%);
+  flex-shrink: 0;
+  padding: 5px;
+  clip-path: var(--ogive);
+  background: linear-gradient(160deg, #8c877f 0 30%, #5c5853 30.1% 62%, #3f3c38 62.1%);
+}
+.entete__medaillon:has(img[hidden]) { display: none; }
+.page-fiche .entete__avatar {
+  display: block;
+  width: 100px;
+  height: 126px;
+  border: 0;
+  border-radius: 0;
+  outline: 0;
+  object-fit: cover;
+  clip-path: var(--ogive);
+}
+
+.page-fiche .entete h1 {
+  margin-bottom: 4px;
+  font-size: clamp(1.6rem, 4vw, 2.4rem);
+  line-height: 1.15;
+  color: var(--parchemin);
+  letter-spacing: .04em;
+  text-shadow: 0 2px 4px rgba(0,0,0,.95), 0 0 24px rgba(0,0,0,.7);
+}
+
+/* Titre équipé : bannière de tissu suspendue à une tringle de fer, bas fendu */
+.page-fiche .entete__titre {
+  position: absolute;
+  top: 0;
+  right: 56px;
+  z-index: 2;
+  width: 150px;
+  margin: 0;
+  padding: 34px 16px 46px;
+  font-family: "Cinzel","Cinzel Repli", serif;
+  font-size: .86rem;
+  font-style: normal;
+  line-height: 1.35;
+  letter-spacing: .1em;
+  text-align: center;
+  color: #f6efe2;
+  text-shadow: 0 1px 2px rgba(0,0,0,.7);
+  background:
+    linear-gradient(180deg, #44464c 0 4px, #1c1d20 4px 12px, transparent 12px),       /* tringle */
+    linear-gradient(90deg, rgba(0,0,0,.28) 0 14%, rgba(255,255,255,.07) 14% 34%,       /* plis */
+                    transparent 34% 58%, rgba(0,0,0,.16) 58% 78%, rgba(255,255,255,.05) 78% 90%, rgba(0,0,0,.3) 90%),
+    var(--vif);
+  box-shadow: inset 0 -1px 0 rgba(0,0,0,.4);
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% calc(100% - 24px), 0 100%);
+  /* contour sombre : la bannière reste lisible même sur une image très rouge */
+  filter: drop-shadow(0 0 1px #000) drop-shadow(0 0 1px #000) drop-shadow(0 8px 10px rgba(0,0,0,.7));
+}
+/* Liseré cousu sur le tissu */
+.page-fiche .entete__titre::before {
+  content: "";
+  position: absolute;
+  inset: 18px 7px 7px;
+  border: 1px dashed rgba(246,239,226,.35);
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% calc(100% - 22px), 0 100%);
+  pointer-events: none;
+}
+.page-fiche .entete__titre:empty { display: none; }
+
+
+/* ---------- Personnage ---------- */
+.page-fiche .perso__entete {
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  margin-bottom: 26px;
+  padding-bottom: 18px;
+  text-align: center;
+  border-bottom: 0;
+  background:
+    linear-gradient(90deg, transparent, rgba(0,0,0,.8), transparent) bottom 1px left / 100% 1px no-repeat,
+    linear-gradient(90deg, transparent, rgba(255,255,255,.1), transparent) bottom / 100% 1px no-repeat;
+}
+.page-fiche .perso__nom {
+  font-size: clamp(1.5rem, 3.5vw, 2.1rem);
+  color: #ece6da;
+  text-shadow: var(--grave);
+}
+.page-fiche .perso__sous-titre { font-size: 1.05rem; color: var(--gris); }
+
+/* Tuiles taillées (CA, attributs) : contour + remplissage de même forme */
+.page-fiche .jauge--badge,
+.page-fiche .attribut {
+  position: relative;
+  isolation: isolate;
+  border: 0;
+  background: none;
+}
+.page-fiche .jauge--badge::before,
+.page-fiche .jauge--badge::after,
+.page-fiche .attribut::before,
+.page-fiche .attribut::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  clip-path: var(--forme);
+}
+
+/* CA : plaque de fer octogonale, quatre rivets */
+.page-fiche .perso__jauges { align-items: center; gap: 20px; margin-bottom: 28px; }
+.page-fiche .jauge--badge {
+  --forme: polygon(28% 0, 72% 0, 100% 28%, 100% 72%, 72% 100%, 28% 100%, 0 72%, 0 28%);
+  width: 68px;
+  height: 68px;
+  padding: 0;
+}
+.page-fiche .jauge--badge::before { inset: 0; background: #0b0b0c; }
+.page-fiche .jauge--badge::after {
+  inset: 1px;
+  background:
+    radial-gradient(circle at 24% 50%, #8a8c93 0 2px, transparent 2.5px),
+    radial-gradient(circle at 76% 50%, #8a8c93 0 2px, transparent 2.5px),
+    radial-gradient(circle at 50% 12%, #8a8c93 0 2px, transparent 2.5px),
+    radial-gradient(circle at 50% 88%, #8a8c93 0 2px, transparent 2.5px),
+    linear-gradient(160deg, #4a4c52 0 35%, #313237 35.1% 65%, #26272b 65.1%);
+}
+.page-fiche .jauge--badge .jauge__label { font-size: .6rem; color: #c3c5cb; }
+.page-fiche .jauge--badge .jauge__valeur { font-size: 1.3rem; line-height: 1; color: #f1ede6; text-shadow: 0 1px 2px #000; }
+
+/* PV / XP : tubes cerclés de fer */
+.page-fiche .jauge__tete .jauge__label {
+  font-family: "Cinzel","Cinzel Repli", serif;
+  font-size: .74rem;
+  letter-spacing: .16em;
+  color: #d6cfc2;
+  text-shadow: var(--grave);
+}
+.page-fiche .jauge__piste {
+  height: 14px;
+  padding: 2px;
+  border: 1px solid #08080a;
+  clip-path: none;
+  background: linear-gradient(180deg, #4a4c52, #26272b);
+  box-shadow: inset 0 0 0 100vmax transparent;
+}
+.page-fiche .jauge__remplissage {
+  clip-path: none;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.2), inset 0 -2px 0 rgba(0,0,0,.25);
+}
+.page-fiche .jauge__piste:has(.jauge__remplissage) { background-color: #0d0d0e; }
+.page-fiche .jauge__piste { background: #0d0d0e; box-shadow: 0 0 0 2px #3c3e44, inset 0 2px 3px #000; }
+.page-fiche .jauge--pv .jauge__remplissage { background: linear-gradient(180deg, #a54a4f 0 45%, #7a2c31 45.1%); }
+.page-fiche .jauge--xp .jauge__remplissage { background: linear-gradient(180deg, #cfcabf 0 45%, #959086 45.1%); }
+
+/* Attributs : six pierres taillées, lettres gravées */
+.page-fiche .perso__attributs {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 28px;
+  border: 0;
+}
+.page-fiche .attribut {
+  --forme: polygon(0 0, 100% 0, 92% 100%, 8% 100%);
+  justify-content: center;
+  aspect-ratio: 1.05;
+  width: 100%;
+  max-width: 100px;
+  margin: 0 auto;
+  padding: 0;
+  transition: transform .2s ease;
+}
+.page-fiche .attribut::before { inset: 0; background: #0a0a0b; }
+.page-fiche .attribut::after {
+  inset: 1px;
+  background:
+    linear-gradient(200deg, rgba(255,255,255,.08) 0 28%, transparent 28.1%),
+    linear-gradient(140deg, transparent 0 62%, rgba(0,0,0,.28) 62.1%),
+    linear-gradient(180deg, #4a4642, #33302d);
+}
+.page-fiche .attribut:hover { transform: translateY(-3px); }
+.page-fiche .attribut__valeur { font-size: 1.35rem; line-height: 1.1; color: #f1ece2; text-shadow: var(--grave); }
+.page-fiche .attribut__label {
+  font-family: "Cinzel","Cinzel Repli", serif;
+  font-size: .66rem;
+  letter-spacing: .16em;
+  color: #bdb6aa;
+  text-shadow: var(--grave);
+}
+.page-fiche .attribut--pos .attribut__valeur { color: #b9d0bd; }
+.page-fiche .attribut--neg .attribut__valeur { color: #dba1a1; }
+
+/* Veine : étiquette de parchemin */
+.page-fiche .chip {
+  gap: 10px;
+  padding: 6px 22px;
+  border: 0;
+  border-radius: 0;
+  background:
+    linear-gradient(160deg, rgba(255,255,255,.35) 0 30%, transparent 30.1%),
+    linear-gradient(20deg, rgba(120,100,70,.18) 0 35%, transparent 35.1%),
+    #d9cfbb;
+  clip-path: polygon(0 0, 100% 0, calc(100% - 8px) 50%, 100% 100%, 0 100%, 8px 50%);
+  filter: drop-shadow(0 3px 4px rgba(0,0,0,.5));
+}
+.page-fiche .chip::before { content: none; }
+.page-fiche .chip__label { color: #6d6253; font-family: "Cinzel","Cinzel Repli", serif; }
+.page-fiche .chip__valeur { color: var(--encre); }
+
+/* Champs divers */
+.page-fiche .stats--autres { border-top-color: rgba(0,0,0,.6); }
+.page-fiche .stat dt { font-family: "Cinzel","Cinzel Repli", serif; color: #bdb6aa; }
+
+/* Inventaire : coffre en bois cerclé de fer */
+.page-fiche .perso__inventaire {
+  padding: 16px 22px 16px;
+  border: 0;
+  border-radius: 0;
+  background:
+    linear-gradient(90deg, #26272b 0 10px, #4a4c52 10px 11px, transparent 11px calc(100% - 11px), #4a4c52 calc(100% - 11px) calc(100% - 10px), #26272b calc(100% - 10px)),
+    repeating-linear-gradient(180deg, #3d342b 0 24px, #2e2720 24px 26px, #382f27 26px 50px, #241e19 50px 52px),
+    #342c24;
+  box-shadow: 0 0 0 1px #08080a, inset 0 2px 0 rgba(255,255,255,.08), 0 8px 18px rgba(0,0,0,.5);
+}
+.page-fiche .perso__inventaire > dt {
+  font-family: "Cinzel","Cinzel Repli", serif;
+  color: #e3d9c8;
+  letter-spacing: .16em;
+  text-shadow: 0 1px 2px #000;
+}
+.page-fiche .objet-image {
+  aspect-ratio: 1;
+  border: 0;
+  border-radius: 0;
+  clip-path: none;
+  background: radial-gradient(circle at 50% 40%, rgba(255,255,255,.05), transparent 70%), #17130f;
+  box-shadow: inset 0 3px 8px rgba(0,0,0,.9), 0 0 0 2px #26272b, 0 0 0 3px #08080a;
+  transition: box-shadow .15s;
+}
+.page-fiche .objet-image:hover { box-shadow: inset 0 3px 8px rgba(0,0,0,.9), 0 0 0 2px #5d6067, 0 0 0 3px #08080a; }
+.page-fiche .objet-image--choisi { box-shadow: inset 0 3px 8px rgba(0,0,0,.9), 0 0 0 2px #cfc8bb, 0 0 0 3px #08080a; }
+.page-fiche .objet-fiche { border-top-color: rgba(0,0,0,.5); }
+.page-fiche .objet-fiche__nom { color: #f1ece2; }
+.page-fiche .objet-fiche__desc { color: #cfc4b2; }
+
+/* Bourse */
+.page-fiche .perso__bourse-label {
+  font-family: "Cinzel","Cinzel Repli", serif;
+  letter-spacing: .22em;
+  color: #d6cfc2;
+  text-shadow: var(--grave);
+}
+.page-fiche .perso__bourse-valeur #solde { color: #f1ece2; }
+
+
+/* ---------- Deck ---------- */
+.page-fiche .deck { text-align: center; }
+.page-fiche .deck .deck-tete { justify-content: center; margin-bottom: 24px; }
+.page-fiche .carte .deck-nom {
+  font-size: 1.15rem;
+  letter-spacing: .24em;
+  text-transform: uppercase;
+  color: #d6cfc2;
+  text-shadow: var(--grave);
+}
+.page-fiche .deck-emplacement:not(.deck-emplacement--plein) {
+  border: 0;
+  background: rgba(0,0,0,.4);
+  box-shadow: inset 0 3px 10px rgba(0,0,0,.9), 0 1px 0 rgba(255,255,255,.06);
+}
+
+/* Bouton de fer forgé, rivets aux extrémités */
+.page-fiche .btn-collection,
+.page-fiche #non-connecte .btn-discord {
+  margin-top: 24px;
+  padding: 9px 30px;
+  border: 1px solid #08080a;
+  clip-path: none;
+  color: #ece6da;
+  text-shadow: 0 1px 1px #000;
+  background:
+    radial-gradient(circle at 12px 50%, #8a8c93 0 2px, transparent 2.5px),
+    radial-gradient(circle at calc(100% - 12px) 50%, #8a8c93 0 2px, transparent 2.5px),
+    linear-gradient(180deg, #4a4c52, #2a2b30);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.18), 0 4px 10px rgba(0,0,0,.5);
+  transition: filter .15s, transform .15s;
+}
+.page-fiche .btn-collection:hover { background: radial-gradient(circle at 12px 50%, #8a8c93 0 2px, transparent 2.5px), radial-gradient(circle at calc(100% - 12px) 50%, #8a8c93 0 2px, transparent 2.5px), linear-gradient(180deg, #5a5c63, #33343a); color: #fff; transform: translateY(-1px); }
+
+
+/* ---------- Duel : même dalle que les autres ---------- */
+.page-fiche .carte.duel { padding: 34px; }
+.page-fiche .duel__sur { color: var(--gris); }
+.page-fiche .carte .duel__titre { color: #ece6da; text-shadow: var(--grave); }
+
+
+/* ---------- Collection / Historique : feuillets de parchemin ---------- */
+.page-fiche .grille { gap: 0 30px; }
+.page-fiche #prive .liste {
+  padding: 4px 18px;
+  color: var(--encre);
+  background:
+    linear-gradient(200deg, rgba(255,255,255,.3) 0 22%, transparent 22.1%),
+    linear-gradient(150deg, transparent 0 70%, rgba(120,100,70,.14) 70.1%),
+    linear-gradient(180deg, #e2d9c6, #cfc3ab);
+  box-shadow: inset 0 0 30px rgba(110,85,50,.25), 0 6px 14px rgba(0,0,0,.5);
+  scrollbar-color: #9c8f78 transparent;
+}
+.page-fiche #prive .liste > li { border-bottom: 1px solid rgba(60,45,30,.18); }
+.page-fiche #prive .liste .vide { color: #6d6253; }
+.page-fiche #prive strong { color: var(--encre); }
+.page-fiche .objet__type,
+.page-fiche .transac small { font-family: "Cinzel","Cinzel Repli", serif; font-size: .68rem; letter-spacing: .12em; color: #7a6d5b; }
+.page-fiche .objet__qte { color: #7a6d5b; }
+.page-fiche #prive .btn-petit--equiper { border-color: var(--encre); color: var(--encre); }
+.page-fiche #prive .btn-petit--equiper:hover { background: var(--encre); color: #e2d9c6; }
+.page-fiche #prive .btn-petit--retirer { border-color: #8a2a2f; color: #8a2a2f; }
+.page-fiche #prive .btn-petit--retirer:hover { background: #8a2a2f; color: #f3ece0; }
+.page-fiche #prive .gain { color: #3f6b4a; }
+.page-fiche #prive .perte { color: #8a2a2f; }
+
+
+/* ---------- Non connecté / chargement ---------- */
+.page-fiche #non-connecte { padding: 50px 30px; }
+.page-fiche #non-connecte p { margin-left: auto; margin-right: auto; color: var(--gris); }
+.page-fiche #chargement { margin-top: 60px; text-align: center; max-width: none; }
+
+
+/* ---------- Téléphones ---------- */
+@media (max-width: 600px) {
+  .page-fiche .carte { padding: 28px 18px 24px; }
+  .page-fiche .carte::before,
+  .page-fiche .entete::before { background-size: 32px, 32px, 32px, 32px; }
+  /* Niche + nom en colonne : le cadre grandit au lieu de garder les proportions
+     de la bannière (sinon la niche est coupée en haut) */
+  .page-fiche .entete { aspect-ratio: auto !important; }
+  .page-fiche .entete__banniere { inset: 8px; background-size: cover; }
+  .page-fiche .entete__infos { flex-direction: column; align-items: center; text-align: center; gap: 12px; padding: 80px 18px 26px; }
+  .page-fiche .entete__avatar { width: 84px; height: 106px; }
+  /* La bannière suspendue redevient une bande sous le nom */
+  .page-fiche .entete__titre {
+    position: static;
+    width: auto;
+    padding: 5px 26px;
+    background: var(--vif);
+    clip-path: polygon(0 0, 100% 0, calc(100% - 10px) 50%, 100% 100%, 0 100%, 10px 50%);
+  }
+  .page-fiche .entete__titre::before { content: none; }
+  .page-fiche .perso__attributs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .page-fiche .attribut { border: 0 !important; }
+  /* Bourse empilée sous l'inventaire : elle ne remonte plus sur lui */
+  .page-fiche .perso__bourse-contenu { margin-top: 0; }
+  .fiche-sur { font-size: .6rem; letter-spacing: .16em; padding: 8px 14px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-fiche .attribut { transition: none; }
+}

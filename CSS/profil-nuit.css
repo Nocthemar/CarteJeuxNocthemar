@@ -1,0 +1,419 @@
+/* =====================================================================
+   Page profil.html — style Nocthémar : low poly + fantasy médiévale
+   Formes facettées, silhouettes nettes, gris / noir / blanc / bleu nuit
+   peu saturés, un seul élément vraiment coloré (--vif), lumière douce.
+
+   Chargé uniquement par profil.html, après CSS/compte.css et CSS/cartes-jeu.css.
+   Tout est rangé sous .page-fiche : la boutique, la collection, le jeu et la
+   page MJ (qui partagent .page-profil) ne sont pas touchés.
+   Pour revenir à l'ancien profil : retirer ce fichier et la classe page-fiche.
+   ===================================================================== */
+
+.page-fiche {
+  --nuit: #0b0e14;
+  --ardoise: #141821;
+  --ardoise-2: #1b202b;
+  --ligne: rgba(196,208,230,.16);
+  --ligne-forte: rgba(196,208,230,.32);
+  --argent: #c3ccda;
+  --blanc: #eef1f6;
+  --gris: #8d96a6;
+  --vif: #c22f38;          /* l'élément coloré de la page ; profil.js le remplace par le thème équipé */
+  --pan: 14px;             /* taille des pans coupés (coins facettés) */
+
+  /* Mêmes variables que compte.css, ramenées vers la palette froide */
+  --texte: var(--blanc);
+  --texte-doux: var(--gris);
+  --bord: var(--ligne);
+
+  color: var(--blanc);
+  /* Fond low poly (ciel de nuit, lune, montagnes) + voile + vignette de cinéma */
+  background:
+    radial-gradient(ellipse 120% 90% at 50% 40%, transparent 55%, rgba(0,0,0,.55) 100%),
+    linear-gradient(180deg, rgba(11,14,20,.15) 0%, rgba(11,14,20,.55) 45%, rgba(11,14,20,.85) 100%),
+    url("../img/Fond/profil-lowpoly.svg") center bottom / cover no-repeat,
+    var(--nuit);
+  background-attachment: fixed;
+}
+
+.page-fiche .profil-wrap { max-width: 960px; padding-top: 18px; }
+
+
+/* ---------- Bandeau du registre ---------- */
+.fiche-sur {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  max-width: none;
+  margin: 8px 0 18px;
+  font-family: "Cinzel","Cinzel Repli", serif;
+  font-size: .72rem;
+  letter-spacing: .3em;
+  text-transform: uppercase;
+  text-align: center;
+  color: var(--argent);
+  opacity: .75;
+}
+.fiche-sur span { flex: 1; height: 1px; background: linear-gradient(90deg, transparent, var(--ligne-forte)); }
+.fiche-sur span:last-child { transform: scaleX(-1); }
+
+
+/* ---------- Panneaux facettés ----------
+   Le panneau lui-même sert de bordure (couleur du trait), ::before le remplit
+   un pixel plus à l'intérieur ; les deux ont les mêmes pans coupés. */
+.page-fiche .carte,
+.page-fiche .entete {
+  --coupe: polygon(var(--pan) 0, calc(100% - var(--pan)) 0, 100% var(--pan), 100% calc(100% - var(--pan)),
+                   calc(100% - var(--pan)) 100%, var(--pan) 100%, 0 calc(100% - var(--pan)), 0 var(--pan));
+  position: relative;
+  isolation: isolate;
+  border: 0;
+  box-shadow: none;
+  clip-path: var(--coupe);
+  background: linear-gradient(160deg, var(--ligne-forte), var(--ligne) 40%, rgba(196,208,230,.08) 70%, var(--ligne-forte));
+}
+.page-fiche .carte { margin-top: 30px; padding: 30px 32px 28px; }
+.page-fiche .carte::before {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  z-index: -1;
+  clip-path: var(--coupe);
+  -webkit-mask-image: none;
+          mask-image: none;
+  /* Facettes : aplats aux arêtes nettes, éclairés par le haut à droite (la lune) */
+  background:
+    linear-gradient(200deg, rgba(200,214,240,.07) 0 18%, transparent 18.1%),
+    linear-gradient(160deg, transparent 0 62%, rgba(200,214,240,.035) 62.1% 78%, transparent 78.1%),
+    linear-gradient(115deg, rgba(0,0,0,.18) 0 22%, transparent 22.1%),
+    linear-gradient(180deg, var(--ardoise-2), var(--ardoise));
+  opacity: .96;
+}
+.page-fiche .carte::after { content: none; }
+
+/* Titres de section : capitales argentées entre deux filets */
+.page-fiche .carte > h2 {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 0 0 22px;
+  font-family: "Cinzel","Cinzel Repli", serif;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: .24em;
+  text-transform: uppercase;
+  color: var(--argent);
+}
+.page-fiche .carte > h2::before,
+.page-fiche .carte > h2::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--ligne-forte));
+}
+.page-fiche .carte > h2::after { transform: scaleX(-1); }
+#prive .carte > h2 { font-size: .86rem; color: var(--argent); }
+
+
+/* ---------- En-tête : bannière, avatar octogonal, ruban coloré ---------- */
+.page-fiche .entete { padding: 1px; }
+.page-fiche .entete__banniere {
+  inset: 1px;
+  clip-path: var(--coupe);
+  background-color: var(--ardoise);
+}
+.page-fiche .entete__banniere::after {
+  background:
+    linear-gradient(180deg, rgba(11,14,20,.2) 0%, transparent 30%, rgba(11,14,20,.6) 68%, rgba(11,14,20,.95) 100%);
+}
+.page-fiche .entete__infos {
+  align-items: center;
+  gap: 22px;
+  padding: 140px 34px 26px;
+}
+
+/* Avatar dans un octogone serti d'argent facetté */
+.entete__medaillon {
+  --octo: polygon(29% 0, 71% 0, 100% 29%, 100% 71%, 71% 100%, 29% 100%, 0 71%, 0 29%);
+  flex-shrink: 0;
+  padding: 4px;
+  clip-path: var(--octo);
+  background: conic-gradient(from 20deg, #f2f5fa, #8790a0, #d9dfe9, #5d6574, #eef1f6, #7b8494, #f2f5fa);
+}
+.entete__medaillon:has(img[hidden]) { display: none; }
+.page-fiche .entete__avatar {
+  display: block;
+  width: 104px;
+  height: 104px;
+  border: 0;
+  border-radius: 0;
+  outline: 0;
+  clip-path: var(--octo);
+}
+
+.page-fiche .entete h1 {
+  font-size: clamp(1.6rem, 4vw, 2.3rem);
+  line-height: 1.15;
+  color: var(--blanc);
+  letter-spacing: .04em;
+  text-shadow: 0 2px 4px rgba(0,0,0,.9), 0 0 24px rgba(0,0,0,.6);
+}
+
+/* Titre équipé : l'élément coloré de l'en-tête, en ruban facetté */
+.page-fiche .entete__titre {
+  display: inline-block;
+  margin: 10px 0 0;
+  padding: 4px 24px;
+  font-family: "Cinzel","Cinzel Repli", serif;
+  font-size: .8rem;
+  font-style: normal;
+  letter-spacing: .14em;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0,0,0,.6);
+  background:
+    linear-gradient(160deg, rgba(255,255,255,.18) 0 35%, transparent 35.1%),
+    linear-gradient(20deg, rgba(0,0,0,.25) 0 40%, transparent 40.1%),
+    var(--vif);
+  clip-path: polygon(0 0, 100% 0, calc(100% - 12px) 50%, 100% 100%, 0 100%, 12px 50%);
+}
+.page-fiche .entete__titre:empty { display: none; }
+
+
+/* ---------- Personnage ---------- */
+.page-fiche .perso__entete {
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 24px;
+  padding-bottom: 18px;
+  text-align: center;
+  border-bottom: 0;
+  background: linear-gradient(90deg, transparent, var(--ligne-forte), transparent) bottom / 100% 1px no-repeat;
+}
+.page-fiche .perso__nom {
+  font-size: clamp(1.5rem, 3.5vw, 2rem);
+  color: var(--blanc);
+  letter-spacing: .03em;
+}
+.page-fiche .perso__sous-titre { font-size: 1.05rem; color: var(--gris); }
+
+/* Tuile facettée réutilisée (CA, attributs) : trait clair + remplissage, mêmes pans */
+.page-fiche .jauge--badge,
+.page-fiche .attribut {
+  position: relative;
+  isolation: isolate;
+  border: 0;
+  background: none;
+}
+.page-fiche .jauge--badge::before,
+.page-fiche .jauge--badge::after,
+.page-fiche .attribut::before,
+.page-fiche .attribut::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  clip-path: var(--forme);
+}
+.page-fiche .jauge--badge::before,
+.page-fiche .attribut::before { inset: 0; background: linear-gradient(160deg, rgba(220,228,242,.55), rgba(140,152,172,.2) 55%, rgba(220,228,242,.35)); }
+.page-fiche .jauge--badge::after,
+.page-fiche .attribut::after {
+  inset: 1.5px;
+  background:
+    linear-gradient(205deg, rgba(200,214,240,.1) 0 30%, transparent 30.1%),
+    linear-gradient(145deg, transparent 0 60%, rgba(0,0,0,.25) 60.1%),
+    linear-gradient(180deg, #212734, #12161e);
+}
+
+/* Jauges : CA en hexagone, PV et XP en barres taillées */
+.page-fiche .perso__jauges { align-items: center; gap: 18px; margin-bottom: 26px; }
+.page-fiche .jauge--badge {
+  --forme: polygon(50% 0, 100% 22%, 100% 78%, 50% 100%, 0 78%, 0 22%);
+  width: 62px;
+  height: 70px;
+  padding: 0;
+}
+.page-fiche .jauge--badge .jauge__label { font-size: .62rem; color: var(--gris); }
+.page-fiche .jauge--badge .jauge__valeur { font-size: 1.3rem; line-height: 1; }
+.page-fiche .jauge--ca .jauge__valeur { color: var(--blanc); }
+
+.page-fiche .jauge__tete .jauge__label {
+  font-family: "Cinzel","Cinzel Repli", serif;
+  font-size: .72rem;
+  letter-spacing: .16em;
+  color: var(--argent);
+}
+.page-fiche .jauge__piste {
+  height: 12px;
+  padding: 2px;
+  border: 0;
+  background: linear-gradient(90deg, var(--ligne-forte), var(--ligne));
+  clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%);
+}
+.page-fiche .jauge__remplissage { clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%); }
+.page-fiche .jauge__piste { box-shadow: inset 0 0 0 100vmax #0b0e14; }
+.page-fiche .jauge--pv .jauge__remplissage {
+  background: linear-gradient(180deg, #a8454b 0 50%, #7d2a30 50.1%);
+}
+.page-fiche .jauge--xp .jauge__remplissage {
+  background: linear-gradient(180deg, #c9d3e4 0 50%, #8e9bb2 50.1%);
+}
+
+/* Attributs : six tuiles hexagonales */
+.page-fiche .perso__attributs {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 26px;
+  border: 0;
+}
+.page-fiche .attribut {
+  --forme: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%);
+  justify-content: center;
+  aspect-ratio: 1.15;
+  width: 100%;
+  max-width: 104px;
+  margin: 0 auto;
+  padding: 0;
+  transition: transform .2s ease;
+}
+.page-fiche .attribut:hover { transform: translateY(-3px); }
+.page-fiche .attribut__valeur { font-size: 1.3rem; line-height: 1.1; color: var(--blanc); }
+.page-fiche .attribut__label {
+  font-family: "Cinzel","Cinzel Repli", serif;
+  font-size: .64rem;
+  letter-spacing: .16em;
+  color: var(--gris);
+}
+.page-fiche .attribut--pos .attribut__valeur { color: #a9c7b3; }
+.page-fiche .attribut--neg .attribut__valeur { color: #cf8a8a; }
+
+/* Veine : étiquette taillée, petit cristal */
+.page-fiche .chip {
+  gap: 10px;
+  padding: 6px 20px 6px 14px;
+  border: 0;
+  border-radius: 0;
+  background:
+    linear-gradient(160deg, rgba(200,214,240,.08) 0 40%, transparent 40.1%),
+    rgba(11,14,20,.6);
+  box-shadow: inset 0 0 0 1px var(--ligne-forte);
+  clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
+}
+.page-fiche .chip::before {
+  content: "";
+  width: 10px;
+  height: 14px;
+  background: linear-gradient(90deg, #e9eef7 0 50%, #9aa6ba 50.1%);
+  clip-path: polygon(50% 0, 100% 40%, 50% 100%, 0 40%);
+}
+.page-fiche .chip__label { color: var(--gris); font-family: "Cinzel","Cinzel Repli", serif; }
+.page-fiche .chip__valeur { color: var(--blanc); }
+
+/* Champs divers */
+.page-fiche .stats--autres { border-top-color: var(--ligne); }
+.page-fiche .stat dt { font-family: "Cinzel","Cinzel Repli", serif; color: var(--gris); }
+
+/* Inventaire : emplacements taillés */
+.page-fiche .perso__inventaire {
+  padding: 14px 16px;
+  border: 0;
+  border-radius: 0;
+  background: rgba(11,14,20,.45);
+  box-shadow: inset 0 0 0 1px var(--ligne);
+}
+.page-fiche .perso__inventaire > dt {
+  font-family: "Cinzel","Cinzel Repli", serif;
+  color: var(--argent);
+  letter-spacing: .16em;
+}
+.page-fiche .objet-image {
+  aspect-ratio: 1;
+  border: 0;
+  background:
+    linear-gradient(205deg, rgba(200,214,240,.07) 0 30%, transparent 30.1%),
+    #0d1118;
+  box-shadow: inset 0 0 0 1px var(--ligne);
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+  transition: box-shadow .15s;
+}
+.page-fiche .objet-image:hover { box-shadow: inset 0 0 0 1px var(--ligne-forte); }
+.page-fiche .objet-image--choisi { box-shadow: inset 0 0 0 1px var(--argent); }
+.page-fiche .objet-fiche { border-top-color: var(--ligne); }
+.page-fiche .objet-fiche__nom { color: var(--blanc); }
+
+/* Bourse */
+.page-fiche .perso__bourse-label {
+  font-family: "Cinzel","Cinzel Repli", serif;
+  letter-spacing: .22em;
+  color: var(--argent);
+}
+.page-fiche .perso__bourse-valeur #solde { color: var(--blanc); }
+
+
+/* ---------- Deck ---------- */
+.page-fiche .deck { text-align: center; }
+.page-fiche .deck .deck-tete { justify-content: center; margin-bottom: 22px; }
+.page-fiche .carte .deck-nom {
+  font-size: 1.1rem;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: var(--argent);
+}
+.page-fiche .deck-emplacement:not(.deck-emplacement--plein) {
+  border: 1px dashed var(--ligne-forte);
+  background: rgba(11,14,20,.45);
+}
+.page-fiche .btn-collection {
+  margin-top: 22px;
+  padding: 8px 24px;
+  border: 1px solid var(--ligne-forte);
+  color: var(--blanc);
+  background: rgba(11,14,20,.45);
+  clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
+}
+.page-fiche .btn-collection:hover { background: var(--blanc); color: var(--nuit); }
+
+
+/* ---------- Duel : même panneau que les autres ---------- */
+.page-fiche .carte.duel { padding: 32px; }
+.page-fiche .duel__sur { color: var(--gris); }
+.page-fiche .carte .duel__titre { color: var(--blanc); text-shadow: none; }
+
+
+/* ---------- Collection / Historique ---------- */
+.page-fiche .grille { gap: 0 28px; }
+.page-fiche .liste > li { border-bottom: 1px solid var(--ligne); }
+.page-fiche .objet__type,
+.page-fiche .transac small { font-family: "Cinzel","Cinzel Repli", serif; font-size: .68rem; letter-spacing: .12em; color: var(--gris); }
+.page-fiche .btn-petit--equiper { border-color: var(--argent); color: var(--argent); }
+.page-fiche .btn-petit--equiper:hover { background: var(--argent); color: var(--nuit); }
+.page-fiche .gain { color: #a9c7b3; }
+.page-fiche .perte { color: #cf8a8a; }
+
+
+/* ---------- Non connecté / chargement ---------- */
+.page-fiche #non-connecte { padding: 46px 30px; }
+.page-fiche #non-connecte p { margin-left: auto; margin-right: auto; color: var(--gris); }
+.page-fiche #chargement { margin-top: 60px; text-align: center; max-width: none; }
+
+
+/* ---------- Téléphones ---------- */
+@media (max-width: 600px) {
+  .page-fiche { --pan: 10px; }
+  .page-fiche .carte { padding: 24px 18px 22px; }
+  /* Avatar + nom en colonne : le cadre grandit au lieu de garder les proportions
+     de la bannière (sinon l'avatar est coupé en haut) */
+  .page-fiche .entete { aspect-ratio: auto !important; }
+  .page-fiche .entete__banniere { background-size: cover; }
+  .page-fiche .entete__infos { flex-direction: column; text-align: center; gap: 14px; padding: 90px 18px 22px; }
+  .page-fiche .entete__avatar { width: 84px; height: 84px; }
+  .page-fiche .perso__attributs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .page-fiche .attribut { border: 0 !important; }
+  /* Bourse empilée sous l'inventaire : elle ne remonte plus sur lui */
+  .page-fiche .perso__bourse-contenu { margin-top: 0; }
+  .fiche-sur { font-size: .62rem; letter-spacing: .18em; gap: 10px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-fiche .attribut { transition: none; }
+}

@@ -1,0 +1,413 @@
+/* =====================================================================
+   Page profil.html — style « écran de personnage »
+   Comme la feuille de personnage d'un jeu de rôle : grande bannière de
+   cinéma, verre sombre et filets fins, sections numérotées en chiffres
+   romains, grandes valeurs. Gris, noir, blanc, bleu nuit ; une seule
+   couleur vive : le titre du joueur (--vif).
+
+   Chargé uniquement par profil.html, après CSS/compte.css et CSS/cartes-jeu.css.
+   Tout est rangé sous .page-fiche : la boutique, la collection, le jeu et la
+   page MJ (qui partagent .page-profil) ne sont pas touchés.
+   Autres styles gardés : CSS/profil-nuit.css, CSS/profil-forteresse.css
+   (il suffit de changer le lien dans profil.html).
+   ===================================================================== */
+
+.page-fiche {
+  --nuit: #0a0c10;
+  --verre: rgba(13,15,20,.78);
+  --filet: rgba(222,228,238,.13);
+  --filet-fort: rgba(222,228,238,.3);
+  --blanc: #eef0f4;
+  --gris: #9198a4;
+  --gris-clair: #c5cad3;
+  --vif: #c22f38;          /* le titre du joueur ; profil.js le remplace par le thème équipé */
+
+  --texte: var(--blanc);
+  --texte-doux: var(--gris);
+  --bord: var(--filet);
+
+  color: var(--blanc);
+  counter-reset: section;
+  /* Paysage low poly très assombri, lumière qui tombe d'en haut */
+  background:
+    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(160,175,205,.08), transparent 70%),
+    linear-gradient(180deg, rgba(10,12,16,.55), rgba(10,12,16,.92) 60%),
+    url("../img/Fond/profil-lowpoly.svg") center bottom / cover no-repeat,
+    var(--nuit);
+  background-attachment: fixed;
+}
+
+.page-fiche .profil-wrap { max-width: 1040px; padding-top: 20px; }
+.page-fiche .fiche-sur { display: none; }
+
+
+/* ---------- Panneaux : verre sombre, filets, petits coins carrés ---------- */
+.page-fiche .carte {
+  position: relative;
+  margin-top: 26px;
+  padding: 30px 34px;
+  border: 1px solid var(--filet);
+  border-radius: 0;
+  background: var(--verre);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 24px 50px rgba(0,0,0,.45);
+  counter-increment: section;
+}
+/* lumière sur l'arête du haut */
+.page-fiche .carte::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; top: -1px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(240,244,250,.5), transparent);
+  pointer-events: none;
+}
+/* petits carrés aux quatre coins */
+.page-fiche .carte::before {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  pointer-events: none;
+  -webkit-mask-image: none;
+          mask-image: none;
+  background:
+    linear-gradient(var(--gris-clair), var(--gris-clair)) top left / 5px 5px no-repeat,
+    linear-gradient(var(--gris-clair), var(--gris-clair)) top right / 5px 5px no-repeat,
+    linear-gradient(var(--gris-clair), var(--gris-clair)) bottom left / 5px 5px no-repeat,
+    linear-gradient(var(--gris-clair), var(--gris-clair)) bottom right / 5px 5px no-repeat;
+  opacity: .7;
+}
+
+/* Titres de section : numéro romain, nom en capitales, filet qui file vers la droite */
+.page-fiche .carte > h2,
+.page-fiche .deck .deck-tete {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  margin: 0 0 24px;
+}
+.page-fiche .carte > h2,
+.page-fiche .carte .deck-nom {
+  font-family: "Cinzel","Cinzel Repli", serif;
+  font-size: .95rem;
+  font-weight: 700;
+  letter-spacing: .26em;
+  text-transform: uppercase;
+  color: var(--gris-clair);
+  text-shadow: none;
+}
+.page-fiche .carte > h2::before,
+.page-fiche .deck .deck-tete::before {
+  content: counter(section, upper-roman);
+  min-width: 1.6em;
+  font-family: "Cinzel","Cinzel Repli", serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  color: var(--blanc);
+}
+.page-fiche .carte > h2::after,
+.page-fiche .deck .deck-tete::after {
+  content: "";
+  flex: 1;
+  align-self: center;
+  height: 1px;
+  background: linear-gradient(90deg, var(--filet-fort), transparent);
+}
+.page-fiche .deck .deck-tete { flex-wrap: nowrap; }
+.page-fiche .deck .deck-tete .btn-petit--lien { order: 3; font-size: .85rem; color: var(--gris); }
+.page-fiche .deck .deck-tete .btn-petit--lien:hover { color: var(--blanc); }
+#prive .carte > h2 { font-size: .85rem; color: var(--gris-clair); }
+
+
+/* ---------- En-tête : bannière de cinéma ---------- */
+.page-fiche .entete {
+  border: 1px solid var(--filet);
+  border-radius: 0;
+  box-shadow: 0 30px 60px rgba(0,0,0,.55);
+}
+.page-fiche .entete__banniere::after {
+  background:
+    linear-gradient(90deg, rgba(10,12,16,.85) 0%, rgba(10,12,16,.35) 45%, transparent 70%),
+    linear-gradient(180deg, transparent 40%, rgba(10,12,16,.9) 100%);
+}
+.page-fiche .entete__infos {
+  align-items: flex-end;
+  gap: 28px;
+  padding: 150px 40px 36px;
+}
+
+/* Portrait : rectangle 4:5, double filet clair */
+.entete__medaillon { flex-shrink: 0; padding: 4px; border: 1px solid var(--filet-fort); background: rgba(10,12,16,.6); }
+.entete__medaillon:has(img[hidden]) { display: none; }
+.page-fiche .entete__avatar {
+  display: block;
+  width: 124px;
+  height: 155px;
+  border: 0;
+  border-radius: 0;
+  outline: 1px solid rgba(240,244,250,.18);
+  outline-offset: -1px;
+  object-fit: cover;
+}
+
+/* Titre équipé : petite ligne colorée au-dessus du nom */
+.page-fiche .entete__infos > div { display: flex; flex-direction: column; }
+.page-fiche .entete__titre {
+  order: -1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 8px;
+  font-family: "Cinzel","Cinzel Repli", serif;
+  font-size: .8rem;
+  font-style: normal;
+  letter-spacing: .28em;
+  text-transform: uppercase;
+  color: #f1eaea;
+  text-shadow: 0 1px 2px #000, 0 0 12px rgba(0,0,0,.9);
+}
+/* le trait coloré : seule touche de couleur vive de la page */
+.page-fiche .entete__titre::before {
+  content: "";
+  width: 40px;
+  height: 3px;
+  background: var(--vif);
+  box-shadow: 0 0 0 1px rgba(0,0,0,.6);
+}
+.page-fiche .entete__titre:empty { display: none; }
+
+.page-fiche .entete h1 {
+  font-size: clamp(2rem, 6vw, 3.6rem);
+  line-height: 1.02;
+  letter-spacing: .03em;
+  color: var(--blanc);
+  text-shadow: 0 4px 24px rgba(0,0,0,.8);
+}
+
+
+/* ---------- Personnage : deux colonnes (identité + jauges | attributs) ---------- */
+.page-fiche #perso {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-areas:
+    "entete   attributs"
+    "jauges   attributs"
+    "identite attributs"
+    "autres   autres";
+  align-content: start;
+  column-gap: 40px;
+}
+.page-fiche #perso > .perso__entete  { grid-area: entete; }
+.page-fiche #perso > .perso__jauges  { grid-area: jauges; }
+.page-fiche #perso > .perso__attributs { grid-area: attributs; align-self: start; }
+.page-fiche #perso > .perso__identite { grid-area: identite; }
+.page-fiche #perso > .stats--autres  { grid-area: autres; }
+.page-fiche #perso > .vide { grid-column: 1 / -1; }
+
+.page-fiche .perso__entete {
+  display: block;
+  margin: 0 0 22px;
+  padding: 0;
+  border: 0;
+}
+.page-fiche .perso__nom {
+  font-size: clamp(1.6rem, 3.4vw, 2.2rem);
+  line-height: 1.1;
+  color: var(--blanc);
+}
+.page-fiche .perso__sous-titre { margin-top: 4px; font-size: 1.05rem; font-style: italic; color: var(--gris); }
+
+/* Jauges : CA en grand chiffre, PV et XP en barres fines */
+.page-fiche .perso__jauges {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+.page-fiche .jauge--badge {
+  flex-direction: row;
+  align-items: baseline;
+  justify-content: flex-start;
+  gap: 12px;
+  min-width: 0;
+  padding: 0 0 14px;
+  border: 0;
+  border-bottom: 1px solid var(--filet);
+  background: none;
+}
+.page-fiche .jauge--badge .jauge__label {
+  font-family: "Cinzel","Cinzel Repli", serif;
+  font-size: .72rem;
+  letter-spacing: .2em;
+  color: var(--gris);
+}
+.page-fiche .jauge--badge .jauge__valeur { font-size: 2rem; line-height: 1; color: var(--blanc); }
+.page-fiche .jauge--barre { flex: none; min-width: 0; }
+.page-fiche .jauge__tete .jauge__label {
+  font-family: "Cinzel","Cinzel Repli", serif;
+  font-size: .72rem;
+  letter-spacing: .2em;
+  color: var(--gris);
+}
+.page-fiche .jauge__tete .jauge__valeur { font-family: "Cinzel","Cinzel Repli", serif; color: var(--blanc); }
+.page-fiche .jauge__piste {
+  height: 6px;
+  padding: 0;
+  border: 0;
+  background: rgba(222,228,238,.08);
+  box-shadow: none;
+  clip-path: none;
+}
+.page-fiche .jauge__remplissage { clip-path: none; box-shadow: none; }
+.page-fiche .jauge--pv .jauge__remplissage { background: linear-gradient(90deg, #6f262b, #b0464c); }
+.page-fiche .jauge--xp .jauge__remplissage { background: linear-gradient(90deg, #6d7584, #d7dce5); }
+
+/* Attributs : grille 3 × 2, grandes valeurs */
+.page-fiche .perso__attributs {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+  margin: 0 0 22px;
+  border: 1px solid var(--filet);
+}
+.page-fiche .attribut {
+  gap: 4px;
+  padding: 20px 8px 16px;
+  border: 0;
+  border-right: 1px solid var(--filet);
+  border-bottom: 1px solid var(--filet);
+  background: none;
+  transition: background .2s ease;
+}
+.page-fiche .attribut:nth-child(3n) { border-right: 0; }
+.page-fiche .attribut:nth-child(n+4) { border-bottom: 0; }
+.page-fiche .attribut:hover { background: rgba(222,228,238,.05); }
+.page-fiche .attribut__valeur { font-size: 2rem; line-height: 1; color: var(--blanc); }
+.page-fiche .attribut__label {
+  font-family: "Cinzel","Cinzel Repli", serif;
+  font-size: .7rem;
+  letter-spacing: .22em;
+  color: var(--gris);
+}
+.page-fiche .attribut--pos .attribut__valeur { color: #b8cdbf; }
+.page-fiche .attribut--neg .attribut__valeur { color: #d39b9b; }
+
+/* Veine : libellé + valeur, sans cadre */
+.page-fiche .perso__identite { margin-bottom: 0; }
+.page-fiche .chip {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  font-size: 1rem;
+}
+.page-fiche .chip__label { font-family: "Cinzel","Cinzel Repli", serif; font-size: .72rem; letter-spacing: .2em; color: var(--gris); }
+.page-fiche .chip__valeur { font-size: 1.1rem; color: var(--blanc); }
+
+/* Champs divers */
+.page-fiche .stats--autres { margin-top: 10px; border-top-color: var(--filet); }
+.page-fiche .stat dt { font-family: "Cinzel","Cinzel Repli", serif; letter-spacing: .14em; color: var(--gris); }
+
+/* Inventaire + bourse : rangée du bas, séparée par un filet */
+.page-fiche .perso__bas {
+  margin-top: 26px;
+  padding-top: 26px;
+  border-top: 1px solid var(--filet);
+  gap: 40px;
+}
+.page-fiche .perso__inventaire {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+}
+.page-fiche .perso__inventaire > dt {
+  font-family: "Cinzel","Cinzel Repli", serif;
+  font-size: .72rem;
+  letter-spacing: .2em;
+  color: var(--gris);
+}
+.page-fiche .objet-image {
+  aspect-ratio: 1;
+  border: 1px solid var(--filet);
+  border-radius: 0;
+  background: radial-gradient(circle at 50% 45%, rgba(222,228,238,.06), transparent 70%), rgba(10,12,16,.5);
+  transition: border-color .15s, background .15s;
+}
+.page-fiche .objet-image:hover { border-color: var(--filet-fort); }
+.page-fiche .objet-image--choisi { border-color: var(--blanc); background-color: rgba(222,228,238,.06); }
+.page-fiche .objet-fiche { border-top-color: var(--filet); padding-left: 0; padding-right: 0; }
+
+/* La rangée a son propre filet : « Bourse » ne remonte plus au-dessus */
+.page-fiche .perso__bourse-contenu { margin-top: 0; }
+.page-fiche .perso__bourse-label {
+  font-family: "Cinzel","Cinzel Repli", serif;
+  font-size: .72rem;
+  letter-spacing: .2em;
+  color: var(--gris);
+}
+.page-fiche .perso__bourse-valeur #solde { color: var(--blanc); }
+
+
+/* ---------- Deck ---------- */
+.page-fiche .deck-emplacement:not(.deck-emplacement--plein) {
+  border: 1px dashed var(--filet-fort);
+  background: rgba(10,12,16,.4);
+}
+.page-fiche .btn-collection {
+  margin-top: 24px;
+  padding: 9px 22px;
+  border: 1px solid var(--filet-fort);
+  color: var(--blanc);
+  background: transparent;
+  letter-spacing: .16em;
+}
+.page-fiche .btn-collection:hover { background: var(--blanc); color: var(--nuit); }
+
+
+/* ---------- Duel ---------- */
+.page-fiche .carte.duel { padding: 32px 34px; background: var(--verre); }
+.page-fiche .duel__sur { color: var(--gris); }
+.page-fiche .carte .duel__titre { color: var(--blanc); text-shadow: none; }
+
+
+/* ---------- Collection / Historique ---------- */
+.page-fiche .grille { gap: 0 26px; }
+.page-fiche .liste > li { border-bottom: 1px solid var(--filet); }
+.page-fiche .objet__type,
+.page-fiche .transac small { font-family: "Cinzel","Cinzel Repli", serif; font-size: .68rem; letter-spacing: .14em; color: var(--gris); }
+.page-fiche .btn-petit--equiper { border-color: var(--gris-clair); color: var(--gris-clair); }
+.page-fiche .btn-petit--equiper:hover { background: var(--gris-clair); color: var(--nuit); }
+.page-fiche .gain { color: #a9c7b3; }
+.page-fiche .perte { color: #cf8a8a; }
+
+
+/* ---------- Non connecté / chargement ---------- */
+.page-fiche #non-connecte { padding: 46px 30px; }
+.page-fiche #non-connecte p { margin-left: auto; margin-right: auto; color: var(--gris); }
+.page-fiche #chargement { margin-top: 60px; text-align: center; max-width: none; }
+
+
+/* ---------- Tablettes et téléphones ---------- */
+@media (max-width: 760px) {
+  .page-fiche #perso {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "entete" "jauges" "attributs" "identite" "autres";
+  }
+}
+@media (max-width: 600px) {
+  .page-fiche .carte { padding: 24px 18px; }
+  .page-fiche .entete { aspect-ratio: auto !important; }
+  .page-fiche .entete__banniere { background-size: cover; }
+  .page-fiche .entete__banniere::after {
+    background: linear-gradient(180deg, rgba(10,12,16,.2) 0%, rgba(10,12,16,.55) 45%, rgba(10,12,16,.95) 100%);
+  }
+  .page-fiche .entete__infos { flex-direction: column; align-items: flex-start; gap: 16px; padding: 110px 20px 24px; }
+  .page-fiche .entete__avatar { width: 96px; height: 120px; }
+  .page-fiche .attribut { border-top: 0 !important; border-left: 0 !important; }
+  .page-fiche .perso__bourse-contenu { margin-top: 0; }
+}

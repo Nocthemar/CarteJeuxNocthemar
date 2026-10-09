@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Profil — Nocthémar</title>
+  <link rel="icon" type="image/png" href="img/Logo/Nocthemar_logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800&family=Cinzel+Decorative:wght@700;900&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="CSS/polices.css">
+  <link rel="stylesheet" href="CSS/index.css">
+  <link rel="stylesheet" href="CSS/compte.css">
+  <link rel="stylesheet" href="CSS/cartes-jeu.css">
+  <link rel="stylesheet" href="CSS/carte-infos.css">
+  <link rel="stylesheet" href="CSS/profil.css">
+<!-- Thème clair / sombre (bouton dans la barre latérale) : appliqué avant l'affichage -->
+<script>try{if(localStorage.getItem('nocthemar-theme')==='jour')document.documentElement.dataset.theme='jour'}catch(e){}</script>
+<link rel="stylesheet" href="CSS/theme-jour.css">
+</head>
+<body class="page-profil page-fiche">
+
+  <header class="topbar">
+    <a class="brand" href="index.html">Nocthémar</a>
+    <span class="brand-sub">Duel des Couronnes</span>
+    <nav class="nav-links">
+      <a href="index.html">Accueil</a>
+      <a href="index.html#categories">Le Codex</a>
+    </nav>
+    <a href="boutique.html" class="nav-boutique">Boutique</a>
+    <div id="discord-auth"></div>
+  </header>
+
+  <main class="profil-wrap">
+
+    <p id="chargement" class="vide">Chargement du profil…</p>
+
+    <!-- Pas connecté -->
+    <section id="non-connecte" class="carte centre" hidden>
+      <h2>Ton profil de joueur</h2>
+      <p>Connecte-toi avec Discord pour voir ton deck, tes cartes et tes pièces.</p>
+      <button id="btn-connexion" type="button" class="btn-discord">
+        <span class="btn-discord__logo" aria-hidden="true"></span>
+        Connecter Discord
+      </button>
+    </section>
+
+    <!-- Profil -->
+    <div id="profil" hidden>
+
+      <!-- Bandeau du registre (décor) -->
+      <p class="fiche-sur" aria-hidden="true"><span></span>Registre des aventuriers de Nocthémar<span></span></p>
+
+      <section class="entete">
+        <div id="banniere" class="entete__banniere"></div>
+        <div class="entete__infos">
+          <div class="entete__medaillon"><img id="avatar" class="entete__avatar" alt=""></div>
+          <div>
+            <h1 id="pseudo"></h1>
+            <p id="titre" class="entete__titre"></p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Duel des Couronnes : le deck de duel en éventail sur le tapis. Visible uniquement sur son propre profil -->
+      <section id="duel" class="carte duel" hidden>
+        <div class="duel__texte">
+          <span class="duel__sur">Jeu de cartes de Nocthémar</span>
+          <h2 class="duel__titre">Duel des Couronnes</h2>
+          <p class="duel__accroche" id="duel-accroche"></p>
+          <dl class="duel__stats" id="duel-stats"></dl>
+          <div class="duel__boutons">
+            <a class="duel__btn duel__btn--plein" href="jeu-cartes.html">
+              <span class="duel__btn-titre">Aller au plateau</span>
+            </a>
+          </div>
+        </div>
+        <a class="duel__eventail" href="jeu-cartes.html" aria-label="Jouer au Duel des Couronnes" id="duel-eventail"></a>
+      </section>
+
+      <!-- Vitrine des cartes favorites (le deck du profil) : visible par tous, modifiable seulement sur son propre profil -->
+      <section class="carte deck vitrine">
+        <span class="vitrine__sur">Cartes favorites</span>
+        <div id="deck"></div>
+        <a id="lien-collection" class="btn-collection" href="collection.html" hidden>Ouvrir ma collection</a>
+      </section>
+
+      <!-- Le duelliste : cartes et objets de pouvoir possédés, bourse. Visible uniquement sur son propre profil -->
+      <section id="duelliste" class="carte duelliste" hidden>
+        <h2>Le duelliste</h2>
+
+        <div class="perso__bas">
+          <!-- Les 7 objets de pouvoir du Duel : ceux qu'on possède en couleur, les autres grisés -->
+          <div id="objets-pouvoir" class="stat perso__inventaire"></div>
+
+          <!-- Bourse : visible uniquement sur son propre profil -->
+          <div id="bourse" class="perso__bourse" hidden>
+            <div class="perso__bourse-contenu">
+              <span class="perso__bourse-label">Bourse</span>
+              <span class="perso__bourse-valeur"><img class="piece-icone" src="img/Equipement/Or-icone.webp" alt="pièces"> <span id="solde">0</span></span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Visible uniquement sur son propre profil : détails du compte, en dernier -->
+      <div id="prive" hidden>
+
+        <div class="grille">
+          <section class="carte carte--collection">
+            <h2>Collection</h2>
+            <!-- Une colonne par type de cosmétique (bannières, thèmes, titres), remplie par profil.js -->
+            <div id="inventaire" class="collection-colonnes"></div>
+          </section>
+
+          <section class="carte">
+            <h2>Historique</h2>
+            <ul id="historique" class="liste"></ul>
+          </section>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <div id="notif" class="notif" role="status" aria-live="polite"></div>
+
+  <script src="JS/lien-site.js"></script>
+  <script src="JS/barre-laterale.js"></script>
+  <script type="module" src="JS/auth.js"></script>
+  <script type="module" src="JS/profil.js"></script>
+</body>
+</html>
