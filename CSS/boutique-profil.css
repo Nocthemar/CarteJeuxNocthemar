@@ -1,0 +1,41 @@
+/* =====================================================================
+   Boutique du profil — aperçus des cosmétiques (bannières, thèmes, titres)
+   dans les niches de l'étal (à charger APRÈS boutique.css)
+   ===================================================================== */
+
+/* Bannière : elle remplit la niche, floutée (on la devine sans la voir en entier) */
+.page-boutique .article__niche .apercu {
+  position: absolute; inset: 0;
+}
+.page-boutique .apercu img {
+  width: 100%; height: 100%;
+  object-fit: cover; display: block;
+  /* Le léger agrandissement évite les bords flous et transparents */
+  filter: blur(6px) brightness(.8);
+  transform: scale(1.12);
+}
+
+/* Titre ou thème : son nom gravé au centre de la niche */
+.page-boutique .article__niche .apercu--titre {
+  position: static;
+  display: grid; place-items: center;
+  padding: 0 14px;
+  font-family: "EB Garamond","EB Garamond Repli", serif;
+  font-style: italic; font-size: 1.15rem;
+  color: var(--or);
+  text-shadow: 0 0 14px rgba(216,185,120,.35);
+}
+
+/* Couleurs d'un thème : petites pastilles rondes sous le nom de l'article */
+.page-boutique .pastilles {
+  display: flex; justify-content: center;
+  gap: 6px;
+  margin: 2px 0 2px;
+}
+.page-boutique .pastille {
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: var(--c);
+  border: 1px solid rgba(255,255,255,.25);
+  box-shadow: 0 0 0 1px rgba(0,0,0,.4);
+}

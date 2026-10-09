@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Boutique — Nocthémar</title>
+  <link rel="icon" type="image/png" href="img/Logo/Nocthemar_logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800&family=Cinzel+Decorative:wght@700;900&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="CSS/polices.css">
+  <link rel="stylesheet" href="CSS/index.css">
+  <link rel="stylesheet" href="CSS/compte.css">
+  <link rel="stylesheet" href="CSS/boutique.css">
+  <link rel="stylesheet" href="CSS/boutique-jour.css">
+  <link rel="stylesheet" href="CSS/boutique-profil.css">
+<!-- Thème clair / sombre (bouton dans la barre latérale) : appliqué avant l'affichage -->
+<script>try{if(localStorage.getItem('nocthemar-theme')==='jour')document.documentElement.dataset.theme='jour'}catch(e){}</script>
+<link rel="stylesheet" href="CSS/theme-jour.css">
+</head>
+<body class="page-profil page-boutique">
+
+  <header class="topbar">
+    <a class="brand" href="index.html">Nocthémar</a>
+    <span class="brand-sub">Duel des Couronnes</span>
+    <nav class="nav-links">
+      <a href="index.html">Accueil</a>
+      <a href="index.html#categories">Le Codex</a>
+    </nav>
+    <a href="boutique.html" class="nav-boutique">Boutique</a>
+    <div id="discord-auth"></div>
+  </header>
+
+  <main class="profil-wrap marche">
+
+    <header class="boutique-entete">
+      <h1>Le Marché de Nocthémar</h1>
+      <p>Tout ce qui se vend ici est cosmétique ou narratif. Les pièces se gagnent en jouant, jamais en payant.</p>
+    </header>
+
+    <!-- Échoppe I : sélection du marchand, renouvelée par le bot -->
+    <section class="echoppe">
+      <!-- Solde (connecté), dans le coin de l'échoppe -->
+      <div id="bourse" class="bourse" hidden>
+        <img class="bourse__piece" src="img/Equipement/Or-icone.webp" alt="">
+        <div class="bourse__texte">
+          <span class="bourse__libelle">Ta bourse</span>
+          <strong><span id="solde">0</span> <small>pièces</small></strong>
+        </div>
+      </div>
+      <div class="enseigne">
+        <span class="enseigne__num">I</span>
+        <span class="enseigne__sur">Boutique du marchand</span>
+        <h2>L'étal du marchand ambulant</h2>
+      </div>
+      <p class="echoppe__intro">Renouvelé toutes les 5 heures. Stock limité : premier arrivé, premier servi.</p>
+      <p id="rebours" class="rebours"></p>
+      <div id="jour" class="etal"><p class="vide">Chargement…</p></div>
+    </section>
+
+    <!-- Échoppe II : cosmétiques du profil -->
+    <section class="echoppe">
+      <div class="enseigne">
+        <span class="enseigne__num">II</span>
+        <span class="enseigne__sur">Boutique du profil</span>
+        <h2>L'armoire des apparences</h2>
+      </div>
+      <p class="echoppe__intro">Bannières, titres et thèmes pour ton profil. Une fois acheté, équipe-le depuis ton profil.</p>
+      <div id="profil" class="etal"><p class="vide">Chargement…</p></div>
+    </section>
+
+  </main>
+
+  <div id="notif" class="notif" role="status" aria-live="polite"></div>
+
+  <script src="JS/lien-site.js"></script>
+  <script src="JS/barre-laterale.js"></script>
+  <script type="module" src="JS/auth.js"></script>
+  <script type="module" src="JS/boutique.js"></script>
+</body>
+</html>

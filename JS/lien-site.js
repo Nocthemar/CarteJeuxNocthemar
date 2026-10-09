@@ -15,7 +15,7 @@ window.NOCTHEMAR_SITE = 'https://nocthemar.github.io/CodexNockt-mar/';
   const site = window.NOCTHEMAR_SITE;
   const racine = new URL('../', document.currentScript.src);   // racine du jeu de cartes
   // Pages du site (et non du jeu)
-  const PAGES_SITE = ['index.html', 'profil.html', 'boutique.html', 'mj.html'];
+  const PAGES_SITE = ['index.html', 'profil.html', 'mj.html'];
   const estDuSite = (chemin) => PAGES_SITE.includes(chemin) || chemin.startsWith('categories/')
     || chemin.startsWith('Personnages/') || chemin.startsWith('Bestiaire/') || chemin.startsWith('Monde/')
     || chemin.startsWith('Rang des Pouvoirs/') || chemin === '';

@@ -1,0 +1,293 @@
+/* =====================================================================
+   Page boutique — style « marché médiéval » commun aux deux échoppes
+   (étal en planches sombres, enseigne en bois suspendue, objets dans des
+   niches sur une étagère, étiquettes accrochées par un fil).
+   Utilise les variables de CSS/compte.css (à charger APRÈS compte.css).
+   Spécifique : boutique-jour.css et boutique-profil.css
+   ===================================================================== */
+
+.page-boutique {
+  --bois-clair: #7a5232;
+  --bois: #5a3a20;
+  --bois-fonce: #3a2414;
+  --planche: #17120f;
+  --etiquette: #1d1816;
+  --trait: rgba(240,236,227,0.16);
+  --or: #d8b978;
+}
+.page-boutique .marche { max-width: 1120px; }
+
+/* ---------- En-tête ---------- */
+.page-boutique .boutique-entete { text-align: center; margin: 10px 0 18px; }
+.page-boutique .boutique-entete h1 {
+  margin: 0 0 8px;
+  font-family: "Cinzel Decorative","Cinzel Decorative Repli", serif;
+  font-size: clamp(1.6rem, 3.4vw, 2.4rem);
+  color: var(--texte);
+}
+.page-boutique .boutique-entete p {
+  margin: 0 auto; max-width: 560px;
+  color: var(--texte-doux); font-style: italic;
+}
+
+/* ---------- Bourse : petit médaillon dans le coin de l'échoppe ---------- */
+.page-boutique .bourse {
+  position: absolute; top: 18px; right: 18px; z-index: 2;
+  display: flex; align-items: center; gap: 12px;
+  width: fit-content;
+  margin: 0;
+  padding: 8px 22px 8px 12px;
+  max-width: none;
+  border: 1px solid var(--trait);
+  background: linear-gradient(180deg, #1c1715, #120e0d);
+  box-shadow: 0 8px 22px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.05);
+}
+.page-boutique .bourse__piece { width: 40px; height: 40px; filter: drop-shadow(0 2px 6px rgba(216,185,120,.35)); }
+.page-boutique .bourse__texte { display: flex; flex-direction: column; line-height: 1.05; }
+.page-boutique .bourse__libelle {
+  font-family: "Cinzel","Cinzel Repli", serif;
+  font-size: .62rem; letter-spacing: .2em; text-transform: uppercase;
+  color: var(--texte-doux);
+}
+.page-boutique .bourse strong {
+  font-family: "Cinzel","Cinzel Repli", serif;
+  font-size: 1.55rem; color: var(--texte);
+}
+.page-boutique .bourse small { font-family: "EB Garamond","EB Garamond Repli", serif; font-style: italic; font-weight: 400; font-size: .85rem; color: var(--texte-doux); }
+
+/* ---------- Échoppe : panneau de planches sombres ---------- */
+.page-boutique .echoppe {
+  max-width: none;
+  margin: 0 0 34px;
+  padding: 0 34px 40px;
+  border: 1px solid var(--trait);
+  background:
+    repeating-linear-gradient(180deg, rgba(255,255,255,.018) 0 1px, transparent 1px 46px),
+    repeating-linear-gradient(90deg, rgba(0,0,0,.22) 0 2px, transparent 2px 260px),
+    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(122,82,50,.14), transparent 70%),
+    var(--planche);
+  box-shadow: inset 0 0 80px rgba(0,0,0,.6), 0 18px 40px rgba(0,0,0,.4);
+  text-align: center;
+}
+
+/* Enseigne en bois suspendue par deux chaînes */
+.page-boutique .enseigne {
+  position: relative;
+  display: inline-flex; flex-direction: column; align-items: center;
+  margin-top: 56px;
+  padding: 14px 44px 18px;
+  min-width: min(540px, 100%);
+  background:
+    repeating-linear-gradient(178deg, rgba(0,0,0,.10) 0 2px, transparent 2px 9px),
+    repeating-linear-gradient(181deg, rgba(255,220,170,.05) 0 1px, transparent 1px 13px),
+    linear-gradient(180deg, var(--bois-clair), var(--bois) 45%, var(--bois-fonce));
+  border: 1px solid #22150b;
+  box-shadow: 0 12px 26px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,220,170,.18), inset 0 -2px 0 rgba(0,0,0,.35);
+}
+/* clous aux quatre coins */
+.page-boutique .enseigne::after {
+  content: ""; position: absolute; inset: 6px; pointer-events: none;
+  background:
+    radial-gradient(circle, #b9a58a 0 1.5px, #4a3a2a 2px 2.5px, transparent 3px) top left / 8px 8px no-repeat,
+    radial-gradient(circle, #b9a58a 0 1.5px, #4a3a2a 2px 2.5px, transparent 3px) top right / 8px 8px no-repeat,
+    radial-gradient(circle, #b9a58a 0 1.5px, #4a3a2a 2px 2.5px, transparent 3px) bottom left / 8px 8px no-repeat,
+    radial-gradient(circle, #b9a58a 0 1.5px, #4a3a2a 2px 2.5px, transparent 3px) bottom right / 8px 8px no-repeat;
+}
+/* chaînes : maillons dessinés par un dégradé répété */
+.page-boutique .enseigne::before {
+  content: ""; position: absolute; bottom: 100%; left: 22%; right: 22%;
+  height: 57px;
+  background:
+    repeating-linear-gradient(180deg, #8b8070 0 5px, #3a332b 5px 7px) left / 4px 100% no-repeat,
+    repeating-linear-gradient(180deg, #8b8070 0 5px, #3a332b 5px 7px) right / 4px 100% no-repeat;
+}
+.page-boutique .enseigne__num {
+  font-family: "Cinzel","Cinzel Repli", serif; font-weight: 700;
+  font-size: 1rem; color: #f2e6cf; line-height: 1;
+}
+.page-boutique .enseigne__sur {
+  margin-top: 6px;
+  font-family: "Cinzel","Cinzel Repli", serif;
+  font-size: .66rem; letter-spacing: .24em; text-transform: uppercase;
+  color: rgba(242,230,207,.6);
+}
+.page-boutique .enseigne h2 {
+  margin: 6px 0 0;
+  font-family: "Cinzel","Cinzel Repli", serif; font-weight: 700;
+  font-size: clamp(1.1rem, 2.4vw, 1.65rem); letter-spacing: .06em; text-transform: uppercase;
+  color: #f6ecd8;
+  text-shadow: 0 2px 0 rgba(0,0,0,.45), 0 0 18px rgba(0,0,0,.4);
+}
+
+.page-boutique .echoppe__intro {
+  margin: 22px auto 0; max-width: 60ch;
+  font-style: italic; font-size: .95rem; color: var(--texte-doux);
+}
+
+/* ---------- Étal : niches sur une étagère + étiquettes suspendues ---------- */
+.page-boutique .etal {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0 28px;
+  margin-top: 30px;
+  text-align: center;
+}
+.page-boutique .etal > .vide { grid-column: 1 / -1; padding: 30px 0; }
+
+.page-boutique .article {
+  display: flex; flex-direction: column;
+  margin-bottom: 34px;
+}
+
+/* niche creusée dans le mur, l'objet posé dedans */
+.page-boutique .article__niche {
+  position: relative;
+  height: 150px;
+  display: grid; place-items: center;
+  background: radial-gradient(ellipse 70% 60% at 50% 55%, #2a211d, #0e0b0a 75%);
+  box-shadow: inset 0 0 28px rgba(0,0,0,.95), inset 0 -10px 18px rgba(0,0,0,.6);
+  overflow: hidden;
+}
+.page-boutique .article__icone {
+  width: 96px; height: 96px; object-fit: contain;
+  filter: drop-shadow(0 10px 10px rgba(0,0,0,.7));
+  transition: transform .3s ease;
+}
+.page-boutique .article:hover .article__icone { transform: translateY(-4px) scale(1.05); }
+.page-boutique .article__sans-image { font-size: 2rem; color: rgba(216,185,120,.45); }
+
+/* planche de l'étagère sous chaque niche ; elle déborde dans l'espace entre
+   deux articles pour former une seule étagère continue */
+.page-boutique .article::before {
+  content: ""; order: 1;
+  height: 12px; margin: 0 -14px;
+  background:
+    repeating-linear-gradient(90deg, rgba(0,0,0,.18) 0 1px, transparent 1px 70px),
+    linear-gradient(180deg, #8a5d38, #5a3a20 55%, #34200f);
+  box-shadow: 0 8px 12px rgba(0,0,0,.55);
+  border-radius: 1px;
+}
+.page-boutique .article__niche { order: 0; }
+
+/* étiquette suspendue sous l'étagère par un fil */
+.page-boutique .article__etiquette {
+  order: 2;
+  position: relative;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  flex: 1;
+  margin: 26px 8px 0;
+  padding: 16px 16px 18px;
+  background: linear-gradient(180deg, #221c1a, var(--etiquette));
+  border: 1px solid var(--trait);
+  outline: 1px solid rgba(240,236,227,.06); outline-offset: -5px;
+  box-shadow: 0 12px 22px rgba(0,0,0,.55);
+  transform: rotate(-1.2deg);
+  transform-origin: 50% -26px;
+  transition: transform .4s ease;
+}
+.page-boutique .article:nth-child(even) .article__etiquette { transform: rotate(1deg); }
+.page-boutique .article:nth-child(3n) .article__etiquette { transform: rotate(-.5deg); }
+.page-boutique .article:hover .article__etiquette { transform: rotate(0deg); }
+/* fil + anneau */
+.page-boutique .article__etiquette::before {
+  content: ""; position: absolute; left: 50%; bottom: 100%;
+  width: 1px; height: 20px; background: rgba(240,236,227,.45);
+}
+.page-boutique .article__etiquette::after {
+  content: ""; position: absolute; left: 50%; top: -9px;
+  width: 7px; height: 7px; margin-left: -3.5px;
+  border: 1px solid rgba(240,236,227,.6); border-radius: 50%;
+  background: #120e0d;
+}
+
+.page-boutique .article__type {
+  font-family: "Cinzel","Cinzel Repli", serif;
+  font-size: .62rem; letter-spacing: .2em; text-transform: uppercase;
+  color: var(--texte-doux);
+}
+.page-boutique .article__nom {
+  margin: 0;
+  font-family: "Cinzel","Cinzel Repli", serif; font-weight: 700;
+  font-size: 1.02rem; line-height: 1.25; color: var(--texte);
+}
+.page-boutique .article__desc {
+  margin: 4px 0 0;
+  flex: 1;                 /* pousse le prix et le bouton en bas de l'étiquette */
+  font-size: .86rem; line-height: 1.5; font-style: italic;
+  color: var(--texte-doux);
+}
+.page-boutique .article__prix {
+  display: inline-flex; align-items: center; gap: 6px;
+  margin-top: 10px;
+  font-family: "Cinzel","Cinzel Repli", serif; font-weight: 700;
+  font-size: 1.25rem; color: var(--texte);
+}
+.page-boutique .piece { width: 20px; height: 20px; }
+
+/* Bouton d'achat */
+.page-boutique .btn-acheter {
+  align-self: stretch;
+  margin-top: 10px;
+  padding: 9px 8px;
+  border: 1px solid rgba(240,236,227,.55);
+  border-radius: 0;
+  background: transparent;
+  color: var(--texte);
+  font-family: "Cinzel","Cinzel Repli", serif; font-weight: 700;
+  font-size: .74rem; letter-spacing: .16em; text-transform: uppercase;
+  cursor: pointer;
+  transition: background .15s, color .15s, border-color .15s;
+}
+.page-boutique .btn-acheter:hover:not(:disabled) {
+  background: var(--or); border-color: var(--or); color: #1a1410;
+}
+.page-boutique .btn-acheter:disabled {
+  border-color: var(--trait);
+  color: var(--texte-doux);
+  letter-spacing: .08em;
+  cursor: not-allowed;
+}
+
+/* Écrans moyens et téléphones : plus la place à côté de l'enseigne,
+   la bourse se pose en haut du panneau, entre les deux chaînes */
+@media (max-width: 1000px) {
+  .page-boutique .bourse { position: relative; top: auto; right: auto; margin: 18px auto -38px; }
+  .page-boutique .bourse[hidden] + .enseigne { margin-top: 56px; }
+  .page-boutique .bourse + .enseigne { margin-top: 56px; }
+}
+
+/* ---------- Téléphones ---------- */
+@media (max-width: 600px) {
+  .page-boutique .echoppe { padding: 0 14px 26px; }
+  .page-boutique .enseigne { padding: 12px 18px 14px; min-width: 0; width: 100%; }
+  .page-boutique .enseigne::before { left: 7%; right: 7%; }
+  .page-boutique .etal { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 16px; }
+  .page-boutique .article::before { margin: 0 -8px; }
+  .page-boutique .article__niche { height: 110px; }
+  .page-boutique .article__icone { width: 72px; height: 72px; }
+  .page-boutique .article__etiquette { margin: 24px 0 0; padding: 12px 10px 14px; }
+  .page-boutique .article__nom { font-size: .9rem; }
+  .page-boutique .article__desc { font-size: .8rem; }
+  .page-boutique .btn-acheter { font-size: .66rem; letter-spacing: .1em; }
+}
+
+/* Notification après achat */
+.notif {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translate(-50%, 20px);
+  max-width: calc(100% - 32px);
+  padding: 12px 18px;
+  border-radius: var(--rayon);
+  background: var(--carte);
+  border: 1px solid var(--bord);
+  color: var(--texte);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .2s, transform .2s;
+  z-index: 100;
+}
+.notif--visible { opacity: 1; transform: translate(-50%, 0); }
+.notif--ok     { border-color: var(--gain); }
+.notif--erreur { border-color: var(--perte); }

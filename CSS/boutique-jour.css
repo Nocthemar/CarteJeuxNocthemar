@@ -1,0 +1,30 @@
+/* =====================================================================
+   Boutique du marchand (sélection gérée par le bot Discord)
+   (à charger APRÈS boutique.css)
+   ===================================================================== */
+
+/* Compte à rebours avant le prochain étal, entre deux filets */
+.page-boutique .rebours {
+  display: inline-flex; align-items: baseline; gap: 12px;
+  margin: 14px auto 0;
+  padding: 8px 18px;
+  border-top: 1px solid var(--trait);
+  border-bottom: 1px solid var(--trait);
+}
+.page-boutique .rebours:empty { display: none; }
+.page-boutique .rebours__libelle {
+  font-family: "Cinzel","Cinzel Repli", serif;
+  font-size: .62rem; letter-spacing: .2em; text-transform: uppercase;
+  color: var(--texte-doux);
+}
+.page-boutique .rebours__temps {
+  font-family: "Cinzel","Cinzel Repli", serif; font-weight: 700;
+  font-size: 1rem; color: var(--texte);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Stock limité */
+.page-boutique .article__stock { font-size: .78rem; font-style: italic; color: var(--texte-doux); }
+.page-boutique .article__stock--bas { color: var(--perte); }
+.page-boutique .article--epuise .article__niche { filter: grayscale(.8) brightness(.6); }
+.page-boutique .article--epuise .article__etiquette { opacity: .6; }
