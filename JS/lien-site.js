@@ -9,7 +9,7 @@
 //  ⚠️ À remplir : l'adresse du site Nocthémar, avec le « / » final.
 //  Exemple : 'https://ton-pseudo.github.io/JDR-Nocthemar/'
 // =====================================================================
-window.NOCTHEMAR_SITE = 'https://ton-site-nocthemar.example/';
+window.NOCTHEMAR_SITE = 'https://nocthemar.github.io/CodexNockt-mar/';
 
 (function () {
   const site = window.NOCTHEMAR_SITE;

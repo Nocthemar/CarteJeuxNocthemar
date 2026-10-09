@@ -60,7 +60,8 @@
   css.addEventListener('error', () => { rail.style.visibility = ''; });
 
   rail.append(
-    item('accueil', 'Site Nocthémar', lien('index.html'), false),
+    // Lien direct vers le site Nocthémar (adresse dans JS/lien-site.js)
+    item('accueil', 'Site Nocthémar', window.NOCTHEMAR_SITE ?? lien('index.html'), false),
   );
 
   // Recherche : on déplace le composant existant et on ajoute un libellé au bouton
