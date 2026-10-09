@@ -535,16 +535,10 @@ export const libelleJet = (de) => rollInfo(de)?.label ?? '';
 
 
 // ---------------------------------------------------------------------
-//  Profondeur à la souris (décor) et inclinaison 3D des cartes en main
+//  Inclinaison 3D des cartes en main (le décor, lui, reste fixe : plus fluide)
 // ---------------------------------------------------------------------
 export function activerProfondeur() {
   if (reduit || !matchMedia('(hover: hover)').matches) return;
-  const scene = $('scene');
-  addEventListener('pointermove', (e) => {
-    scene.style.setProperty('--px', (e.clientX / innerWidth - 0.5).toFixed(3));
-    scene.style.setProperty('--py', (e.clientY / innerHeight - 0.5).toFixed(3));
-  }, { passive: true });
-
   document.addEventListener('pointermove', (e) => {
     const carte = e.target.closest?.('.dc-carte');
     document.querySelectorAll('.dc-carte.incline').forEach((c) => { if (c !== carte) { c.classList.remove('incline'); c.style.removeProperty('--rx'); c.style.removeProperty('--ry'); } });

@@ -3,7 +3,7 @@
    Low poly très visible + fantasy médiévale sombre : formes à facettes,
    gris / noir / blanc / bleu nuit, un seul accent ambre.
    Décor : forteresse en ruine sous la lune (img/Fond/profil-forteresse.svg),
-   brume, grain de film, profondeur à la souris (--px, --py posées par JS).
+   brume (décor fixe : rien n'y bouge, pour la fluidité).
    ===================================================================== */
 
 .page-jeu {
@@ -30,7 +30,6 @@
 
 /* ---------- Décor ---------- */
 .scene {
-  --px: 0; --py: 0;
   position: fixed; inset: 0; z-index: 0;
   overflow: hidden;
   pointer-events: none;
@@ -42,30 +41,15 @@
     linear-gradient(180deg, rgba(11,13,18,.35), rgba(11,13,18,.8) 70%),
     url("../img/Fond/profil-forteresse.svg") center bottom / cover no-repeat,
     var(--nuit);
-  transform: translate(calc(var(--px) * -18px), calc(var(--py) * -12px)) scale(1.03);
-  transition: transform .4s ease-out;
+  transform: scale(1.03);
 }
 .scene__brume {
   position: absolute; left: -30%; right: -30%; bottom: 0; height: 55%;
   background:
     radial-gradient(ellipse 40% 50% at 30% 70%, rgba(170,180,200,.10), transparent 70%),
     radial-gradient(ellipse 35% 40% at 75% 80%, rgba(170,180,200,.08), transparent 70%);
-  animation: brume 38s linear infinite alternate;
-  transform: translateX(calc(var(--px) * -30px));
 }
-.scene__brume--2 { bottom: 15%; opacity: .7; animation-duration: 52s; animation-direction: alternate-reverse; }
-@keyframes brume { from { translate: -6% 0; } to { translate: 6% 0; } }
-/* grain de film */
-.scene__grain {
-  position: absolute; inset: -50%;
-  opacity: .07;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
-  animation: grain .9s steps(6) infinite;
-}
-@keyframes grain {
-  0% { transform: translate(0, 0); } 20% { transform: translate(-3%, 2%); } 40% { transform: translate(2%, -3%); }
-  60% { transform: translate(-2%, -1%); } 80% { transform: translate(3%, 3%); } 100% { transform: translate(0, 0); }
-}
+.scene__brume--2 { bottom: 15%; opacity: .7; }
 
 .jeu-wrap {
   position: relative; z-index: 1;
@@ -435,7 +419,7 @@
 
 /* Réduire les animations : rien ne bouge */
 @media (prefers-reduced-motion: reduce) {
-  .scene__brume, .scene__grain, .d20.roule svg, .dc-unite.est-ciblable, .dc-heros.est-ciblable { animation: none !important; }
+  .d20.roule svg, .dc-unite.est-ciblable, .dc-heros.est-ciblable { animation: none !important; }
   .scene__fond { transform: none; transition: none; }
   .dc-carte { transform: none; transition: none; }
   .fx-secousse, .fx-arrivee, .fx-mort, .fx-vague, .fx-eclair, .flotte { animation-duration: .01s !important; }
@@ -1803,7 +1787,7 @@ body.en-duel { overflow: hidden; padding: 0 !important; }
 .menu .ligne__bloc { min-width: 0; }
 
 /* --- Fond du plateau : la ruelle de Nocthémar (img/Fond/font plateux jeux.png),
-       assombrie sur les bords pour que la table ressorte ; elle suit un peu la souris --- */
+       assombrie sur les bords pour que la table ressorte --- */
 .en-duel .scene__fond {
   inset: -60px;
   background:
@@ -1813,8 +1797,7 @@ body.en-duel { overflow: hidden; padding: 0 !important; }
     url("../img/Fond/font%20plateux%20jeux.png") center / cover no-repeat,
     #07080d;
   filter: saturate(.95);
-  transform: translate(calc(var(--px) * -36px), calc(var(--py) * -24px)) scale(1.04);
-  transition: transform .6s ease-out;
+  transform: scale(1.04);
 }
 
 /* Le dé et son résultat : cachés au repos, ils apparaissent pendant un lancer (attaque ou Destin) */
