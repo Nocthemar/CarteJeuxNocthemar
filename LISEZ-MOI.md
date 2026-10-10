@@ -21,6 +21,8 @@ mêmes cartes, mêmes pièces, même progression.
 - `JS/jeu-cartes-moteur.js` : les règles (Grimoire, pioche, Tombeau, attaques, d20, Destin, IA)
 - `JS/jeu-cartes-arene.js` : l'affichage du plateau et les animations
 - `JS/jeu-cartes-effets.js`, `JS/jeu-cartes-son.js` : effets visuels et sons
+- `JS/jeu-cartes-attaques.js` : l'animation de chaque attaque (par Veine, et les attaques
+  signatures des personnages : pour une nouvelle carte, ajouter son attaque dans `ATTAQUES`)
 - `JS/jeu-cartes-ligne.js` : le mode en ligne (salons Supabase Realtime)
 - `JS/jeu-cartes.js` : le pilote de la page du jeu
 - `JS/histoire-data.js` : les chapitres et niveaux du mode Histoire (à modifier à la main)

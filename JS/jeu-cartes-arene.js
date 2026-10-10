@@ -8,7 +8,8 @@ import { $, esc } from './commun.js';
 import { htmlInfos } from './cartes.js';
 import { ENERGIE_MAX, COUT_DESTIN, COUT_DEFAUSSE, COUT_MEDITER, peutJouer, peutAttaquer, peutDestin, peutDefausser, peutMediter, rollInfo, coutDe } from './jeu-cartes-moteur.js';
 import { jouerSon, SM } from './jeu-cartes-son.js';
-import { particules, onde, flash, voile, secousseEcran, eclair, briser } from './jeu-cartes-effets.js';
+import { particules, onde, flash, voile, secousseEcran, eclair, briser, recul, annonce, envol, symbole } from './jeu-cartes-effets.js';
+import { styleAttaque, couleursVeine } from './jeu-cartes-attaques.js';
 
 export const reduit = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -189,6 +190,30 @@ function htmlEnergie(camp) {
 }
 
 
+// Cartes qui viennent d'arriver dans une main (pioche) : elles glissent depuis le Grimoire.
+// On compare avec la main du rendu précédent : les cartes ajoutées à la fin sont les nouvelles.
+let mainAvant = null;
+let nAdverseAvant = null;
+function animerPioche(main, nAdverse) {
+  const cles = main.map((c) => c.id ?? c.n);
+  if (!reduit && mainAvant && cles.length > mainAvant.length && mainAvant.every((k, i) => cles[i] === k)) {
+    const cartes = [...$('main-joueur').children];
+    cartes.slice(mainAvant.length).forEach((el, i) => {
+      el.classList.add('fx-piochee');
+      el.style.setProperty('--d', `${i * 110}ms`);
+      setTimeout(() => el.classList.remove('fx-piochee'), 700 + i * 110);
+    });
+  }
+  if (!reduit && nAdverseAvant != null && nAdverse > nAdverseAvant) {
+    [...$('main-adverse').children].slice(nAdverseAvant).forEach((el, i) => {
+      el.classList.add('fx-piochee');
+      el.style.setProperty('--d', `${i * 110}ms`);
+    });
+  }
+  mainAvant = cles;
+  nAdverseAvant = nAdverse;
+}
+
 // ---------------------------------------------------------------------
 //  Rendu complet du plateau
 //  sel : { monTour, attaquant, sortIndex, cibles } (sélection en cours du joueur)
@@ -226,6 +251,7 @@ export function rendre(p, sel, avatars = {}) {
   for (const c of $('main-joueur').children) c.draggable = glissable;
   $('main-joueur').classList.toggle('en-defausse', !!sel.defausse);
   $('main-adverse').innerHTML = a.main.map(() => '<i class="dos"></i>').join('');
+  animerPioche(j.main, a.main.length);
   // Les deux mains s'ouvrent en éventail : --k = place de la carte par rapport au centre
   for (const id of ['main-joueur', 'main-adverse']) {
     const cartes = $(id).children;
@@ -398,16 +424,30 @@ function impact(el, q, heros) {
 export async function animer(ev) {
   switch (ev.type) {
     case 'pose': {
+      // la carte quitte la main et vole jusqu'à sa place sur le terrain
+      const place = $(`terrain-${ev.qui}`)?.children[ev.place];
+      await volerDepuisMain(ev, place);
       jouerSon('pose');
       return;
     }
     case 'apres-pose': {
       const el = elUnite(ev.uid);
       classeTemporaire(el, 'fx-arrivee', 700);
-      // la carte se pose : nuage de poussière ; une Charge part déjà en étincelles
+      // la carte s'écrase sur le plateau : nuage de poussière, couleur de sa Veine ; une Charge part déjà en étincelles
       setTimeout(() => {
         particules(el, { n: 14, couleurs: POUSSIERE, vitesse: 80, gravite: 15, taille: [5, 12], rond: true, duree: 800 });
         onde(el, 'rgba(197,202,211,.7)', 1.6, 500);
+        secousseEcran(4, 300);
+        const teinte = couleursVeine(ev.carte?.veine);
+        if (teinte) {
+          onde(el, teinte[0], 2.2, 700);
+          particules(el, { n: 16, couleurs: teinte, vitesse: 40, monte: 70, gravite: -40, rond: true, depuis: 'surface', duree: 1100 });
+        }
+        if (ev.carte?.carte?.rarity === 'legendaire' || ev.carte?.carte?.rarity === 'transcendante') {
+          flash(el, 'rgba(255,230,170,.9)', 3, 500);
+          symbole(el, '♛', { couleur: '#f6d995', taille: 48, duree: 900 });
+          jouerSon('couronne');
+        }
         (UFX[ev.carte.n] ?? ((e) => {
           if (ev.carte.k === 'charge') { particules(e, { n: 16, couleurs: OR, vitesse: 150, gravite: 50 }); jouerSon('acier', 0.05); }
           if (ev.carte.k === 'guard') onde(e, '#e6eaf1', 1.9, 650);
@@ -419,6 +459,8 @@ export async function animer(ev) {
     case 'sort': {
       const apercu = $('apercu');
       apercu.innerHTML = htmlCarte(ev.carte);
+      // la carte vole de la main jusqu'au centre, puis s'y montre en grand
+      await volerDepuisMain(ev, apercu.firstElementChild);
       apercu.className = `apercu est-visible ${ev.qui === 'adverse' ? 'apercu--adverse' : ''}`;
       await pause(700);
       apercu.className = 'apercu';
@@ -442,24 +484,41 @@ export async function animer(ev) {
     case 'attaque': {
       const att = elUnite(ev.uid);
       const cib = elCible(ev.cible);
-      // 1. le dé roule d'abord : l'attaquant s'illumine et sa cible est marquée
+      // Chorégraphie de l'attaque (par son nom, sinon sa Veine : JS/jeu-cartes-attaques.js)
+      const style = styleAttaque(ev.attaque);
+      // 1. le nom de l'attaque s'affiche, l'attaquant se charge, le dé roule ; la cible est marquée
+      const retirerAnnonce = annonce(att, ev.attaque?.nom ?? ev.n ?? 'Attaque', style.icone, style.couleur);
       att?.classList.add('fx-prepare');
       cib?.classList.add('fx-visee');
+      style.charge?.(att);
       await lancerDe(ev.de, ev.info.label, ev.info.q);
       att?.classList.remove('fx-prepare');
       cib?.classList.remove('fx-visee');
-      // 2. puis l'attaquant s'élance vers sa cible, et le coup tombe à l'arrivée
-      if (att && cib && !reduit) {
-        const ra = att.getBoundingClientRect();
-        const rc = cib.getBoundingClientRect();
-        att.style.setProperty('--dx', `${(rc.left + rc.width / 2 - (ra.left + ra.width / 2)) * 0.7}px`);
-        att.style.setProperty('--dy', `${(rc.top + rc.height / 2 - (ra.top + ra.height / 2)) * 0.7}px`);
+      // 2. l'attaque part (projectile, rayon, élan…) et touche
+      let retour = null;
+      if (ev.degats > 0) {
+        retour = await style.coup(att, cib, ev);
+      } else if (att && cib && !reduit) {
+        // Raté : l'attaquant s'élance mais le coup passe à côté
+        att.style.setProperty('--dx', `${(cib.getBoundingClientRect().left - att.getBoundingClientRect().left) * 0.35}px`);
+        att.style.setProperty('--dy', `${(cib.getBoundingClientRect().top - att.getBoundingClientRect().top) * 0.35}px`);
         att.classList.add('fx-elan');
         await pause(230);
+        retour = () => att.classList.remove('fx-elan');
       }
-      jouerSon(ev.info.q === 'echec' ? 'acier' : ev.info.q === 'critique' ? 'tonnerre' : 'choc');
-      if (ev.degats > 0) { secouer(cib); impact(cib, ev.info.q, !!ev.cible.heros); }
+      // 3. le coup : la cible recule, chiffres de dégâts
+      if (ev.info.q === 'echec') jouerSon('echec');
+      else if (ev.info.q === 'critique') jouerSon('tonnerre');
+      if (ev.degats > 0) {
+        if (att && cib) {
+          const ra = att.getBoundingClientRect(); const rc = cib.getBoundingClientRect();
+          recul(cib, rc.left - ra.left, rc.top - ra.top, ev.info.q === 'critique' ? 26 : 14);
+        }
+        impact(cib, ev.info.q, !!ev.cible.heros);
+      }
+      if (ev.info.q === 'critique' && ev.degats > 0) flotter(cib, 'Critique !', 'critique');
       flotter(cib, ev.degats > 0 ? `-${ev.degats}` : 'Raté', ev.degats > 0 ? 'degats' : 'rate');
+      retirerAnnonce();
       if (ev.riposte > 0) {
         setTimeout(() => {
           secouer(att);
@@ -472,7 +531,7 @@ export async function animer(ev) {
         particules(att, { n: 18, couleurs: ['#9aa1ad', '#c5cad3', '#5d6574'], vitesse: 150, gravite: 120, taille: [3, 7], duree: 800 });
       }
       await pause(350);
-      att?.classList.remove('fx-elan');
+      retour?.();
       await mourir(ev.morts);
       await effetsPioche(ev);
       await pause(250);
@@ -525,6 +584,23 @@ export async function animer(ev) {
     }
     default: return;
   }
+}
+
+// Une carte jouée quitte la main (la tienne : la vraie carte ; l'adverse : un dos qui se retourne)
+// et vole jusqu'à dest. La carte d'origine est cachée pendant le vol (le plateau est redessiné après).
+async function volerDepuisMain(ev, dest) {
+  if (!dest || reduit) return;
+  const source = ev.qui === 'joueur'
+    ? $('main-joueur')?.querySelector(`[data-index="${ev.index}"]`)
+    : $('main-adverse')?.lastElementChild;
+  if (!source) return;
+  source.style.visibility = 'hidden';
+  jouerSon('elan');
+  await envol(source, dest, {
+    html: ev.qui === 'adverse' ? htmlCarte(ev.carte) : null,
+    rotation: ev.qui === 'joueur' ? -10 : 10,
+    duree: 440,
+  });
 }
 
 // Les unités tombées éclatent en morceaux

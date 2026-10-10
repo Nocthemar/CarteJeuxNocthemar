@@ -30,7 +30,7 @@ import {
 } from './jeu-cartes-moteur.js';
 import { trouverNiveau } from './histoire-data.js';
 import { rendre, animer, banniere, pause, htmlCarte, activerProfondeur, secouer, reduit } from './jeu-cartes-arene.js';
-import { jouerSon, basculerMuet, estMuet } from './jeu-cartes-son.js';
+import { jouerSon, basculerMuet, estMuet, lireVolume, reglerVolume } from './jeu-cartes-son.js';
 import { ouvrirSalon, nouveauCode, codeValide, TAILLE_SALON } from './jeu-cartes-ligne.js';
 
 const NOM_ADVERSAIRE = "L'Ombre du Codex";
@@ -1127,6 +1127,18 @@ function majBoutonSon() {
   $('btn-son').classList.toggle('est-muet', m);
 }
 $('btn-son').addEventListener('click', () => { basculerMuet(); majBoutonSon(); jouerSon('clic'); });
+
+// Curseur du volume : le pourcentage s'affiche à côté ; un petit son d'essai quand on le lâche
+const curseurVolume = $('volume');
+function majVolume() {
+  const pct = Math.round(lireVolume() * 100);
+  curseurVolume.value = pct;
+  curseurVolume.style.setProperty('--pct', `${pct}%`);
+  $('volume-valeur').textContent = `${pct} %`;
+}
+curseurVolume.addEventListener('input', () => { reglerVolume(curseurVolume.value / 100); majVolume(); majBoutonSon(); });
+curseurVolume.addEventListener('change', () => jouerSon('clic'));
+majVolume();
 
 function remplirRegles() {
   $('regles-jets').innerHTML = JETS.map((j) => `<li><b>${j.min === j.max ? j.min : `${j.min}–${j.max}`}</b> ${esc(j.label.replace(' !', ''))} : ${esc(j.texte)}</li>`).join('');

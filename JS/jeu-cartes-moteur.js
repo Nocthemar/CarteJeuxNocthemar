@@ -377,7 +377,7 @@ export function jouer(p, qui, index, cible = null) {
   camp.energie -= coutDe(camp, carte);
   if (carte.fx !== 'jeton') camp.reduction = 0;   // la réduction du Jeton ne sert qu'une fois
   camp.stats.cartes += 1;
-  const ev = { type: carte.t === 'u' ? 'pose' : 'sort', qui, carte, cible };
+  const ev = { type: carte.t === 'u' ? 'pose' : 'sort', qui, carte, cible, index };   // index : pour l'animation (main -> plateau)
 
   if (carte.t === 'u') {
     const place = placeLibre(camp);
@@ -520,6 +520,16 @@ function cast(p, qui, carte, cible, ev) {
   }
 }
 
+// Attaque montrée à l'écran (nom, Veine), sans effet sur les dégâts : sur un bon jet (15 ou plus),
+// la plus puissante des deux attaques de la carte, sinon l'autre. null pour les troupes du Codex.
+export function attaqueJouee(def, de) {
+  const liste = [def?.carte?.attack_1, def?.carte?.attack_2].filter((x) => x?.nom);
+  if (!liste.length) return null;
+  const [faible, forte = faible] = [...liste].sort((x, y) => puissance(x.puissance) - puissance(y.puissance));
+  const a = de >= 15 ? forte : faible;
+  return { nom: a.nom, veine: a.veine ?? null };
+}
+
 // Attaque d'une unité : jet de d20 ; une unité attaquée riposte avec son attaque (sans jet)
 export function attaquer(p, qui, uid, cible) {
   const camp = p.camps[qui];
@@ -537,7 +547,7 @@ export function attaquer(p, qui, uid, cible) {
 
   const degats = info.degats(u.a);
   u.aAttaque = true;
-  const ev = { type: 'attaque', qui, uid, cible, de, info, degats, riposte: 0, brise: false };
+  const ev = { type: 'attaque', qui, uid, cible, de, info, degats, riposte: 0, brise: false, n: u.n, attaque: attaqueJouee(u.def, de) };
 
   if (info.q === 'echec') {
     u.a = Math.floor(u.a / 2);

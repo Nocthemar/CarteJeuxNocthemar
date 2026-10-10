@@ -258,7 +258,35 @@
 .jet--critique b, .jet--grace b { background: var(--ambre); color: #1b1408; }
 .jet--echec b, .jet--malediction b { background: #8e3238; }
 .jet--vide { color: var(--gris); font-style: italic; }
-.historique__outils { display: flex; gap: 8px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--ligne); }
+.historique__outils { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--ligne); }
+
+/* Curseur du volume, sous les boutons du panneau */
+.volume {
+  flex: 1 0 100%;
+  display: grid; grid-template-columns: auto 1fr 3.2em; align-items: center; gap: 8px;
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: .68rem; letter-spacing: .06em;
+  color: var(--gris);
+}
+.volume__valeur { text-align: right; color: var(--blanc); font-variant-numeric: tabular-nums; }
+.volume input {
+  --pct: 80%;
+  appearance: none; -webkit-appearance: none;
+  width: 100%; height: 6px; margin: 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--ambre, #d9a441) var(--pct), rgba(255,255,255,.14) var(--pct));
+  cursor: pointer;
+}
+.volume input::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 14px; height: 14px; border-radius: 50%;
+  background: #f6d995; box-shadow: 0 0 0 2px #1a1416, 0 0 8px rgba(240,200,115,.6);
+}
+.volume input::-moz-range-thumb {
+  width: 14px; height: 14px; border: 0; border-radius: 50%;
+  background: #f6d995; box-shadow: 0 0 0 2px #1a1416, 0 0 8px rgba(240,200,115,.6);
+}
+.volume input:focus-visible { outline: 2px solid var(--ambre, #d9a441); outline-offset: 3px; }
+@media (max-width: 600px) { .volume { display: none; } }
 .btn-outil {
   display: grid; place-items: center;
   width: 36px; height: 36px; padding: 0;
@@ -319,6 +347,11 @@
 .flotte--soin { color: #9fd9b0; }
 .flotte--buff { color: var(--ambre); font-size: 1.2rem; }
 .flotte--rate { color: var(--gris); font-size: 1.1rem; }
+.flotte--critique {
+  margin-top: -34px;
+  color: #f6d995; font-size: 1.15rem; letter-spacing: .12em; text-transform: uppercase;
+  text-shadow: 0 0 10px rgba(240,200,115,.9), 0 2px 4px #000;
+}
 @keyframes flotte { 0% { opacity: 0; transform: translateY(10px) scale(.8); } 15% { opacity: 1; transform: translateY(0) scale(1.15); } 100% { opacity: 0; transform: translateY(-50px) scale(1); } }
 
 .fx-secousse { animation: secousse .4s ease; }
@@ -786,6 +819,71 @@
   filter: drop-shadow(0 0 8px #b8c6ff);
   clip-path: polygon(40% 0, 100% 0, 55% 40%, 100% 40%, 20% 100%, 45% 55%, 0 55%);
 }
+/* --- Attaques (JS/jeu-cartes-attaques.js) : projectiles, griffures, rayons, symboles, pointes --- */
+.fx-projectile {
+  position: fixed; width: var(--t, 26px); height: var(--t, 26px);
+  display: grid; place-items: center;
+  will-change: transform;
+}
+.fx-projectile--orbe {
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, #fff 0, var(--c, #f0c873) 35%, transparent 72%);
+  box-shadow: 0 0 18px var(--c, #f0c873);
+}
+.fx-projectile--texte, .fx-symbole {
+  font-size: var(--t, 26px); line-height: 1;
+  color: var(--c, #f0c873);
+  text-shadow: 0 0 10px var(--c, #f0c873), 0 0 3px #000;
+}
+.fx-symbole { position: fixed; font-family: "Cinzel","Cinzel Repli", serif; font-weight: 700; white-space: nowrap; will-change: transform, opacity; }
+.fx-griffe {
+  position: fixed;
+  border-radius: 50%;
+  background: linear-gradient(90deg, transparent, #fff 20%, var(--c, #ff4b5c) 55%, transparent);
+  box-shadow: 0 0 10px var(--c, #ff4b5c);
+  transform-origin: 50% 50%;
+  will-change: transform, opacity;
+}
+.fx-rayon {
+  position: fixed;
+  transform-origin: 0 50%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--c, #c9b2fb), #fff 50%, var(--c, #c9b2fb));
+  box-shadow: 0 0 16px var(--c, #c9b2fb), 0 0 4px #fff;
+  will-change: transform, opacity;
+}
+.fx-pointe {
+  position: fixed;
+  transform-origin: 50% 100%;
+  background: linear-gradient(0deg, color-mix(in srgb, var(--c, #6fae5b) 60%, #000), var(--c, #6fae5b));
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+  will-change: transform, opacity;
+}
+/* Nom de l'attaque au-dessus de l'attaquant */
+.fx-annonce {
+  position: fixed; z-index: 2;
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 5px 13px 5px 8px;
+  border: 1px solid var(--c, #f0c873);
+  border-radius: 999px;
+  background: rgba(12,10,14,.92);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--c, #f0c873) 55%, transparent), 0 6px 14px rgba(0,0,0,.6);
+  color: #f2eee6;
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: .78rem; font-weight: 700; letter-spacing: .06em;
+  white-space: nowrap;
+  transform: translate(-50%, -100%);
+}
+.fx-annonce i { font-style: normal; font-size: 1rem; line-height: 1; }
+.fx-annonce b { color: var(--c, #f0c873); }
+/* Carte jouée qui vole de la main au plateau */
+.fx-envol { position: fixed; z-index: 3; pointer-events: none; will-change: transform; rotate: 0deg !important; translate: 0 0 !important; }
+/* Carte piochée : elle glisse depuis le Grimoire (à droite) jusqu'à la main */
+.fx-piochee .dc-carte__corps, .dos.fx-piochee { animation: piochee .55s cubic-bezier(.2,.9,.3,1.15) var(--d, 0ms) both; }
+@keyframes piochee {
+  from { opacity: 0; transform: translate(180px, -90px) rotate(28deg) scale(.55); }
+  60%  { opacity: 1; }
+}
+
 /* Reflet des cartes du Codex : découpé à la silhouette (pas d'image pour servir de masque) */
 .dc-reflet--codex {
   -webkit-mask: none; mask: none;
@@ -1939,16 +2037,17 @@ body.en-duel { overflow: hidden; padding: 0 !important; }
 
 
 /* =====================================================================
-   Le tapis de jeu de Nocthémar (img/Plateaux de carte/…, 1952 × 806) : c'est le plateau.
-   Tout y est placé en % de l'image (cqw = % de la largeur du tapis) :
-   - les 10 emplacements peints : les troupes (5 en haut pour l'adversaire, 5 en bas pour toi)
-   - le panneau de gauche : le Grimoire et le Tombeau de l'adversaire
-   - le panneau de droite : les tiens
-   - le grand N au centre : le dé
+   Le plateau de Nocthémar (img/Plateaux de carte/…, 1944 × 809) : une île flottante, fond transparent.
+   Tout y est placé en % de l'image (cqw = % de la largeur du plateau), mesuré au pixel :
+   - les 10 emplacements peints : les troupes (5 en haut pour l'adversaire, 5 en bas pour toi) ;
+     la rangée du bas est plus grande et plus espacée (perspective), d'où deux réglages
+   - la clairière en haut à gauche : le Grimoire et le Tombeau de l'adversaire
+   - la clairière en bas à droite : les tiens
+   - le cercle de pierre au centre : le dé
    ===================================================================== */
 .page-jeu .tg-bord {
   container-type: inline-size;
-  aspect-ratio: 1952 / 806;
+  aspect-ratio: 1944 / 809;
   padding: 0;
   border-radius: 0;
   background: url("../img/Plateaux%20de%20carte/Plateau%20de%20bataille%20gothique%20au%20cr%C3%A9puscule.png") center / 100% 100% no-repeat;
@@ -1978,15 +2077,19 @@ body.en-duel { overflow: hidden; padding: 0 !important; }
   align-items: center;
   gap: 0;
 }
-.page-jeu .tg-bord #terrain-adverse { left: 22.8%; width: 54.3%; top: 8.7%; height: 21.7%; --unite-l: 5.6cqw; }
-.page-jeu .tg-bord #terrain-joueur  { left: 22.4%; width: 55.5%; top: 62%; height: 24.8%; --unite-l: 6.4cqw; }
+/* Une colonne par emplacement, centrée sur son cadre peint (centres mesurés : 168 px d'écart en haut, 177 en bas).
+   Les cases ont été retouchées au format des cartes (2 x 3 : 92 x 137 px en haut, 104 x 155 px en bas ;
+   original : « … (cases larges, original).png ») : la carte recouvre le fond et le cadre. Les images
+   des vraies cartes ont ~3,5 % de marge transparente autour de leur cadre : on les agrandit d'autant */
+.page-jeu .tg-bord #terrain-adverse { left: 28.43%; width: 43.34%; top: 20.89%; height: 16.93%; --unite-l: 5.1cqw; }
+.page-jeu .tg-bord #terrain-joueur  { left: 27.40%; width: 45.42%; top: 59.33%; height: 19.16%; --unite-l: 5.75cqw; }
 .page-jeu .tg-bord .dc-unite,
 .page-jeu .tg-bord .dc-place { width: var(--unite-l); }
 .page-jeu .tg-bord .dc-place { opacity: 0; }   /* emplacement vide : le cadre peint suffit */
 
-/* Le dé sur le grand N, la consigne juste dessous */
+/* Le dé dans le cercle de pierre, la consigne juste dessous */
 .page-jeu .tg-bord .centre {
-  position: absolute; left: 49.3%; top: 46.5%;
+  position: absolute; left: 49.9%; top: 47.4%;
   translate: -50% -50%;
   margin: 0;
   justify-content: center;
@@ -1994,23 +2097,27 @@ body.en-duel { overflow: hidden; padding: 0 !important; }
 .page-jeu .tg-bord .centre::before,
 .page-jeu .tg-bord .centre::after { content: none; }
 .page-jeu .tg-tapis > .centre__consigne {
-  position: absolute; left: 49.3%; top: 55%;
+  position: absolute; left: 49.9%; top: 55.2%;
   translate: -50% 0;
-  width: 36%;
+  width: 30%;
   font-size: clamp(.62rem, .95cqw, .85rem);
   color: rgba(230,224,214,.8);
   text-shadow: 0 1px 3px #000, 0 0 8px #000;
 }
 
-/* Les Grimoires : le nombre de cartes posé sur la pile peinte */
+/* Les Grimoires : une pile de dos de cartes posée dans la clairière, et son nombre de cartes */
 .plateau-pile {
   position: absolute;
-  display: grid; place-items: center;
+  width: 4.2cqw; aspect-ratio: 2 / 3;
+  display: grid; place-items: end center;
   pointer-events: none;
+  background: url("../img/Cartes/Verso-Carte.webp") center / contain no-repeat;
+  filter: drop-shadow(.25cqw .25cqw 0 #2a1a14) drop-shadow(.25cqw .25cqw 0 #3a261c) drop-shadow(0 .6cqw .8cqw rgba(0,0,0,.7));
 }
-.plateau-pile--adverse { left: 5%; width: 16%; top: 14%; height: 14%; }
-.plateau-pile--joueur  { left: 79%; width: 16%; top: 72%; height: 14%; }
+.plateau-pile--adverse { left: 16.6%; top: 17%; }
+.plateau-pile--joueur  { left: 81.6%; top: 57%; }
 .plateau-pile b {
+  translate: 0 50%;
   display: grid; place-items: center;
   min-width: 3.2cqw; height: 2.3cqw; padding: 0 .5cqw;
   clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%);
@@ -2030,14 +2137,21 @@ body.en-duel { overflow: hidden; padding: 0 !important; }
   box-shadow: none;
   cursor: pointer;
 }
-.page-jeu .tg-bord .tombeau--adverse { left: 5%; width: 16%; top: 30%; height: 40%; }
-.page-jeu .tg-bord .tombeau--joueur  { left: 79%; width: 16%; top: 30%; height: 40%; }
+/* emplacement du Tombeau : un cadre de carte sombre, la dernière carte posée dessus */
+.page-jeu .tg-bord .tombeau--adverse { left: 22.2%; top: 17%; }
+.page-jeu .tg-bord .tombeau--joueur  { left: 75.6%; top: 57%; }
+.page-jeu .tg-bord .tombeau--adverse, .page-jeu .tg-bord .tombeau--joueur {
+  width: 4.2cqw; aspect-ratio: 2 / 3;
+  border-radius: .5cqw;
+  background: rgba(14,12,18,.55);
+  box-shadow: inset 0 0 0 1px rgba(230,224,214,.35), 0 .4cqw .8cqw rgba(0,0,0,.5);
+}
 .page-jeu .tg-bord .tombeau:hover,
 .page-jeu .tg-bord .tombeau:focus-visible { filter: brightness(1.2); outline: none; }
-.tombeau__carte { --carte-l: 7cqw; display: block; pointer-events: none; filter: grayscale(.35) brightness(.85); }
+.tombeau__carte { --carte-l: 4.2cqw; display: block; pointer-events: none; filter: grayscale(.35) brightness(.85); }
 .tombeau__carte > * { pointer-events: none; }
 .tombeau__compte {
-  position: absolute; right: 8%; bottom: 0;
+  position: absolute; left: 50%; bottom: 0; translate: -50% 50%;
   display: flex; align-items: center; gap: .3cqw;
   padding: .2cqw .6cqw;
   background: rgba(10,8,10,.85);
@@ -2050,3 +2164,48 @@ body.en-duel { overflow: hidden; padding: 0 !important; }
 .tombeau__compte path:last-child { fill: none; stroke: #e9e6e0; stroke-width: 1.8; }
 .page-jeu .tg-bord .tombeau.est-cible { box-shadow: 0 0 0 3px var(--ambre), 0 0 24px var(--ambre-lueur); }
 .tombeau__carte .dc-carte { display: block; position: relative; }
+
+
+/* =====================================================================
+   Disposition du duel sur ordinateur : un grand plateau au milieu
+   - le plateau prend toute la place libre (largeur moins les boutons à droite,
+     hauteur moins la barre de l'adversaire et la main), en gardant sa forme 1944 / 809
+   - ton énergie et ton héros : une plaque en bas à gauche de l'écran
+   - la main : des cartes plus petites, qui grossissent au survol
+   (vient en dernier : ces règles l'emportent)
+   ===================================================================== */
+.en-duel .main, .en-duel .main .dc-carte { --carte-l: min(6.2vw, 11.5vh); }
+.en-duel .main .dc-carte:hover, .en-duel .main .dc-carte:focus-visible,
+.en-duel .main .dc-carte.est-choisie { translate: 0 calc(var(--carte-l) * -0.35); scale: 1.45; z-index: 6; }
+
+@media (min-width: 1101px) {
+  .en-duel .tg-table { width: 100%; }
+  .en-duel .tg-perspective {
+    width: min(calc(100vw - 2 * clamp(150px, 11vw, 190px)), calc((100vh - 13vh - var(--carte-l-main) * 1.5 - 40px) * 1944 / 809));
+    margin: 0 auto;
+  }
+  .en-duel .table__plateau { --carte-l-main: min(6.2vw, 11.5vh); }
+
+  /* Ta plaque (énergie + héros) en bas à gauche, hors du flux : le plateau gagne sa hauteur */
+  .en-duel .tg-bas {
+    position: absolute; left: 14px; bottom: 14px; z-index: 5;
+    margin: 0;
+    padding: 6px 30px 6px 22px;
+    gap: 18px;
+    grid-template-columns: auto auto;
+  }
+  .en-duel .tg-bas .tg-pile { display: none; }
+  .en-duel .tg-bas .energie { max-width: 108px; }
+}
+
+/* Fin du tour, Destin, Défausser, Méditer : en bas à droite de l'écran (symétrique de ta plaque) */
+@media (min-width: 1101px) {
+  .en-duel .tg-cote {
+    position: fixed; top: auto; right: 14px; bottom: 14px; z-index: 5;
+    translate: none;
+  }
+}
+
+/* Vraies cartes posées sur le plateau : l'image est agrandie de sa marge transparente (~3,5 % de chaque côté),
+   pour que le cadre de la carte remplisse la case comme une troupe du Codex */
+.page-jeu .tg-bord .dc-unite .dc-face--hote { scale: 1.075; }
