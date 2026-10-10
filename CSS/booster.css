@@ -1,0 +1,297 @@
+/* =====================================================================
+   Boosters : l'échoppe de la boutique et l'animation d'ouverture
+   (JS/boutique-boosters.js, JS/booster-ouverture.js)
+   --rarete : couleur de la meilleure rareté du booster ouvert
+   ===================================================================== */
+
+/* ---------- Échoppe des boosters (boutique) ---------- */
+.page-boutique .etal--boosters { display: flex; flex-wrap: wrap; justify-content: center; gap: 0 28px; }
+.page-boutique .etal--boosters .article { width: min(300px, 100%); }
+.page-boutique .article__niche--booster { height: 230px; }
+.page-boutique .article__booster {
+  height: 210px; width: auto;
+  filter: drop-shadow(0 12px 14px rgba(0,0,0,.75));
+  transition: transform .35s ease, filter .35s ease;
+}
+.page-boutique .article:hover .article__booster { transform: translateY(-6px) rotate(-2deg) scale(1.04); filter: drop-shadow(0 16px 18px rgba(0,0,0,.8)) drop-shadow(0 0 14px rgba(216,185,120,.35)); }
+.page-boutique .booster__possedes {
+  position: absolute; top: 10px; right: 10px;
+  min-width: 30px; padding: 3px 9px;
+  background: linear-gradient(180deg, #f6d995, #d9a441);
+  color: #1a1416;
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: .8rem; font-weight: 800;
+  box-shadow: 0 3px 8px rgba(0,0,0,.6);
+}
+.page-boutique .booster__chances {
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 10px;
+  margin: 4px 0 0; padding: 0; list-style: none;
+  font-size: .76rem; color: var(--texte-doux);
+}
+.page-boutique .booster__chances li::before {
+  content: ""; display: inline-block; width: 7px; height: 7px; margin-right: 5px;
+  transform: rotate(45deg); background: var(--c);
+}
+.page-boutique .booster__cartes { display: flex; justify-content: center; gap: 6px; margin-top: 6px; }
+.page-boutique .booster__cartes img { width: 38px; height: 57px; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,.6)); }
+.page-boutique .btn-ouvrir {
+  align-self: stretch;
+  margin-top: 8px; padding: 10px 8px;
+  border: 0;
+  background: linear-gradient(180deg, #f6d995, #d9a441);
+  color: #1a1410;
+  font-family: "Cinzel","Cinzel Repli", serif; font-weight: 800;
+  font-size: .76rem; letter-spacing: .14em; text-transform: uppercase;
+  cursor: pointer;
+  animation: ouvrir-appel 2.4s ease-in-out infinite;
+}
+.page-boutique .btn-ouvrir:hover { filter: brightness(1.1); }
+@keyframes ouvrir-appel { 50% { box-shadow: 0 0 16px rgba(240,200,115,.55); } }
+
+/* ---------- Animation d'ouverture ---------- */
+.ob {
+  --rarete: #ffffff;
+  position: fixed; inset: 0; z-index: 400;
+  display: grid; grid-template-rows: 1fr auto auto; justify-items: center;
+  overflow: hidden;
+  background: radial-gradient(ellipse at 50% 45%, #1e1a24, #07060a 75%);
+  cursor: pointer;
+  user-select: none; -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+  animation: ob-entree .3s ease-out both;
+}
+.ob--sortie { animation: ob-sortie .3s ease-in both; }
+@keyframes ob-entree { from { opacity: 0; } }
+@keyframes ob-sortie { to { opacity: 0; } }
+body.ob-ouvert { overflow: hidden; }
+
+/* Lumière de fond : blanche pendant les fissures, couleur de la rareté ensuite */
+.ob__lumiere {
+  position: absolute; left: 50%; top: 45%;
+  width: 90vmin; height: 90vmin; translate: -50% -50%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,255,255,.14), transparent 65%);
+  transition: background .4s ease, scale .6s ease;
+  pointer-events: none;
+}
+.ob[data-taps="2"] .ob__lumiere { background: radial-gradient(circle, rgba(255,255,255,.22), transparent 65%); }
+.ob--couleur .ob__lumiere { background: radial-gradient(circle, color-mix(in srgb, var(--rarete) 55%, transparent), transparent 66%); scale: 1.3; }
+.ob__rayons {
+  position: absolute; left: 50%; top: 45%;
+  width: 150vmax; height: 150vmax; translate: -50% -50%;
+  background: repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--rarete) 22%, transparent) 0deg 5deg, transparent 5deg 15deg);
+  -webkit-mask: radial-gradient(circle, #000, transparent 50%); mask: radial-gradient(circle, #000, transparent 50%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .5s ease;
+  animation: ob-rayons 16s linear infinite;
+}
+.ob--couleur .ob__rayons { opacity: 1; }
+@keyframes ob-rayons { to { rotate: 360deg; } }
+
+.ob__scene {
+  position: relative;
+  align-self: center;
+  display: grid; place-items: center;
+  width: 100%; height: 100%;
+}
+
+/* La porte (le booster) : deux battants découpés dans la même image */
+.ob__porte {
+  --l: min(62vw, 46vh, 360px);
+  position: relative;
+  width: var(--l); aspect-ratio: 2 / 3;
+  perspective: 1200px;
+  animation: ob-porte .7s cubic-bezier(.2,1.3,.4,1) both;
+  filter: drop-shadow(0 20px 30px rgba(0,0,0,.7));
+}
+@keyframes ob-porte { from { transform: translateY(40px) scale(.7); opacity: 0; } }
+.ob__battant {
+  position: absolute; top: 0; bottom: 0; width: 50%;
+  background-size: 200% 100%;
+  background-repeat: no-repeat;
+  transition: transform .9s cubic-bezier(.5,0,.2,1), opacity .9s ease;
+}
+.ob__battant--g { left: 0; background-position: left center; transform-origin: left center; }
+.ob__battant--d { right: 0; background-position: right center; transform-origin: right center; }
+.ob--ouvert .ob__battant--g { transform: rotateY(-105deg); opacity: 0; }
+.ob--ouvert .ob__battant--d { transform: rotateY(105deg); opacity: 0; }
+
+/* Fissures : apparaissent tap après tap, puis prennent la couleur de la rareté */
+.ob__fissures { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; transition: opacity .4s ease; }
+.ob__fissure polyline {
+  fill: none; stroke: #fff; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round;
+  stroke-dasharray: 1; stroke-dashoffset: 1;
+  filter: drop-shadow(0 0 4px #fff);
+  transition: stroke-dashoffset .35s ease-out, stroke .4s ease;
+}
+.ob[data-taps="1"] .ob__fissure--1 polyline,
+.ob[data-taps="2"] .ob__fissure--1 polyline, .ob[data-taps="2"] .ob__fissure--2 polyline,
+.ob[data-taps="3"] .ob__fissure polyline { stroke-dashoffset: 0; }
+.ob--couleur .ob__fissure polyline { stroke: var(--rarete); filter: drop-shadow(0 0 6px var(--rarete)); }
+.ob--ouvert .ob__fissures { opacity: 0; }
+
+/* Le cristal du centre (50 % / 50,5 % de l'image) */
+.ob__cristal {
+  position: absolute; left: 50%; top: 50.5%;
+  width: 18%; aspect-ratio: 2 / 3; translate: -50% -50%;
+  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+  background: radial-gradient(circle, rgba(255,255,255,.0), transparent);
+  transition: background .3s ease, scale .3s ease, opacity .5s ease;
+}
+.ob[data-taps="1"] .ob__cristal { background: radial-gradient(circle, rgba(255,255,255,.55), rgba(255,255,255,.1) 70%); }
+.ob[data-taps="2"] .ob__cristal { background: radial-gradient(circle, rgba(255,255,255,.85), rgba(255,255,255,.25) 70%); scale: 1.08; }
+.ob[data-taps="3"] .ob__cristal { background: radial-gradient(circle, #fff, rgba(255,255,255,.4) 70%); scale: 1.15; }
+.ob--couleur .ob__cristal {
+  background: radial-gradient(circle, #fff 10%, var(--rarete) 55%, transparent 80%);
+  scale: 1.6;
+  animation: ob-cristal 1.2s ease-in-out infinite;
+}
+@keyframes ob-cristal { 50% { scale: 1.85; } }
+.ob--ouvert .ob__cristal { opacity: 0; scale: 3; }
+
+/* Les cartes : cachées dans la porte, elles en sortent face cachée */
+.ob__cartes {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center; gap: clamp(10px, 3vw, 34px);
+  pointer-events: none;
+}
+.ob-carte {
+  --lc: min(26vw, 30vh, 200px);
+  width: var(--lc);
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  opacity: 0;
+  transform: scale(.3);
+  transition: opacity .5s ease, transform .7s cubic-bezier(.2,1.3,.4,1);
+  transition-delay: calc(.25s + var(--i) * .12s);
+}
+.ob--ouvert .ob-carte { opacity: 1; transform: none; }
+.ob-carte__corps {
+  position: relative;
+  width: 100%; aspect-ratio: 2 / 3;
+  transform-style: preserve-3d;
+  transition: transform .7s cubic-bezier(.3,1.3,.4,1);
+}
+.ob-carte__dos, .ob-carte__face {
+  position: absolute; inset: 0;
+  backface-visibility: hidden; -webkit-backface-visibility: hidden;
+}
+.ob-carte__dos img, .ob-carte__face img { width: 100%; height: 100%; object-fit: contain; }
+.ob-carte__dos { filter: drop-shadow(0 10px 14px rgba(0,0,0,.7)); }
+.ob-carte__face { transform: rotateY(180deg); filter: drop-shadow(0 0 18px var(--c)) drop-shadow(0 10px 14px rgba(0,0,0,.7)); }
+.ob-carte--revelee .ob-carte__corps { transform: rotateY(180deg) scale(1.06); }
+.ob-carte__info {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  min-height: 3.6em;
+  text-align: center;
+  opacity: 0; transform: translateY(8px);
+  transition: opacity .4s ease .35s, transform .4s ease .35s;
+}
+.ob-carte--revelee .ob-carte__info { opacity: 1; transform: none; }
+.ob-carte__rarete {
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: .64rem; letter-spacing: .2em; text-transform: uppercase;
+  color: var(--c);
+}
+.ob-carte__nom { font-family: "Cinzel","Cinzel Repli", serif; font-size: clamp(.8rem, 2.4vw, 1rem); color: #f2eee6; }
+.ob-carte__etat { font-size: .78rem; color: #bcb2a4; font-style: italic; }
+.ob-carte__etat--nouvelle { color: #8fe3a5; font-style: normal; font-weight: 600; }
+
+/* Texte d'aide et fin */
+.ob__aide {
+  margin: 0 0 18px; min-height: 1.4em;
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: .82rem; letter-spacing: .18em; text-transform: uppercase;
+  color: rgba(242,238,230,.75);
+  animation: ob-aide 1.6s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes ob-aide { 50% { opacity: .45; } }
+.ob__fin { display: flex; flex-direction: column; align-items: center; gap: 12px; margin-bottom: 28px; cursor: default; animation: ob-entree .4s ease-out both; }
+.ob__bilan { margin: 0; color: #f2eee6; font-size: 1.05rem; }
+.ob__boutons { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+.ob__btn {
+  padding: 10px 20px;
+  border: 1px solid rgba(240,236,227,.55);
+  background: rgba(10,8,12,.7);
+  color: #f2eee6;
+  font-family: "Cinzel","Cinzel Repli", serif; font-weight: 700; font-size: .78rem; letter-spacing: .12em; text-transform: uppercase;
+  cursor: pointer;
+}
+.ob__btn:hover { border-color: #f0c873; }
+.ob__btn--or { background: linear-gradient(180deg, #f6d995, #d9a441); border-color: #d9a441; color: #1a1410; }
+
+/* Éclats */
+.ob__particules { position: absolute; inset: 0; pointer-events: none; }
+.ob__eclat {
+  position: fixed; width: 9px; height: 9px;
+  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+  background: var(--c); box-shadow: 0 0 10px var(--c);
+  will-change: transform, opacity;
+}
+
+/* Transcendante : un éclat doré plus fort */
+.ob--transcendante.ob--couleur .ob__lumiere { scale: 1.6; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ob, .ob__porte, .ob__rayons, .ob__cristal, .ob__aide, .page-boutique .btn-ouvrir { animation: none; }
+  .ob__battant, .ob-carte, .ob-carte__corps, .ob-carte__info { transition: none; }
+}
+@media (max-width: 600px) {
+  .ob-carte { --lc: min(29vw, 26vh); }
+  .ob-carte__etat { font-size: .68rem; }
+  .page-boutique .article__niche--booster { height: 180px; }
+  .page-boutique .article__booster { height: 165px; }
+}
+
+/* ---------- Image du booster : la porte devant, les cartes en éventail derrière ----------
+   --n : nombre de cartes du booster (1, 3, 5) ; --k : place de chaque carte dans l'éventail */
+.page-boutique .booster__pile {
+  position: relative;
+  width: 100%; height: 100%;
+  display: grid; place-items: end center;
+  padding-bottom: 8px;
+}
+.page-boutique .booster__pile .article__booster { position: relative; z-index: 2; height: 196px; }
+.page-boutique .booster__dos {
+  position: absolute; bottom: 30px; left: 50%;
+  width: 92px; aspect-ratio: 2 / 3;
+  margin-left: -46px;
+  transform-origin: 50% 100%;
+  /* écart et rotation selon la place ; plus il y a de cartes, plus l'éventail s'ouvre */
+  transform: translateX(calc(var(--k) * 34px)) translateY(calc(var(--k) * var(--k) * 3px - 34px)) rotate(calc(var(--k) * 13deg));
+  filter: drop-shadow(0 6px 8px rgba(0,0,0,.75)) brightness(.9);
+  transition: transform .35s ease;
+  z-index: 1;
+}
+.page-boutique .booster__pile--1 .booster__dos { transform: translateY(-40px) rotate(8deg) translateX(30px); }
+/* au survol, l'éventail s'ouvre un peu plus */
+.page-boutique .article:hover .booster__dos {
+  transform: translateX(calc(var(--k) * 44px)) translateY(calc(var(--k) * var(--k) * 4px - 46px)) rotate(calc(var(--k) * 17deg));
+}
+.page-boutique .article:hover .booster__pile--1 .booster__dos { transform: translateY(-54px) rotate(12deg) translateX(40px); }
+
+/* Ruban « 1 carte / 3 cartes / 5 cartes » */
+.page-boutique .booster__ruban {
+  position: absolute; top: 12px; left: -6px; z-index: 3;
+  padding: 5px 14px 5px 12px;
+  background: linear-gradient(180deg, #8a2a30, #5a161b);
+  color: #f6ecd8;
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: .78rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
+  clip-path: polygon(0 0, 100% 0, calc(100% - 10px) 50%, 100% 100%, 0 100%);
+  box-shadow: 0 4px 8px rgba(0,0,0,.6);
+}
+.page-boutique .article--booster:has(.booster__pile--5) .booster__ruban { background: linear-gradient(180deg, #f6d995, #b8892f); color: #1a1410; }
+.page-boutique .article--booster:has(.booster__pile--1) .booster__ruban { background: linear-gradient(180deg, #6b717c, #3e434c); }
+.page-boutique .article--booster:has(.booster__pile--5) .article__niche { box-shadow: inset 0 0 28px rgba(0,0,0,.95), inset 0 0 40px rgba(240,200,115,.12); }
+
+/* ---------- Ouverture : la taille des cartes dépend de leur nombre (1 à 5) ---------- */
+.ob__cartes { flex-wrap: wrap; align-content: center; padding: 0 12px; }
+.ob-carte { --lc: min(calc(86vw / var(--n, 3)), 30vh, 200px); }
+@media (max-width: 600px) {
+  /* téléphone : 3 cartes au plus par ligne (un booster de 5 fait 2 lignes) */
+  .ob-carte { --lc: min(calc(84vw / min(var(--n, 3), 3)), 22vh, 170px); }
+  .page-boutique .booster__pile .article__booster { height: 150px; }
+  .page-boutique .booster__dos { width: 70px; margin-left: -35px; bottom: 24px; }
+}
+/* 5 cartes : éventail un peu plus serré, pour rester dans la niche */
+.page-boutique .booster__pile--5 .booster__dos { transform: translateX(calc(var(--k) * 27px)) translateY(calc(var(--k) * var(--k) * 3px - 30px)) rotate(calc(var(--k) * 11deg)); }
+.page-boutique .article:hover .booster__pile--5 .booster__dos { transform: translateX(calc(var(--k) * 33px)) translateY(calc(var(--k) * var(--k) * 3.5px - 40px)) rotate(calc(var(--k) * 14deg)); }

@@ -336,6 +336,31 @@ const ATTAQUES = {
       voile('rgba(240,200,115,.35)', 700);
     },
   },
+  // Seigneur des Marais
+  'Étreinte de la Vase': {
+    charge: aura(['#6b7a4a', '#3e4a2a', '#a3b07a'], true),
+    async coup(att, cib) {
+      jouerSon('gluant');
+      // la vase monte sous la cible, puis la retient (pointes boueuses, bulles qui éclatent)
+      pointes(cib, { n: 6, couleur: '#4a5a2e', hauteur: 0.85, duree: 900 });
+      await pause(220);
+      jouerSon('eau');
+      particules(cib, { n: 22, couleurs: ['#6b7a4a', '#3e4a2a', '#8a9a5a'], vitesse: 60, monte: 20, gravite: 120, rond: true, depuis: 'surface', taille: [5, 12], duree: 1100 });
+      onde(cib, '#6b7a4a', 2, 700);
+      secousseEcran(6);
+    },
+  },
+  'Brume Stagnante': {
+    charge: aura(['#9fb3a0', '#5f7a6a', '#d0dccf']),
+    async coup(att, cib) {
+      jouerSon('sombre');
+      // une brume verdâtre roule jusqu'à la cible et l'enveloppe
+      await salve(att, cib, 3, { couleur: '#8fa596', taille: 38, duree: 620, arc: 25, trainee: true }, 110);
+      voile('rgba(70,95,80,.45)', 900);
+      particules(cib, { n: 26, couleurs: ['#9fb3a0', '#5f7a6a', '#c3d1c4'], vitesse: 35, monte: 40, gravite: -15, rond: true, depuis: 'surface', taille: [10, 20], duree: 1500 });
+      jouerSon('eau', 0.2);
+    },
+  },
   // Veilleuse Écarlate
   'Saignée Pourpre': {
     async coup(att, cib) {

@@ -14,6 +14,7 @@ const etat = {
   saison: null,
   paliers: new Map(),   // "numero-piste" -> palier
   cartes: new Map(),    // nom -> { image, rarity } (récompenses « carte »)
+  boosters: new Map(),  // id -> { nom, image } (récompenses « booster », SQL/boosters.sql)
   prog: null,           // { xp, premium, reclames_gratuite, reclames_premium }
   solde: 0,
 };
@@ -21,6 +22,7 @@ const etat = {
 const TYPES = {
   or: 'Or',
   carte: 'Carte',
+  booster: 'Booster',
   dos_carte: 'Dos de cartes',
   cadre_portrait: 'Cadre de portrait',
   titre: 'Titre',
@@ -58,6 +60,10 @@ async function chargerSaison() {
   if (noms.length) {
     const { data: cartes } = await supabase.from('cards').select('name, image, rarity').in('name', noms);
     etat.cartes = new Map((cartes ?? []).map((c) => [c.name, c]));
+  }
+  if ((paliers ?? []).some((p) => p.type_recompense === 'booster')) {
+    const { data: boosters } = await supabase.from('boosters').select('id, nom, image');
+    etat.boosters = new Map((boosters ?? []).map((b) => [b.id, b]));
   }
 }
 
@@ -129,6 +135,12 @@ function contenuRecompense(p) {
     const c = etat.cartes.get(v.nom);
     return `<span class="recompense__visuel recompense__visuel--carte">${c?.image ? `<img src="${urlImage(c.image)}" alt="" loading="lazy">` : svg('dos_carte')}</span>
       <span class="recompense__nom">${esc(v.nom ?? 'Carte')}</span>`;
+  }
+  if (p.type_recompense === 'booster') {
+    const b = etat.boosters.get(v.booster ?? 'cendres');
+    const n = v.quantite ?? 1;
+    return `<span class="recompense__visuel recompense__visuel--carte">${b?.image ? `<img src="${urlImage(b.image)}" alt="" loading="lazy">` : svg('dos_carte')}</span>
+      <span class="recompense__nom">${esc(b?.nom ?? 'Booster')}${n > 1 ? ` ×${n}` : ''}</span>`;
   }
   return `<span class="recompense__visuel recompense__visuel--cosmetique">${svg(p.type_recompense)}</span>
     <span class="recompense__nom">${esc(v.nom ?? TYPES[p.type_recompense])}</span>`;
@@ -219,6 +231,8 @@ $('piste').addEventListener('click', async (e) => {
     notifier(error.message || 'Impossible de réclamer cette récompense.', 'erreur');
   } else if (data.type === 'or') {
     notifier(`+${nombre(data.or)} or ajoutés à ta bourse.`);
+  } else if (data.type === 'booster') {
+    notifier(`${data.quantite > 1 ? `${data.quantite} × ` : ''}« ${data.nom} » ajouté : ouvre-le dans la Boutique !`);
   } else if (data.type === 'carte') {
     notifier(data.deja_possedee
       ? `Tu avais déjà « ${data.nom} » : +${nombre(data.or)} or à la place.`

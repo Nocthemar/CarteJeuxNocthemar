@@ -6,6 +6,7 @@
 --  - pass_progression  : XP du joueur dans la saison, premium débloqué, paliers réclamés,
 --                        compteurs du jour (plafonds des duels contre l'IA et contre un ami)
 --  - pass_parties      : les « tickets » de partie (anti-triche des duels, voir plus bas)
+--  - récompenses : or, cartes, boosters (SQL/boosters.sql) et cosmétiques
 --  - pass_cosmetiques  : les cosmétiques gagnés (dos de cartes, cadres, titres, fonds de plateau),
 --                        enregistrés seulement : leur affichage n'existe pas encore
 --
@@ -27,7 +28,7 @@
 --      compte, avec son propre ticket dans le même salon ; une seule victoire par partie ;
 --    - un abandon ne rapporte rien (le jeu ne déclare pas la fin de la partie).
 --
---  À exécuter dans Supabase > SQL Editor, APRÈS cartes_collection.sql et mode_histoire.sql.
+--  À exécuter dans Supabase > SQL Editor, APRÈS cartes_collection.sql, mode_histoire.sql et boosters.sql.
 --  Relançable (les paliers de la saison 1 sont remis à jour, la progression est gardée).
 -- =====================================================================
 
@@ -54,13 +55,19 @@ create table if not exists public.pass_paliers (
   numero          int    not null check (numero >= 1),
   piste           text   not null check (piste in ('gratuite', 'premium')),
   type_recompense text   not null check (type_recompense in
-                    ('or', 'carte', 'dos_carte', 'cadre_portrait', 'titre', 'fond_plateau')),
+                    ('or', 'carte', 'booster', 'dos_carte', 'cadre_portrait', 'titre', 'fond_plateau')),
   -- or : {"montant": 150}
   -- carte : {"nom": "Dalek", "or_si_deja": 300}   (nom exact dans la table cards ; or donné si déjà possédée)
+  -- booster : {"booster": "cendres", "quantite": 1}  (SQL/boosters.sql ; il s'ouvre dans la Boutique)
   -- cosmétiques : {"nom": "Dos de l'Éveil"}
   valeur          jsonb  not null default '{}'::jsonb,
   primary key (saison_id, numero, piste)
 );
+
+-- Table déjà créée avant l'arrivée des boosters : on ajoute le type « booster »
+alter table public.pass_paliers drop constraint if exists pass_paliers_type_recompense_check;
+alter table public.pass_paliers add constraint pass_paliers_type_recompense_check check (type_recompense in
+  ('or', 'carte', 'booster', 'dos_carte', 'cadre_portrait', 'titre', 'fond_plateau'));
 
 create table if not exists public.pass_progression (
   discord_id        text   not null,
@@ -409,6 +416,14 @@ begin
       insert into player_cards (discord_id, card_id, source) values (v_moi, v_carte.id, 'recompense');
     end if;
 
+  elsif v_palier.type_recompense = 'booster' then
+    -- Booster : ajouté aux boosters du joueur (SQL/boosters.sql), à ouvrir dans la Boutique
+    select nom into v_nom from boosters where id = coalesce(v_palier.valeur ->> 'booster', 'cendres');
+    if not found then raise exception 'Booster introuvable.'; end if;
+    insert into player_boosters (discord_id, booster_id, quantite)
+    values (v_moi, coalesce(v_palier.valeur ->> 'booster', 'cendres'), coalesce((v_palier.valeur ->> 'quantite')::int, 1))
+    on conflict (discord_id, booster_id) do update set quantite = player_boosters.quantite + excluded.quantite;
+
   else
     -- Cosmétique : enregistré (son affichage viendra plus tard)
     insert into pass_cosmetiques (discord_id, type, nom, saison_id)
@@ -432,7 +447,8 @@ begin
     'nom', coalesce(v_carte.name, v_nom),
     'or', v_or,
     'carte_image', v_carte.image,
-    'deja_possedee', v_deja
+    'deja_possedee', v_deja,
+    'quantite', case when v_palier.type_recompense = 'booster' then coalesce((v_palier.valeur ->> 'quantite')::int, 1) end
   );
 end;
 $$;
@@ -498,30 +514,30 @@ where not exists (select 1 from public.saisons where nom = 'Les Cendres de Pravo
 
 with s as (select id from public.saisons where nom = 'Les Cendres de Pravorn'),
 paliers (numero, piste, type_recompense, valeur) as (values
-  -- Piste gratuite : de l'or, des cartes dédiées, un titre au bout
+  -- Piste gratuite : de l'or, des cartes dédiées, des boosters, un titre au bout
   ( 1, 'gratuite', 'or',             '{"montant": 50}'),
   ( 2, 'gratuite', 'or',             '{"montant": 50}'),
-  ( 3, 'gratuite', 'or',             '{"montant": 75}'),
+  ( 3, 'gratuite', 'booster',        '{"booster": "cendres", "quantite": 1}'),
   ( 4, 'gratuite', 'or',             '{"montant": 75}'),
   ( 5, 'gratuite', 'carte',          '{"nom": "Slime", "or_si_deja": 150}'),
   ( 6, 'gratuite', 'or',             '{"montant": 75}'),
   ( 7, 'gratuite', 'or',             '{"montant": 100}'),
-  ( 8, 'gratuite', 'or',             '{"montant": 100}'),
+  ( 8, 'gratuite', 'booster',        '{"booster": "cendres", "quantite": 1}'),
   ( 9, 'gratuite', 'or',             '{"montant": 100}'),
   (10, 'gratuite', 'carte',          '{"nom": "Mange-cœur", "or_si_deja": 200}'),
   (11, 'gratuite', 'or',             '{"montant": 100}'),
   (12, 'gratuite', 'or',             '{"montant": 125}'),
-  (13, 'gratuite', 'or',             '{"montant": 125}'),
+  (13, 'gratuite', 'booster',        '{"booster": "cendres", "quantite": 1}'),
   (14, 'gratuite', 'or',             '{"montant": 125}'),
   (15, 'gratuite', 'titre',          '{"nom": "Pèlerin des Cendres"}'),
   (16, 'gratuite', 'or',             '{"montant": 125}'),
   (17, 'gratuite', 'or',             '{"montant": 150}'),
-  (18, 'gratuite', 'or',             '{"montant": 150}'),
+  (18, 'gratuite', 'booster',        '{"booster": "cendres", "quantite": 1}'),
   (19, 'gratuite', 'or',             '{"montant": 150}'),
   (20, 'gratuite', 'carte',          '{"nom": "Kaéliss", "or_si_deja": 300}'),
   (21, 'gratuite', 'or',             '{"montant": 150}'),
   (22, 'gratuite', 'or',             '{"montant": 175}'),
-  (23, 'gratuite', 'or',             '{"montant": 175}'),
+  (23, 'gratuite', 'booster',        '{"booster": "cendres", "quantite": 1}'),
   (24, 'gratuite', 'or',             '{"montant": 175}'),
   (25, 'gratuite', 'or',             '{"montant": 200}'),
   (26, 'gratuite', 'or',             '{"montant": 200}'),
@@ -529,36 +545,37 @@ paliers (numero, piste, type_recompense, valeur) as (values
   (28, 'gratuite', 'or',             '{"montant": 225}'),
   (29, 'gratuite', 'or',             '{"montant": 250}'),
   (30, 'gratuite', 'titre',          '{"nom": "Vétéran de Pravorn"}'),
-  -- Piste premium : plus d'or, les cartes légendaires et du MJ, tous les cosmétiques
+  -- Piste premium : plus d'or, des boosters, les cartes légendaires, tous les cosmétiques
+  -- (le Maître du Jeu n'est plus dans le pass : il sort des boosters, SQL/boosters.sql)
   ( 1, 'premium',  'or',             '{"montant": 150}'),
   ( 2, 'premium',  'dos_carte',      '{"nom": "Dos des Cendres"}'),
   ( 3, 'premium',  'or',             '{"montant": 150}'),
-  ( 4, 'premium',  'or',             '{"montant": 175}'),
+  ( 4, 'premium',  'booster',        '{"booster": "cendres", "quantite": 1}'),
   ( 5, 'premium',  'carte',          '{"nom": "Dalek", "or_si_deja": 300}'),
   ( 6, 'premium',  'or',             '{"montant": 175}'),
   ( 7, 'premium',  'cadre_portrait', '{"nom": "Cadre de braise"}'),
   ( 8, 'premium',  'or',             '{"montant": 200}'),
-  ( 9, 'premium',  'or',             '{"montant": 200}'),
+  ( 9, 'premium',  'booster',        '{"booster": "cendres", "quantite": 1}'),
   (10, 'premium',  'fond_plateau',   '{"nom": "Plateau du crépuscule"}'),
   (11, 'premium',  'or',             '{"montant": 200}'),
   (12, 'premium',  'titre',          '{"nom": "Porteur de Couronne"}'),
   (13, 'premium',  'or',             '{"montant": 225}'),
-  (14, 'premium',  'or',             '{"montant": 225}'),
+  (14, 'premium',  'booster',        '{"booster": "cendres", "quantite": 1}'),
   (15, 'premium',  'carte',          '{"nom": "Kaéliss", "or_si_deja": 300}'),
   (16, 'premium',  'or',             '{"montant": 225}'),
   (17, 'premium',  'dos_carte',      '{"nom": "Dos du Codex doré"}'),
   (18, 'premium',  'or',             '{"montant": 250}'),
-  (19, 'premium',  'or',             '{"montant": 250}'),
+  (19, 'premium',  'booster',        '{"booster": "cendres", "quantite": 1}'),
   (20, 'premium',  'cadre_portrait', '{"nom": "Cadre royal"}'),
   (21, 'premium',  'or',             '{"montant": 250}'),
   (22, 'premium',  'or',             '{"montant": 275}'),
   (23, 'premium',  'fond_plateau',   '{"nom": "Plateau des Couronnes"}'),
-  (24, 'premium',  'or',             '{"montant": 275}'),
-  (25, 'premium',  'carte',          '{"nom": "Maître du Jeu", "or_si_deja": 500}'),
+  (24, 'premium',  'booster',        '{"booster": "cendres", "quantite": 1}'),
+  (25, 'premium',  'or',             '{"montant": 300}'),
   (26, 'premium',  'or',             '{"montant": 300}'),
   (27, 'premium',  'or',             '{"montant": 300}'),
   (28, 'premium',  'titre',          '{"nom": "Main du Destin"}'),
-  (29, 'premium',  'or',             '{"montant": 350}'),
+  (29, 'premium',  'booster',        '{"booster": "cendres", "quantite": 1}'),
   (30, 'premium',  'titre',          '{"nom": "Souverain des Cendres"}')
 )
 insert into public.pass_paliers (saison_id, numero, piste, type_recompense, valeur)

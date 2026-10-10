@@ -26,6 +26,7 @@ mêmes cartes, mêmes pièces, même progression.
   signatures des personnages : pour une nouvelle carte, ajouter son attaque dans `ATTAQUES`)
 - `JS/jeu-cartes-ligne.js` : le mode en ligne (salons Supabase Realtime)
 - `JS/jeu-cartes.js` : le pilote de la page du jeu
+- `JS/boutique-boosters.js`, `JS/booster-ouverture.js`, `CSS/booster.css` : les boosters de cartes (achat dans la Boutique, animation d'ouverture)
 - `JS/pass.js`, `CSS/pass.css` : la page du Pass de saison (l'XP se gagne en fin de duel, dans `JS/jeu-cartes.js`)
 - `JS/histoire-data.js` : les chapitres et niveaux du mode Histoire (à modifier à la main)
 - `JS/histoire.js`, `JS/collection.js`, `JS/cartes.js` : mode Histoire, collection, affichage des cartes
@@ -50,7 +51,8 @@ mêmes cartes, mêmes pièces, même progression.
    doit pointer vers l'adresse du jeu.
 4. **La base** : les fichiers de `SQL/` sont déjà passés dans Supabase pour la plupart ;
    `mode_histoire.sql` est à lancer s'il ne l'a pas encore été.
-   Pour le Pass de saison : relancer `mode_histoire.sql` (XP 200 / 500), puis lancer `pass_saison.sql`.
+   Pour le Pass de saison et les boosters, dans cet ordre : relancer `mode_histoire.sql` (XP 200 / 500),
+   lancer `boosters.sql`, puis `pass_saison.sql`.
 
 ## Bon à savoir
 

@@ -10,6 +10,7 @@ import { getMonJoueur } from './supabase.js';
 import { $, etat, chargerSolde, chargerPossedes, notifier } from './boutique-commun.js';
 import { afficherBoutiqueDuJour, acheterDuJour, demarrerCompteARebours } from './boutique-jour.js';
 import { afficherBoutiqueProfil, acheterProfil } from './boutique-profil.js';
+import { afficherBoosters } from './boutique-boosters.js';
 
 const ACHATS = { jour: acheterDuJour, profil: acheterProfil };
 
@@ -21,7 +22,7 @@ async function init() {
     await Promise.all([chargerSolde(), chargerPossedes()]);
   }
 
-  await Promise.all([afficherBoutiqueDuJour(), afficherBoutiqueProfil()]);
+  await Promise.all([afficherBoutiqueDuJour(), afficherBoutiqueProfil(), afficherBoosters()]);
   demarrerCompteARebours();
 }
 
@@ -55,7 +56,7 @@ document.addEventListener('click', async (e) => {
 
   // Le solde est commun aux deux boutiques : on les recharge toutes les deux
   await Promise.all([chargerSolde(), chargerPossedes()]);
-  await Promise.all([afficherBoutiqueDuJour(), afficherBoutiqueProfil()]);
+  await Promise.all([afficherBoutiqueDuJour(), afficherBoutiqueProfil(), afficherBoosters()]);
 });
 
 init();
