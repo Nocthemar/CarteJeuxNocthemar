@@ -7,6 +7,7 @@
 // =====================================================================
 import { supabase, getMonJoueur, connexionDiscord, SITE_ROOT } from './supabase.js';
 import { $, esc, notifier } from './commun.js';
+import { jouerSon } from './jeu-cartes-son.js';   // fanfare du déblocage premium (respecte le volume et le mode muet du jeu)
 
 const etat = {
   moi: null,
@@ -231,16 +232,115 @@ $('piste').addEventListener('click', async (e) => {
   $('piste').scrollLeft = defilement;
 });
 
+// Pas de fenêtre du navigateur : le premier clic transforme le bouton en « Confirmer »
+// (pendant 4 s), le second clic achète. Évite de dépenser 1 500 or par un clic de travers.
+let confirmationPremium = null;
 $('btn-premium').addEventListener('click', async () => {
-  const prix = etat.saison.prix_premium;
-  if (!confirm(`Débloquer la piste premium pour ${nombre(prix)} or ?`)) return;
-  $('btn-premium').disabled = true;
+  const bouton = $('btn-premium');
+  if (!confirmationPremium) {
+    bouton.classList.add('btn-premium--confirmer');
+    bouton.innerHTML = `Confirmer l'achat <span class="btn-premium__prix"><img src="img/Equipement/Or-icone.webp" alt=""> ${nombre(etat.saison.prix_premium)}</span>`;
+    confirmationPremium = setTimeout(() => { confirmationPremium = null; bouton.classList.remove('btn-premium--confirmer'); afficherPremium(); }, 4000);
+    return;
+  }
+  clearTimeout(confirmationPremium);
+  confirmationPremium = null;
+  bouton.classList.remove('btn-premium--confirmer');
+  bouton.disabled = true;
   const { error } = await supabase.rpc('pass_debloquer_premium');
   if (error) notifier(error.message || 'Impossible de débloquer la piste premium.', 'erreur');
-  else notifier('Piste premium débloquée ! Réclame tes récompenses premium.');
   await chargerJoueur();
   toutAfficher();
+  if (!error) {
+    await celebrerPremium();
+    revelerPistePremium();
+  }
 });
+
+// ---------------------------------------------------------------------
+//  Animation : piste premium débloquée
+//  1. écran de fête : rayons, blason qui s'abat, pluie de pièces et d'étincelles, fanfare
+//  2. à la fermeture, la ligne premium s'illumine case par case, jusqu'au palier atteint
+// ---------------------------------------------------------------------
+const mouvementReduit = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function pluie(zone, n) {
+  const l = innerWidth; const h = innerHeight;
+  for (let i = 0; i < n; i++) {
+    const piece = i % 3 === 0;
+    const el = document.createElement(piece ? 'img' : 'span');
+    if (piece) { el.src = 'img/Equipement/Or-icone.webp'; el.alt = ''; }
+    el.className = piece ? 'fete__piece' : 'fete__etincelle';
+    zone.appendChild(el);
+    // jaillit du centre, retombe en tournant
+    const angle = Math.random() * Math.PI * 2;
+    const force = (0.25 + Math.random() * 0.45) * Math.min(l, h);
+    const dx = Math.cos(angle) * force;
+    const dy = Math.sin(angle) * force * 0.7 - h * 0.12;
+    const a = el.animate([
+      { transform: 'translate(-50%, -50%) scale(.2) rotate(0deg)', opacity: 0 },
+      { transform: `translate(calc(-50% + ${dx * 0.7}px), calc(-50% + ${dy * 0.7}px)) scale(1) rotate(${Math.random() * 360}deg)`, opacity: 1, offset: 0.35 },
+      { transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy + h * 0.45}px)) scale(.7) rotate(${Math.random() * 720}deg)`, opacity: 0 },
+    ], { duration: 1600 + Math.random() * 900, delay: Math.random() * 350, easing: 'cubic-bezier(.15,.7,.35,1)', fill: 'both' });
+    a.onfinish = () => el.remove();
+  }
+}
+
+// Ouvre l'écran de fête ; se résout quand le joueur le ferme (ou tout seul après 6 s)
+function celebrerPremium() {
+  const fete = $('fete');
+  $('fete-saison').textContent = etat.saison.nom;
+  const dispo = document.querySelectorAll('.recompense--premium.recompense--disponible').length;
+  $('fete-texte').textContent = dispo
+    ? `${dispo} récompense${dispo > 1 ? 's' : ''} premium t'attend${dispo > 1 ? 'ent' : ''} déjà !`
+    : 'Chaque palier atteint te donnera aussi sa récompense premium.';
+  fete.hidden = false;
+  document.body.classList.add('fete-ouverte');
+  jouerSon('fanfare');
+  if (!mouvementReduit) {
+    pluie($('fete-particules'), 46);
+    setTimeout(() => pluie($('fete-particules'), 24), 650);
+  }
+  $('fete-ok').focus();
+
+  return new Promise((resolve) => {
+    let fini = false;
+    const fermer = () => {
+      if (fini) return;
+      fini = true;
+      clearTimeout(minuteur);
+      fete.classList.add('fete--sortie');
+      setTimeout(() => {
+        fete.hidden = true;
+        fete.classList.remove('fete--sortie');
+        $('fete-particules').innerHTML = '';
+        document.body.classList.remove('fete-ouverte');
+        resolve();
+      }, mouvementReduit ? 0 : 380);
+    };
+    const minuteur = setTimeout(fermer, 6000);
+    $('fete-ok').onclick = fermer;
+    fete.onclick = (e) => { if (e.target === fete) fermer(); };
+    fete.onkeydown = (e) => { if (e.key === 'Escape') fermer(); };
+  });
+}
+
+// La ligne premium s'éclaire de gauche à droite ; la piste défile jusqu'à la première récompense à réclamer
+function revelerPistePremium() {
+  const premiere = document.querySelector('.recompense--premium.recompense--disponible');
+  if (premiere) {
+    const colonne = premiere.closest('.palier');
+    $('piste').scrollTo({ left: Math.max(0, colonne.offsetLeft - 40), behavior: mouvementReduit ? 'auto' : 'smooth' });
+  }
+  if (mouvementReduit) return;
+  document.querySelectorAll('.recompense--premium').forEach((el, i) => {
+    el.animate([
+      { transform: 'translateY(10px) scale(.92)', filter: 'brightness(.5) saturate(.5)' },
+      { transform: 'translateY(-6px) scale(1.05)', filter: 'brightness(1.9) saturate(1.4)', offset: 0.45 },
+      { transform: 'none', filter: 'none' },
+    ], { duration: 650, delay: 250 + i * 55, easing: 'cubic-bezier(.2,.9,.3,1.2)', fill: 'backwards' });
+  });
+}
 
 $('btn-connexion').addEventListener('click', () => connexionDiscord());
 

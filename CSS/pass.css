@@ -115,6 +115,15 @@
 }
 .btn-premium:hover:not(:disabled) { filter: brightness(1.15); }
 .btn-premium:disabled { opacity: .5; cursor: not-allowed; }
+/* Second clic attendu : le bouton passe à l'or et pulse */
+.btn-premium--confirmer {
+  background: linear-gradient(180deg, #f6d995, #d9a441);
+  color: #1a1416;
+  animation: confirmer-pulse 1s ease-in-out infinite;
+}
+.btn-premium--confirmer .btn-premium__prix { color: #1a1416; }
+@keyframes confirmer-pulse { 50% { box-shadow: 0 0 18px rgba(240,200,115,.7); } }
+@media (prefers-reduced-motion: reduce) { .btn-premium--confirmer { animation: none; } }
 .btn-premium__prix { display: inline-flex; align-items: center; gap: 5px; color: var(--or-vif); }
 .btn-premium__prix img { width: 20px; height: 20px; }
 
@@ -290,4 +299,104 @@
   .legende { padding: 0 5px; font-size: .62rem; }
   /* la notification ne doit pas passer sous la barre de navigation du bas */
   .page-pass .notif { bottom: 90px; }
+}
+
+
+/* =====================================================================
+   Fête : piste premium débloquée (JS/pass.js, celebrerPremium)
+   Rayons qui tournent, blason qui s'abat, pluie de pièces et d'étincelles.
+   Seulement transform / opacity : fluide même sur téléphone.
+   ===================================================================== */
+.fete {
+  position: fixed; inset: 0; z-index: 300;
+  display: grid; place-items: center;
+  overflow: hidden;
+  background: radial-gradient(ellipse at 50% 45%, rgba(74,52,116,.88), rgba(10,7,14,.96) 70%);
+  animation: fete-entree .35s ease-out both;
+}
+.fete--sortie { animation: fete-sortie .38s ease-in both; }
+@keyframes fete-entree { from { opacity: 0; } }
+@keyframes fete-sortie { to { opacity: 0; } }
+body.fete-ouverte { overflow: hidden; }
+
+/* Rayons de lumière derrière le blason */
+.fete__rayons {
+  position: absolute; left: 50%; top: 45%;
+  width: 160vmax; height: 160vmax;
+  translate: -50% -50%;
+  background: repeating-conic-gradient(from 0deg, rgba(240,200,115,.16) 0deg 6deg, transparent 6deg 18deg);
+  -webkit-mask: radial-gradient(circle, #000 0, transparent 55%);
+          mask: radial-gradient(circle, #000 0, transparent 55%);
+  animation: fete-rayons 14s linear infinite, fete-rayons-entree .9s cubic-bezier(.2,.8,.3,1) both;
+}
+@keyframes fete-rayons { to { rotate: 360deg; } }
+@keyframes fete-rayons-entree { from { scale: .2; opacity: 0; } }
+
+/* Pièces et étincelles (créées par le script) */
+.fete__particules { position: absolute; inset: 0; pointer-events: none; }
+.fete__piece, .fete__etincelle { position: absolute; left: 50%; top: 42%; will-change: transform, opacity; }
+.fete__piece { width: 34px; height: 34px; filter: drop-shadow(0 2px 6px rgba(240,200,115,.6)); }
+.fete__etincelle {
+  width: 10px; height: 10px;
+  clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
+  background: #e6d4ff;
+  box-shadow: 0 0 10px #b48cf0;
+}
+.fete__etincelle:nth-child(4n) { background: #f6d995; }
+
+/* Le contenu : blason, titre, bouton */
+.fete__contenu {
+  position: relative;
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  max-width: min(520px, calc(100% - 32px));
+  text-align: center;
+}
+.fete__blason {
+  display: grid; place-items: center;
+  width: 150px; height: 170px;
+  clip-path: polygon(50% 0, 100% 22%, 100% 70%, 50% 100%, 0 70%, 0 22%);
+  background: linear-gradient(160deg, #f6d995, #8a6a2c 45%, #b48cf0 75%, #f0c873);
+  filter: drop-shadow(0 0 30px rgba(180,140,240,.8));
+  animation: fete-blason .9s cubic-bezier(.2,1.5,.35,1) both, fete-lueur 2.2s ease-in-out .9s infinite;
+}
+.fete__blason svg {
+  width: 120px; height: 140px; padding: 30px 26px;
+  clip-path: polygon(50% 0, 100% 22%, 100% 70%, 50% 100%, 0 70%, 0 22%);
+  background: radial-gradient(circle at 50% 40%, #4a3474, #1a1226 75%);
+  fill: #f6d995; stroke: #8a6a2c; stroke-width: .6;
+}
+@keyframes fete-blason {
+  0%   { transform: translateY(-60vh) scale(1.6) rotate(-25deg); opacity: 0; }
+  60%  { transform: translateY(0) scale(.92) rotate(4deg); opacity: 1; }
+  80%  { transform: scale(1.06) rotate(-2deg); }
+  100% { transform: none; }
+}
+@keyframes fete-lueur { 50% { filter: drop-shadow(0 0 46px rgba(240,200,115,.9)); } }
+
+.fete__sur {
+  margin-top: 8px;
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: .72rem; letter-spacing: .3em; text-transform: uppercase;
+  color: var(--premium);
+  animation: fete-monte .5s ease-out .55s both;
+}
+.fete__titre {
+  margin: 0;
+  font-family: "Cinzel Decorative","Cinzel Decorative Repli", serif;
+  font-size: clamp(1.6rem, 6vw, 2.6rem); line-height: 1.1;
+  background: linear-gradient(180deg, #fff6dc, #f0c873 55%, #b48cf0);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(0 2px 10px rgba(0,0,0,.6));
+  animation: fete-titre .6s cubic-bezier(.2,1.4,.4,1) .65s both;
+}
+@keyframes fete-titre { from { opacity: 0; transform: scale(.6); letter-spacing: .3em; } }
+.fete__texte { margin: 0; color: #e6dcf5; font-size: 1.05rem; animation: fete-monte .5s ease-out .85s both; }
+.fete__bouton { margin-top: 10px; animation: fete-monte .5s ease-out 1.05s both; }
+@keyframes fete-monte { from { opacity: 0; transform: translateY(14px); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .fete, .fete--sortie, .fete__rayons, .fete__blason, .fete__sur, .fete__titre, .fete__texte, .fete__bouton { animation: none; }
+}
+@media (max-width: 600px) {
+  .fete__blason { width: 116px; height: 132px; }
+  .fete__blason svg { width: 92px; height: 108px; padding: 22px 20px; }
 }

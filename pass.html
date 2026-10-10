@@ -95,6 +95,21 @@
 
   </main>
 
+  <!-- Célébration : piste premium débloquée (JS/pass.js, celebrerPremium) -->
+  <div class="fete" id="fete" hidden role="dialog" aria-modal="true" aria-labelledby="fete-titre">
+    <div class="fete__rayons" aria-hidden="true"></div>
+    <div class="fete__particules" id="fete-particules" aria-hidden="true"></div>
+    <div class="fete__contenu">
+      <div class="fete__blason" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M3 8l4 3 5-6 5 6 4-3-2 11H5z"/></svg>
+      </div>
+      <span class="fete__sur" id="fete-saison"></span>
+      <h2 class="fete__titre" id="fete-titre">Piste premium débloquée</h2>
+      <p class="fete__texte" id="fete-texte"></p>
+      <button type="button" class="btn-premium fete__bouton" id="fete-ok">Voir mes récompenses</button>
+    </div>
+  </div>
+
   <div id="notif" class="notif" role="status" aria-live="polite"></div>
 
   <script src="JS/lien-site.js"></script>
