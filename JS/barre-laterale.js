@@ -27,6 +27,7 @@
   const ICONES = {
     accueil: '<path d="M4 11l8-7 8 7"/><path d="M6 10v10h12V10"/><path d="M10 20v-5h4v5"/>',
     cartes:  '<rect x="3" y="6" width="11" height="15" rx="1.5" transform="rotate(-8 8.5 13.5)"/><rect x="10" y="3" width="11" height="15" rx="1.5" transform="rotate(8 15.5 10.5)"/>',
+    pass:    '<path d="M6 3h12v18l-6-4-6 4z"/><path d="M9 8l3 2 3-2M9 12l3 2 3-2"/>',
     collection:'<path d="M5 3h11l3 3v15H5z"/><path d="M9 3v6l2-1.5L13 9V3"/>',
     boutique:'<path d="M5 8h14l-1.2 12H6.2z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>',
     retour:  '<path d="M15 5l-7 7 7 7"/>',
@@ -38,6 +39,7 @@
   const surBoutique = new URL('boutique.html', racine).pathname === page;
   // Menu des modes de jeu (Duel, Histoire) : actif sur le menu du duel et sur la carte du mode Histoire
   const surModes = ['jeu-cartes.html', 'histoire.html'].some((p) => new URL(p, racine).pathname === page);
+  const surPass = new URL('pass.html', racine).pathname === page;
   const surCollection =new URL('collection.html', racine).pathname === page;
 
   function item(nom, libelle, href, actif){
@@ -92,12 +94,13 @@
   const compte = document.getElementById('discord-auth');
   if(compte) rail.appendChild(compte);
 
-  // Modes de jeu, Collection puis Boutique : juste sous la photo du compte Discord.
+  // Modes de jeu, Pass de saison, Collection puis Boutique : juste sous la photo du compte Discord.
   // JS/auth.js réécrit la zone à chaque (dé)connexion : on la replace à chaque fois.
   const liens = document.createElement('div');
   liens.className = 'rail-compte-liens';
   liens.append(
     item('cartes', 'Modes de jeu', lien('jeu-cartes.html'), surModes),
+    item('pass', 'Pass de saison', lien('pass.html'), surPass),
     item('collection', 'Collection', lien('collection.html'), surCollection),
     item('boutique', 'Boutique', lien('boutique.html'), surBoutique),
   );

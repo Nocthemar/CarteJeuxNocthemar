@@ -14,6 +14,7 @@ mêmes cartes, mêmes pièces, même progression.
 | `index.html` | Entrée du jeu : renvoie vers `jeu-cartes.html` |
 | `jeu-cartes.html` | Le menu et le plateau du Duel des Couronnes |
 | `histoire.html` | Le mode Histoire (carte des chapitres et des niveaux) |
+| `pass.html` | Le Pass de saison : 30 paliers, piste gratuite et piste premium (payée en or du jeu) |
 | `collection.html` | La collection de cartes (le grimoire) et les cartes favorites |
 
 ## Les fichiers
@@ -25,6 +26,7 @@ mêmes cartes, mêmes pièces, même progression.
   signatures des personnages : pour une nouvelle carte, ajouter son attaque dans `ATTAQUES`)
 - `JS/jeu-cartes-ligne.js` : le mode en ligne (salons Supabase Realtime)
 - `JS/jeu-cartes.js` : le pilote de la page du jeu
+- `JS/pass.js`, `CSS/pass.css` : la page du Pass de saison (l'XP se gagne en fin de duel, dans `JS/jeu-cartes.js`)
 - `JS/histoire-data.js` : les chapitres et niveaux du mode Histoire (à modifier à la main)
 - `JS/histoire.js`, `JS/collection.js`, `JS/cartes.js` : mode Histoire, collection, affichage des cartes
 - `JS/supabase.js`, `JS/auth.js`, `JS/commun.js` : connexion Supabase / Discord, outils communs
@@ -48,6 +50,7 @@ mêmes cartes, mêmes pièces, même progression.
    doit pointer vers l'adresse du jeu.
 4. **La base** : les fichiers de `SQL/` sont déjà passés dans Supabase pour la plupart ;
    `mode_histoire.sql` est à lancer s'il ne l'a pas encore été.
+   Pour le Pass de saison : relancer `mode_histoire.sql` (XP 200 / 500), puis lancer `pass_saison.sql`.
 
 ## Bon à savoir
 

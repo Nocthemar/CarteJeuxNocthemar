@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pass de saison — Nocthémar</title>
+  <link rel="icon" type="image/png" href="img/Logo/Nocthemar_logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800&family=Cinzel+Decorative:wght@700;900&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="CSS/polices.css">
+  <link rel="stylesheet" href="CSS/index.css">
+  <link rel="stylesheet" href="CSS/compte.css">
+  <link rel="stylesheet" href="CSS/pass.css">
+<!-- Thème clair / sombre : appliqué avant l'affichage -->
+<script>try{if(localStorage.getItem('nocthemar-theme')==='jour')document.documentElement.dataset.theme='jour'}catch(e){}</script>
+<link rel="stylesheet" href="CSS/theme-jour.css">
+</head>
+<body class="page-profil page-pass">
+
+  <header class="topbar">
+    <a class="brand" href="index.html">Nocthémar</a>
+    <span class="brand-sub">Duel des Couronnes</span>
+    <nav class="nav-links">
+      <a href="index.html">Accueil</a>
+    </nav>
+    <div id="discord-auth"></div>
+  </header>
+
+  <main class="profil-wrap pass-wrap">
+
+    <!-- En-tête : nom de la saison et compte à rebours -->
+    <header class="pass-entete">
+      <span class="pass-entete__sur">Pass de saison</span>
+      <h1 id="saison-nom">Chargement…</h1>
+      <p class="pass-rebours" id="rebours" aria-live="off"></p>
+    </header>
+
+    <!-- Pas connecté -->
+    <section class="pass-connexion" id="bloc-connexion" hidden>
+      <p>Connecte-toi avec Discord pour gagner de l'XP de pass, réclamer tes récompenses et débloquer la piste premium.</p>
+      <button type="button" class="btn-discord" id="btn-connexion">
+        <span class="btn-discord__logo" aria-hidden="true"></span>
+        <span class="btn-discord__texte">Connecter Discord</span>
+      </button>
+    </section>
+
+    <!-- Aucune saison en cours -->
+    <section class="pass-vide" id="bloc-vide" hidden>
+      <p>Aucune saison n'est en cours pour le moment. Reviens bientôt !</p>
+    </section>
+
+    <div id="bloc-saison" hidden>
+      <!-- Palier actuel, barre d'XP, piste premium -->
+      <section class="pass-tableau">
+        <div class="pass-niveau">
+          <div class="pass-niveau__blason" aria-hidden="true"><span id="palier-actuel">0</span></div>
+          <div class="pass-niveau__infos">
+            <span class="pass-niveau__libelle">Palier <strong id="palier-texte">0</strong> / <span id="palier-max">30</span></span>
+            <div class="pass-barre" role="progressbar" id="barre-xp" aria-valuemin="0" aria-valuemax="1000" aria-valuenow="0" aria-label="XP vers le palier suivant">
+              <span class="pass-barre__remplie" id="barre-remplie"></span>
+            </div>
+            <span class="pass-niveau__xp" id="xp-texte"></span>
+          </div>
+        </div>
+
+        <div class="pass-premium" id="bloc-premium" hidden>
+          <span class="pass-premium__titre">Piste premium</span>
+          <p class="pass-premium__texte" id="premium-texte"></p>
+          <button type="button" class="btn-premium" id="btn-premium"></button>
+          <span class="pass-premium__solde" id="premium-solde"></span>
+        </div>
+      </section>
+
+      <!-- Comment gagner de l'XP -->
+      <details class="pass-aide">
+        <summary>Comment gagner de l'XP de pass ?</summary>
+        <ul>
+          <li><strong>Duel contre l'IA</strong> : 100 XP par victoire, 30 par défaite (1 000 XP par jour au plus).</li>
+          <li><strong>Duel contre un ami</strong> : 150 XP par victoire, 50 par défaite (1 500 XP par jour au plus).</li>
+          <li><strong>Mode Histoire</strong> : 200 XP par niveau gagné pour la première fois, 500 pour un boss.</li>
+          <li>Un duel doit durer au moins 2 minutes, et un abandon ne rapporte rien.</li>
+        </ul>
+      </details>
+
+      <!-- La piste : 30 paliers, gratuite en haut, premium en bas (défile horizontalement) -->
+      <section class="pass-piste" aria-label="Récompenses du pass">
+        <div class="pass-piste__legende" aria-hidden="true">
+          <span class="legende legende--gratuite">Gratuit</span>
+          <span class="legende legende--premium">Premium</span>
+        </div>
+        <div class="pass-piste__defile" id="piste" tabindex="0"></div>
+      </section>
+    </div>
+
+  </main>
+
+  <div id="notif" class="notif" role="status" aria-live="polite"></div>
+
+  <script src="JS/lien-site.js"></script>
+  <script src="JS/barre-laterale.js"></script>
+  <script type="module" src="JS/auth.js"></script>
+  <script type="module" src="JS/pass.js"></script>
+</body>
+</html>

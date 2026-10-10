@@ -1,0 +1,293 @@
+/* =====================================================================
+   Page du Pass de saison (pass.html, JS/pass.js)
+   Même habillage que la boutique : panneaux sombres, arêtes vives, or du jeu.
+   Utilise les variables de CSS/compte.css (à charger APRÈS compte.css).
+   ===================================================================== */
+
+.page-pass {
+  --or: #d8b978;
+  --or-vif: #f0c873;
+  --premium: #b48cf0;
+  --premium-fonce: #3a2560;
+  --panneau: linear-gradient(180deg, #1c1715, #120e0d);
+  --trait: rgba(240,236,227,0.16);
+  --case-l: 132px;       /* largeur d'un palier sur la piste */
+}
+.page-pass .pass-wrap { max-width: 1120px; }
+/* Les <section> et <p> de cette page n'héritent pas des styles génériques du site (CSS/index.css :
+   gros padding, bordure basse, largeur de lecture) */
+.page-pass .pass-wrap section { padding: 0; max-width: none; border-bottom: 0; margin-left: 0; margin-right: 0; }
+.page-pass .pass-wrap section:last-of-type { border-bottom: 0; }
+.page-pass .pass-wrap p { max-width: none; }
+
+/* ---------- En-tête : saison + compte à rebours ---------- */
+.pass-entete { text-align: center; margin: 10px 0 20px; }
+.pass-entete__sur {
+  font-family: "Cinzel","Cinzel Repli", serif;
+  font-size: .7rem; letter-spacing: .3em; text-transform: uppercase;
+  color: var(--or);
+}
+.pass-entete h1 {
+  margin: 6px 0 8px;
+  font-family: "Cinzel Decorative","Cinzel Decorative Repli", serif;
+  font-size: clamp(1.6rem, 3.6vw, 2.5rem);
+  color: var(--texte);
+}
+.pass-rebours { margin: 0; color: var(--texte-doux); font-style: italic; }
+.pass-rebours strong {
+  font-family: "Cinzel","Cinzel Repli", serif; font-style: normal; font-weight: 700;
+  color: var(--texte); font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Connexion / pas de saison ---------- */
+.page-pass .pass-wrap .pass-connexion, .page-pass .pass-wrap .pass-vide {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 14px 22px;
+  margin: 0 0 18px; padding: 18px 22px;
+  border: 1px solid var(--trait); background: var(--panneau);
+  text-align: center;
+}
+.page-pass .pass-connexion p, .page-pass .pass-vide p { margin: 0; max-width: 520px; color: var(--texte-doux); }
+.pass-connexion .btn-discord { width: auto; }
+.pass-connexion .btn-discord__texte { display: inline; opacity: 1; }
+
+/* ---------- Tableau : palier, barre d'XP, piste premium ---------- */
+.pass-tableau {
+  display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 16px;
+  margin-bottom: 14px;
+}
+.pass-niveau, .pass-premium {
+  border: 1px solid var(--trait); background: var(--panneau);
+  box-shadow: 0 8px 22px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.05);
+  padding: 18px 20px;
+}
+.pass-niveau { display: flex; align-items: center; gap: 18px; }
+.pass-niveau__blason {
+  flex: 0 0 76px; height: 86px;
+  display: grid; place-items: center;
+  clip-path: polygon(50% 0, 100% 22%, 100% 70%, 50% 100%, 0 70%, 0 22%);
+  background: linear-gradient(160deg, #f6d995, #8a6a2c 55%, #d9a441);
+}
+.pass-niveau__blason span {
+  display: grid; place-items: center;
+  width: 66px; height: 76px;
+  clip-path: inherit;
+  background: #17120f;
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: 1.9rem; font-weight: 800;
+  color: var(--or-vif);
+}
+.pass-niveau__infos { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.pass-niveau__libelle {
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: .78rem; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--texte-doux);
+}
+.pass-niveau__libelle strong { color: var(--texte); font-size: 1rem; }
+.pass-barre {
+  position: relative; height: 14px;
+  background: rgba(255,255,255,.06);
+  box-shadow: inset 0 0 0 1px var(--trait);
+  overflow: hidden;
+}
+.pass-barre__remplie {
+  position: absolute; inset: 0 auto 0 0; width: 0;
+  background: linear-gradient(90deg, #8a6a2c, var(--or-vif));
+  box-shadow: 0 0 12px rgba(240,200,115,.5);
+  transition: width .6s cubic-bezier(.2,.8,.3,1);
+}
+.pass-niveau__xp { font-size: .92rem; color: var(--texte-doux); font-variant-numeric: tabular-nums; }
+
+.pass-premium { display: flex; flex-direction: column; gap: 8px; border-color: rgba(180,140,240,.35); }
+.pass-premium__titre {
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: .78rem; letter-spacing: .2em; text-transform: uppercase;
+  color: var(--premium);
+}
+.pass-premium__texte { margin: 0; color: var(--texte-doux); font-size: .95rem; }
+.pass-premium__solde { font-size: .85rem; color: var(--texte-doux); font-style: italic; }
+.pass-premium.est-debloque { border-color: rgba(180,140,240,.6); background: linear-gradient(180deg, #241a33, #120e16); }
+.pass-premium.est-debloque .pass-premium__texte { color: var(--texte); }
+.btn-premium {
+  display: inline-flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap;
+  padding: 10px 16px;
+  border: 1px solid rgba(240,200,115,.6);
+  background: linear-gradient(180deg, #4a3474, var(--premium-fonce));
+  color: #f6eaff;
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: .82rem; font-weight: 700; letter-spacing: .06em;
+  cursor: pointer;
+}
+.btn-premium:hover:not(:disabled) { filter: brightness(1.15); }
+.btn-premium:disabled { opacity: .5; cursor: not-allowed; }
+.btn-premium__prix { display: inline-flex; align-items: center; gap: 5px; color: var(--or-vif); }
+.btn-premium__prix img { width: 20px; height: 20px; }
+
+/* ---------- Aide : comment gagner de l'XP ---------- */
+.pass-aide {
+  margin-bottom: 16px; padding: 10px 16px;
+  border: 1px solid var(--trait); background: rgba(255,255,255,.02);
+}
+.pass-aide summary {
+  cursor: pointer;
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: .8rem; letter-spacing: .08em;
+  color: var(--or);
+}
+.pass-aide ul { margin: 10px 0 4px; padding-left: 20px; color: var(--texte-doux); }
+.pass-aide li { margin: 4px 0; }
+.pass-aide strong { color: var(--texte); }
+
+/* ---------- La piste : 30 paliers qui défilent horizontalement ---------- */
+.pass-piste {
+  position: relative;
+  display: grid; grid-template-columns: auto minmax(0, 1fr);
+  border: 1px solid var(--trait); background: var(--panneau);
+}
+.pass-piste__legende {
+  display: grid; grid-template-rows: 34px 1fr 1fr;
+  border-right: 1px solid var(--trait);
+  background: #120e0d;
+}
+.legende {
+  grid-row: auto;
+  display: grid; place-items: center;
+  padding: 0 8px;
+  writing-mode: vertical-rl; transform: rotate(180deg);
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: .7rem; letter-spacing: .24em; text-transform: uppercase;
+}
+.legende--gratuite { grid-row: 2; color: var(--or); }
+.legende--premium { grid-row: 3; color: var(--premium); background: rgba(180,140,240,.06); }
+
+.pass-piste__defile {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(216,185,120,.5) transparent;
+  padding-bottom: 6px;
+}
+.pass-piste__defile:focus-visible { outline: 2px solid var(--or); outline-offset: -2px; }
+
+.palier {
+  flex: 0 0 var(--case-l);
+  display: grid; grid-template-rows: 34px auto auto;
+  scroll-snap-align: start;
+  border-right: 1px solid rgba(240,236,227,.07);
+}
+/* Numéro du palier, sur une ligne de progression */
+.palier__numero {
+  position: relative;
+  display: grid; place-items: center;
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: .82rem; font-weight: 800;
+  color: var(--texte-doux);
+}
+.palier__numero::before {   /* la ligne */
+  content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 3px; translate: 0 -50%;
+  background: rgba(255,255,255,.08);
+  z-index: 0;
+}
+.palier__numero::after {    /* la pastille */
+  content: ""; position: absolute; left: 50%; top: 50%; width: 26px; height: 26px; translate: -50% -50%;
+  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+  background: #2a2320;
+  z-index: 0;
+}
+.palier__numero { z-index: 1; isolation: isolate; }
+.palier--atteint .palier__numero { color: #1a1416; }
+.palier--atteint .palier__numero::before { background: linear-gradient(90deg, #8a6a2c, var(--or-vif)); }
+.palier--atteint .palier__numero::after { background: linear-gradient(160deg, #f6d995, #d9a441); }
+.palier--suivant .palier__numero::after { box-shadow: inset 0 0 0 2px var(--or-vif); background: #2a2320; }
+.palier--suivant .palier__numero { color: var(--or-vif); }
+
+/* ---------- Une récompense ---------- */
+.recompense {
+  position: relative;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  margin: 8px 7px;
+  padding: 10px 8px 10px;
+  min-height: 186px;
+  border: 1px solid var(--trait);
+  background: rgba(255,255,255,.025);
+  text-align: center;
+}
+.recompense--premium { background: rgba(180,140,240,.05); border-color: rgba(180,140,240,.22); }
+.recompense--absente { border-style: dashed; opacity: .3; }
+.recompense__type {
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: .58rem; letter-spacing: .16em; text-transform: uppercase;
+  color: var(--texte-doux);
+}
+.recompense__visuel { display: grid; place-items: center; height: 92px; width: 100%; }
+.recompense__visuel img { max-height: 100%; max-width: 100%; object-fit: contain; }
+.recompense__visuel--or img { width: 58px; height: 58px; filter: drop-shadow(0 3px 8px rgba(216,185,120,.4)); }
+.recompense__visuel--carte img { height: 92px; filter: drop-shadow(0 4px 8px rgba(0,0,0,.6)); }
+.recompense__visuel svg { width: 52px; height: 52px; color: var(--or); }
+.recompense--premium .recompense__visuel--cosmetique svg { color: var(--premium); }
+.recompense__nom {
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: .74rem; font-weight: 700; line-height: 1.2;
+  color: var(--texte);
+  min-height: 2.4em;
+  display: grid; place-items: center;
+}
+.recompense__etat {
+  display: inline-flex; align-items: center; gap: 5px; margin-top: auto;
+  font-size: .78rem; color: var(--texte-doux);
+}
+.recompense__etat svg { width: 14px; height: 14px; }
+.recompense__etat--ok { color: var(--gain); }
+
+/* États : verrouillée (sombre), disponible (lueur + bouton), réclamée (cochée, apaisée) */
+.recompense--verrouillee .recompense__visuel, .recompense--verrouillee .recompense__nom { opacity: .45; filter: grayscale(.6); }
+.recompense--disponible {
+  border-color: var(--or-vif);
+  background: linear-gradient(180deg, rgba(240,200,115,.14), rgba(240,200,115,.03));
+  box-shadow: 0 0 16px rgba(240,200,115,.25);
+  animation: dispo 2.4s ease-in-out infinite;
+}
+.recompense--disponible.recompense--premium { border-color: var(--premium); box-shadow: 0 0 16px rgba(180,140,240,.3); }
+@keyframes dispo { 50% { box-shadow: 0 0 24px rgba(240,200,115,.45); } }
+.recompense--reclamee { border-color: rgba(111,191,115,.4); }
+.recompense--reclamee .recompense__visuel { opacity: .6; }
+
+.btn-reclamer {
+  margin-top: auto;
+  padding: 6px 14px;
+  border: 0;
+  background: linear-gradient(180deg, #f6d995, #d9a441);
+  color: #1a1416;
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: .72rem; font-weight: 800; letter-spacing: .08em;
+  cursor: pointer;
+}
+.recompense--premium .btn-reclamer { background: linear-gradient(180deg, #d2b8ff, #9a6cf0); }
+.btn-reclamer:hover:not(:disabled) { filter: brightness(1.1); }
+.btn-reclamer:disabled { opacity: .6; cursor: wait; }
+
+/* Notification (même style que la boutique) */
+.page-pass .notif {
+  position: fixed; left: 50%; bottom: 24px; z-index: 100;
+  transform: translate(-50%, 20px);
+  max-width: calc(100% - 32px);
+  padding: 12px 18px;
+  background: var(--carte); border: 1px solid var(--bord); color: var(--texte);
+  opacity: 0; pointer-events: none;
+  transition: opacity .2s, transform .2s;
+}
+.page-pass .notif--visible { opacity: 1; transform: translate(-50%, 0); }
+.page-pass .notif--ok     { border-color: var(--gain); }
+.page-pass .notif--erreur { border-color: var(--perte); }
+
+@media (prefers-reduced-motion: reduce) {
+  .recompense--disponible { animation: none; }
+  .pass-barre__remplie { transition: none; }
+}
+
+/* ---------- Téléphones ---------- */
+@media (max-width: 760px) {
+  .pass-tableau { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 600px) {
+  .page-pass { --case-l: 112px; }
+  .pass-niveau { padding: 14px; gap: 14px; }
+  .pass-niveau__blason { flex-basis: 60px; height: 68px; }
+  .pass-niveau__blason span { width: 52px; height: 60px; font-size: 1.5rem; }
+  .recompense { min-height: 170px; margin: 6px 5px; }
+  .recompense__visuel { height: 76px; }
+  .recompense__visuel--carte img { height: 76px; }
+  .legende { padding: 0 5px; font-size: .62rem; }
+  /* la notification ne doit pas passer sous la barre de navigation du bas */
+  .page-pass .notif { bottom: 90px; }
+}

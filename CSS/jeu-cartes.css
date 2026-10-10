@@ -418,6 +418,21 @@
 .fin__titre--victoire { color: var(--ambre); text-shadow: 0 0 30px var(--ambre-lueur); }
 .fin__titre--defaite { color: #c9ced8; }
 .fin__texte { margin: 0 auto 18px; color: #c9ced8; }
+/* « +100 XP de pass » : un petit badge, lien vers la page du Pass de saison */
+.fin__pass {
+  display: inline-block;
+  margin: -6px auto 18px;
+  padding: 5px 16px;
+  border: 1px solid rgba(240,200,115,.55);
+  background: rgba(240,200,115,.12);
+  color: #f6d995;
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: .82rem; font-weight: 700; letter-spacing: .06em;
+  text-decoration: none;
+  animation: fin-pass .5s cubic-bezier(.2,1.4,.4,1) both;
+}
+.fin__pass:hover { background: rgba(240,200,115,.22); }
+.fin__pass--vide { border-color: rgba(240,236,227,.2); background: rgba(255,255,255,.04); color: #bcb2a4; font-weight: 600; }
+@keyframes fin-pass { from { opacity: 0; transform: scale(.8); } }
 .fin__stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 0 0 24px; }
 .fin__stats div { padding: 10px 6px; background: rgba(255,255,255,.04); clip-path: var(--facette); }
 .fin__stats dt { font-size: .72rem; color: var(--gris); }

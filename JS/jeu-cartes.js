@@ -49,6 +49,8 @@ let p = null;               // partie en cours (chez l'invité : copie en miroir
 let occupe = false;         // une animation, le tour de l'IA, ou une action envoyée est en cours
 let finAffichee = false;
 let sel = { monTour: false, attaquant: null, sortIndex: null, cibles: null };
+let ticketPass = null;      // Pass de saison : ticket du duel en cours (promesse d'un uuid), voir SQL/pass_saison.sql
+let abandonParMoi = false;  // un abandon ne rapporte pas d'XP de pass
 
 // Seulement les vraies cartes illustrées (pas la carte d'exemple)
 const jouable = (c) => c?.image && c.description !== "Carte d'exemple";
@@ -360,8 +362,7 @@ function texteRecompense({ gagne, recompenses: r, erreur }) {
   if (!r || r.deja) return 'Niveau déjà terminé : pas de nouvelle récompense.';
   const gains = [];
   if (r.or) gains.push(`+${r.or} pièces`);
-  if (r.xp) gains.push(`+${r.xp} XP de pass`);
-  if (r.carte) gains.push(`la carte « ${r.carte} »`);
+  if (r.carte) gains.push(`la carte « ${r.carte} »`);   // l'XP de pass s'affiche à part (afficherXpPass)
   return gains.length ? `Récompenses : ${gains.join(', ')}.` : '';
 }
 
@@ -375,6 +376,8 @@ const nomAdverse = () => p.camps.adverse.nom;
 
 function montrerPlateau() {
   finAffichee = false;
+  abandonParMoi = false;
+  ticketPass = demanderTicketPass();
   sel = { monTour: false, attaquant: null, sortIndex: null, cibles: null };
   $('fin').hidden = true;
   $('ecran-accueil').hidden = true;
@@ -569,12 +572,59 @@ async function terminer(raison = '') {
     ['Cartes jouées', s.cartes], ['Dégâts infligés', s.degats], ['Jets du Destin', s.destins],
   ].map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('');
   if (resultat) $('fin-texte').textContent += ' ' + texteRecompense(resultat);
+  afficherXpPass(gagne, resultat);
   $('btn-rejouer').textContent = role ? 'Revanche' : histoire ? (gagne ? 'Rejouer le niveau' : 'Réessayer') : 'Rejouer';
   $('btn-menu-fin').textContent = histoire ? 'Retour à la carte' : 'Retour au menu';
   $('btn-menu-fin').hidden = !!role;
   $('btn-quitter-fin').hidden = !role;
   $('fin').hidden = false;
   $('btn-rejouer').focus();
+}
+
+
+// ---------------------------------------------------------------------
+//  Pass de saison (pass.html, SQL/pass_saison.sql)
+//  Duel contre l'IA ou un ami : un ticket est demandé au serveur au début du duel, puis échangé
+//  contre l'XP à la fin (le serveur vérifie la durée, le plafond du jour, l'adversaire).
+//  Mode Histoire : l'XP vient de valider_niveau_histoire (premières victoires seulement).
+// ---------------------------------------------------------------------
+function demanderTicketPass() {
+  if (!moi || histoire) return null;
+  const params = role ? { p_mode: 'ami', p_salon: salon?.code ?? null } : { p_mode: 'ia' };
+  return supabase.rpc('pass_commencer_partie', params)
+    .then(({ data, error }) => (error ? null : data))
+    .catch(() => null);
+}
+
+const RAISONS_PASS = {
+  plafond: 'Plafond d\'XP de pass du jour atteint',
+  courte: 'Partie trop courte pour l\'XP de pass (2 minutes minimum)',
+};
+
+// Petit message « +X XP de pass » sur l'écran de fin (lien vers la page du pass)
+async function afficherXpPass(gagne, resultat) {
+  const el = $('fin-pass');
+  el.hidden = true;
+  let r = null;
+  if (histoire) {
+    if (resultat?.recompenses?.xp) r = { xp: resultat.recompenses.xp };
+  } else if (ticketPass && !abandonParMoi) {
+    const attente = ticketPass;
+    ticketPass = null;   // un ticket ne sert qu'une fois
+    const ticket = await attente;
+    if (ticket) {
+      const { data, error } = await supabase.rpc('pass_fin_partie', { p_ticket: ticket, p_victoire: gagne });
+      if (!error) r = data;
+    }
+  }
+  if (!r) return;
+  if (r.xp > 0) {
+    el.textContent = `+${r.xp} XP de pass${r.raison === 'plafond' ? ' (plafond du jour atteint)' : ''}`;
+  } else if (RAISONS_PASS[r.raison]) {
+    el.textContent = RAISONS_PASS[r.raison];
+  } else return;
+  el.classList.toggle('fin__pass--vide', !(r.xp > 0));
+  el.hidden = false;
 }
 
 
@@ -734,6 +784,7 @@ $('btn-menu-fin').addEventListener('click', () => {
 });
 $('btn-abandon').addEventListener('click', () => {
   if (!p || p.fini || !confirm('Abandonner le duel ?')) return;
+  abandonParMoi = true;
   if (role === 'invite') {
     salon?.envoyer('choix', { pid: invite.pid, id: crypto.randomUUID(), n: invite.dernier, a: { type: 'abandon' } });
     return;

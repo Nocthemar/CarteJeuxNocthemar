@@ -5,7 +5,9 @@
 --  - histoire_niveaux    : les niveaux, leur ordre, le boss et les RÉCOMPENSES
 --                          (c'est ici qu'elles sont décidées, pas dans le navigateur)
 --  - histoire_progression: les niveaux terminés par chaque joueur
---  - player_pass         : l'XP de pass de chaque joueur (pour un futur battle pass)
+--  - player_pass         : l'XP de pass de chaque joueur, sans saison (ancienne table, gardée)
+--                          ; l'XP va aussi dans le Pass de saison (SQL/pass_saison.sql) :
+--                          200 par niveau gagné pour la première fois, 500 pour un boss
 --  - valider_niveau_histoire(p_niveau_id) : appelée après une victoire. Vérifie que le
 --    niveau était débloqué et que c'est la première victoire, puis enregistre la
 --    progression et donne l'or, l'XP et (boss) une carte au hasard, en une seule transaction.
@@ -65,13 +67,13 @@ insert into public.histoire_chapitres (id, nom, ordre) values
 on conflict (id) do update set nom = excluded.nom, ordre = excluded.ordre;
 
 insert into public.histoire_niveaux (id, chapitre_id, ordre, nom, est_boss, or_gagne, xp_gagne, carte_aleatoire) values
-  ('pravorn-1',    'pravorn', 1, 'La route du Nord',            false,  15,  50, false),
-  ('pravorn-2',    'pravorn', 2, 'Le pont gardé',               false,  18,  50, false),
-  ('pravorn-3',    'pravorn', 3, 'Le camp des mercenaires',     false,  20,  50, false),
-  ('pravorn-4',    'pravorn', 4, 'Les marais du Sud',           false,  24,  50, false),
-  ('pravorn-5',    'pravorn', 5, 'Les remparts de la capitale', false,  27,  50, false),
-  ('pravorn-6',    'pravorn', 6, 'Les lices du tournoi',        false,  30,  50, false),
-  ('pravorn-boss', 'pravorn', 7, 'Le Grand Tournoi',            true,  100, 200, true)
+  ('pravorn-1',    'pravorn', 1, 'La route du Nord',            false,  15, 200, false),
+  ('pravorn-2',    'pravorn', 2, 'Le pont gardé',               false,  18, 200, false),
+  ('pravorn-3',    'pravorn', 3, 'Le camp des mercenaires',     false,  20, 200, false),
+  ('pravorn-4',    'pravorn', 4, 'Les marais du Sud',           false,  24, 200, false),
+  ('pravorn-5',    'pravorn', 5, 'Les remparts de la capitale', false,  27, 200, false),
+  ('pravorn-6',    'pravorn', 6, 'Les lices du tournoi',        false,  30, 200, false),
+  ('pravorn-boss', 'pravorn', 7, 'Le Grand Tournoi',            true,  100, 500, true)
 on conflict (id) do update set
   chapitre_id = excluded.chapitre_id, ordre = excluded.ordre, nom = excluded.nom,
   est_boss = excluded.est_boss, or_gagne = excluded.or_gagne, xp_gagne = excluded.xp_gagne,
@@ -236,6 +238,10 @@ begin
   if v_niveau.xp_gagne > 0 then
     insert into player_pass (discord_id, xp) values (v_moi, v_niveau.xp_gagne)
     on conflict (discord_id) do update set xp = player_pass.xp + excluded.xp, maj_le = now();
+    -- Pass de saison (SQL/pass_saison.sql) : la même XP, dans la saison en cours
+    if to_regprocedure('public.pass_ajouter_xp(text,integer)') is not null then
+      execute 'select public.pass_ajouter_xp($1, $2)' using v_moi, v_niveau.xp_gagne;
+    end if;
   end if;
 
   return json_build_object(
