@@ -303,3 +303,85 @@ body.ob-ouvert { overflow: hidden; }
 /* 5 cartes : éventail un peu plus serré, pour rester dans la niche */
 .page-boutique .booster__pile--5 .booster__dos { transform: translateX(calc(var(--k) * 27px)) translateY(calc(var(--k) * var(--k) * 3px - 30px)) rotate(calc(var(--k) * 11deg)); }
 .page-boutique .article:hover .booster__pile--5 .booster__dos { transform: translateX(calc(var(--k) * 33px)) translateY(calc(var(--k) * var(--k) * 3.5px - 40px)) rotate(calc(var(--k) * 14deg)); }
+
+
+/* =====================================================================
+   Effets par rareté à l'ouverture (JS/booster-ouverture.js : eclaterCristal, revelerCarte)
+   ===================================================================== */
+.ob__onde {
+  position: fixed; width: 120px; height: 120px; border-radius: 50%;
+  border: var(--e, 4px) solid var(--c);
+  box-shadow: 0 0 24px var(--c), inset 0 0 24px var(--c);
+  pointer-events: none; will-change: transform, opacity;
+}
+.ob__flash {
+  position: absolute; inset: 0; z-index: 5; pointer-events: none;
+  background: radial-gradient(circle at 50% 45%, var(--c), transparent 75%);
+  opacity: 0;
+}
+.ob__pluie { position: fixed; width: 9px; height: 9px; background: var(--c); box-shadow: 0 0 8px var(--c); pointer-events: none; will-change: transform, opacity; }
+.ob__pluie--losange { clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
+.ob__pluie--feuille { width: 10px; height: 14px; border-radius: 0 100% 0 100%; box-shadow: none; }
+.ob__pluie--etoile { width: 14px; height: 14px; clip-path: polygon(50% 0, 61% 38%, 100% 50%, 61% 62%, 50% 100%, 39% 62%, 0 50%, 39% 38%); }
+.ob__titre {
+  position: absolute; left: 50%; top: 18%; z-index: 6;
+  font-family: "Cinzel Decorative","Cinzel Decorative Repli", serif; font-weight: 900;
+  font-size: clamp(1.8rem, 6vw, 4rem); text-transform: uppercase; white-space: nowrap;
+  color: var(--c);
+  text-shadow: 0 0 24px var(--c), 0 0 60px var(--c), 0 4px 10px #000;
+  pointer-events: none;
+}
+.ob__titre--or {
+  background: linear-gradient(180deg, #fffbe8, #f6d27a 45%, #b8862e);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(0 0 18px rgba(246,210,122,.9)) drop-shadow(0 4px 8px #000);
+}
+
+/* Mythique : la carte tourbillonne avant de se retourner */
+.ob-carte--tourbillon .ob-carte__corps { animation: ob-tourbillon .65s cubic-bezier(.4,0,.2,1) both; }
+@keyframes ob-tourbillon {
+  0%   { transform: translateY(0) rotateZ(0) scale(1); }
+  60%  { transform: translateY(-30px) rotateZ(360deg) scale(1.12); }
+  100% { transform: translateY(0) rotateZ(360deg) scale(1); }
+}
+
+/* Légendaire : la carte tremble et rougeoit de plus en plus */
+.ob-carte--tremble .ob-carte__corps { animation: ob-tremble .9s linear both; }
+@keyframes ob-tremble {
+  0%   { translate: 0 0; }
+  10%  { translate: -2px 1px; } 20% { translate: 2px -1px; } 30% { translate: -3px 0; } 40% { translate: 3px 1px; }
+  50%  { translate: -4px -1px; } 60% { translate: 4px 1px; } 70% { translate: -5px 0; } 80% { translate: 5px -1px; } 90% { translate: -6px 1px; }
+  100% { translate: 0 0; }
+}
+
+/* Transcendante : l'écran s'assombrit, la carte s'élève au centre dans des rayons d'or */
+.ob--nuit .ob__lumiere, .ob--nuit .ob__rayons { opacity: .15; transition: opacity .6s ease; }
+.ob--nuit .ob-carte:not(.ob-carte--elevee) { filter: brightness(.3); transition: filter .6s ease; }
+.ob-carte--elevee { position: relative; z-index: 4; }
+.ob-carte--elevee .ob-carte__corps { animation: ob-elevee 1.4s cubic-bezier(.3,0,.2,1) both; }
+.ob-carte--elevee .ob-carte__corps::before {
+  content: ""; position: absolute; left: 50%; top: 50%; z-index: -1;
+  width: 320%; aspect-ratio: 1; translate: -50% -50%;
+  background: repeating-conic-gradient(from 0deg, rgba(246,210,122,.55) 0 4deg, transparent 4deg 14deg);
+  -webkit-mask: radial-gradient(circle, #000, transparent 60%); mask: radial-gradient(circle, #000, transparent 60%);
+  animation: ob-rayons 4s linear infinite, ob-apparait .8s ease both;
+}
+@keyframes ob-elevee {
+  0%   { transform: translateY(0) scale(1); }
+  100% { transform: translateY(-40px) scale(1.25); }
+}
+@keyframes ob-apparait { from { opacity: 0; scale: .3; } }
+.ob-carte--elevee.ob-carte--revelee .ob-carte__corps { animation: none; transform: translateY(-40px) scale(1.25) rotateY(180deg); }
+
+/* Lueur selon la rareté, sur la face (un filtre sur la carte entière casserait le retournement 3D) */
+.ob-carte__face { filter: drop-shadow(0 0 calc(10px + var(--rang, 0) * 6px) var(--c)) drop-shadow(0 10px 14px rgba(0,0,0,.7)); }
+
+@media (prefers-reduced-motion: reduce) {
+  .ob-carte--tourbillon .ob-carte__corps, .ob-carte--tremble .ob-carte__corps,
+  .ob-carte--elevee .ob-carte__corps, .ob-carte--elevee .ob-carte__corps::before { animation: none; }
+}
+
+/* Lueur pendant l'anticipation : sur le dos (pas sur la carte 3D) */
+.ob-carte--tourbillon .ob-carte__dos, .ob-carte--tremble .ob-carte__dos { animation: ob-lueur-dos .9s ease-in both; }
+.ob-carte--elevee .ob-carte__dos { animation: ob-lueur-dos 1.4s ease-in both; --c: #f6d27a; }
+@keyframes ob-lueur-dos { to { filter: drop-shadow(0 0 26px var(--c)) drop-shadow(0 0 8px #fff); } }
