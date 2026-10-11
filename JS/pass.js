@@ -7,6 +7,7 @@
 // =====================================================================
 import { supabase, getMonJoueur, connexionDiscord, SITE_ROOT } from './supabase.js';
 import { $, esc, notifier } from './commun.js';
+import { ouvrirApercu } from './cartes.js';
 import { jouerSon } from './jeu-cartes-son.js';   // fanfare du déblocage premium (respecte le volume et le mode muet du jeu)
 
 const etat = {
@@ -58,7 +59,7 @@ async function chargerSaison() {
 
   const noms = [...new Set((paliers ?? []).filter((p) => p.type_recompense === 'carte').map((p) => p.valeur?.nom))].filter(Boolean);
   if (noms.length) {
-    const { data: cartes } = await supabase.from('cards').select('name, image, rarity').in('name', noms);
+    const { data: cartes } = await supabase.from('cards').select('*').in('name', noms);
     etat.cartes = new Map((cartes ?? []).map((c) => [c.name, c]));
   }
   if ((paliers ?? []).some((p) => p.type_recompense === 'booster')) {
@@ -133,7 +134,7 @@ function contenuRecompense(p) {
   }
   if (p.type_recompense === 'carte') {
     const c = etat.cartes.get(v.nom);
-    return `<span class="recompense__visuel recompense__visuel--carte">${c?.image ? `<img src="${urlImage(c.image)}" alt="" loading="lazy">` : svg('dos_carte')}</span>
+    return `<span class="recompense__visuel recompense__visuel--carte">${c?.image ? `<button type="button" class="recompense__loupe" data-apercu-carte="${esc(v.nom)}" title="Voir la carte en grand" aria-label="Voir la carte ${esc(v.nom)}"><img src="${urlImage(c.image)}" alt="" loading="lazy"></button>` : svg('dos_carte')}</span>
       <span class="recompense__nom">${esc(v.nom ?? 'Carte')}</span>`;
   }
   if (p.type_recompense === 'booster') {
@@ -221,6 +222,8 @@ function demarrerRebours() {
 //  Actions
 // ---------------------------------------------------------------------
 $('piste').addEventListener('click', async (e) => {
+  const loupe = e.target.closest('[data-apercu-carte]');
+  if (loupe) { ouvrirApercu(etat.cartes.get(loupe.dataset.apercuCarte)); return; }
   const bouton = e.target.closest('.btn-reclamer');
   if (!bouton || bouton.disabled) return;
   bouton.disabled = true;

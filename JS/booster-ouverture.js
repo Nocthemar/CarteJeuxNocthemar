@@ -10,7 +10,7 @@
 //  Usage : await ouvrirBoosterAnime(resultat, imageBooster, { restants, surRouvrir })
 // =====================================================================
 import { jouerSon } from './jeu-cartes-son.js';
-import { versoDe } from './cartes.js';
+import { versoDe, htmlInfos } from './cartes.js';
 
 const reduit = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const RARETES = ['commune', 'eveillee', 'mythique', 'legendaire', 'transcendante'];
@@ -44,12 +44,13 @@ function fissure(niveau) {
   return `<g class="ob__fissure ob__fissure--${niveau}">${traits.join('')}</g>`;
 }
 
-function htmlCarte(c, i) {
+function htmlCarte(c, i, details) {
+  const detail = details?.get(c.nom);   // la carte complète du catalogue (attaques, rang)
   return `
     <div class="ob-carte" data-i="${i}" style="--c:${COULEURS_RARETE[c.rarete] ?? '#fff'}; --i:${i}; --rang:${RARETES.indexOf(c.rarete)}">
       <div class="ob-carte__corps">
         <div class="ob-carte__dos"><img src="${versoDe(c.rarete)}" alt=""></div>
-        <div class="ob-carte__face"><img src="${esc(c.image)}" alt="${esc(c.nom)}"></div>
+        <div class="ob-carte__face"><img src="${esc(c.image)}" alt="${esc(c.nom)}">${detail ? htmlInfos(detail) : ''}</div>
       </div>
       <div class="ob-carte__info">
         <span class="ob-carte__rarete">${esc(NOMS_RARETE[c.rarete] ?? c.rarete)}</span>
@@ -220,7 +221,8 @@ async function revelerCarte(ov, zone, carte, c) {
   await attendre(rang >= 3 ? 700 : rang === 2 ? 350 : 150);
 }
 
-export function ouvrirBoosterAnime(resultat, imageBooster, { restants = 0, surRouvrir = null } = {}) {
+// details : Map nom -> carte du catalogue, pour écrire ses informations sur la face
+export function ouvrirBoosterAnime(resultat, imageBooster, { restants = 0, surRouvrir = null, details = null } = {}) {
   // La plus rare en dernier
   const cartes = [...resultat.cartes].sort((a, b) => RARETES.indexOf(a.rarete) - RARETES.indexOf(b.rarete));
   const meilleure = resultat.meilleure_rarete ?? cartes.at(-1)?.rarete ?? 'commune';
@@ -243,7 +245,7 @@ export function ouvrirBoosterAnime(resultat, imageBooster, { restants = 0, surRo
         <svg class="ob__fissures" viewBox="0 0 640 960" preserveAspectRatio="none">${[1, 2, 3].map(fissure).join('')}</svg>
         <span class="ob__cristal"></span>
       </div>
-      <div class="ob__cartes" style="--n:${cartes.length}">${cartes.map(htmlCarte).join('')}</div>
+      <div class="ob__cartes" style="--n:${cartes.length}">${cartes.map((c, i) => htmlCarte(c, i, details)).join('')}</div>
     </div>
     <p class="ob__aide" aria-live="polite">Tape sur le booster pour l'ouvrir</p>
     <div class="ob__fin" hidden>

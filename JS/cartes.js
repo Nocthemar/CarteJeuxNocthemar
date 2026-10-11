@@ -64,7 +64,7 @@ export function htmlInfos(carte, rarete = RARETES[carte.rarity] ? carte.rarity :
     <div class="carte-infos carte-infos--${rarete}">
       <div class="carte-infos__tete">
         <span class="carte-infos__nom">${esc(carte.name)}</span>
-        ${RANGS[carte.rank] ? `<span class="carte-infos__rang">Rang ${RANGS[carte.rank]}</span>` : ''}
+        ${RANGS[carte.rank] ? `<span class="carte-infos__rang" data-rang="${RANGS[carte.rank]}" title="Rang ${RANGS[carte.rank]}">Rang ${RANGS[carte.rank]}</span>` : ''}
       </div>
       ${lignes ? `<div class="carte-infos__attaques">${lignes}</div>` : ''}
       <div class="carte-infos__rarete"><span class="carte-infos__gemme"></span>${RARETES[rarete]}</div>

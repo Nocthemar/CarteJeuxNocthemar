@@ -1,169 +1,172 @@
 /* =====================================================================
-   Informations écrites dans le cadre noir des cartes (nom, rang, attaques, rareté).
-   Utilisé par le grimoire, le deck du profil et les pages des personnages.
+   Informations écrites sur les cartes (nom, rang, attaques, rareté), façon carte de jeu :
+   - un cartouche pour le NOM, posé à cheval entre l'illustration et le panneau noir,
+     avec le RANG dans un petit écusson rouge à droite
+   - les ATTAQUES dans le panneau noir : icône de Veine, nom (+ effet en grand), puissance
+     dans un écusson
+   - la RARETÉ en pied, avec sa gemme
+   Utilisé par le grimoire, le deck du profil, les boosters, le duel et les pages des personnages.
+   Position mesurée sur les nouvelles cartes (images 1024 × 1536) : le panneau noir va de
+   9,7 % à 90,2 % de la largeur et de 70 % à 89,3 % de la hauteur.
+   Tailles en cqw (% de la largeur de la carte) : tout suit la taille de la carte, et le détail
+   s'allège quand la carte est petite.
    ===================================================================== */
-/* ---------- Informations dans le cadre noir de la carte ----------
-   Mise en page inspirée des cartes Pokémon : nom + rang en tête, deux attaques
-   (icône de Veine, nom, effet, puissance), rareté en pied.
-   Position mesurée sur les images 1024 × 1536 de img/Cartes : le cadre noir va
-   d'environ 68 % à 86 % de la hauteur et de 14 % à 86 % de la largeur.
-   Les tailles sont en cqw (% de la largeur de la carte) : tout grandit et
-   rapetisse avec la carte, et le détail s'allège quand la carte est petite. */
 /* Hôte : la carte du grimoire/deck (.carte-jeu) ou la face avant d'une carte
    des pages personnages (.carte-infos-hote) */
 .carte-jeu { container: carte / inline-size; }
 .carte-infos-hote { position: relative; container: carte / inline-size; }
 
-/* Couleur de la rareté (texte et gemme du pied de carte) */
-.carte-infos--commune       { --rarete: #8f8a84; }
-.carte-infos--eveillee      { --rarete: #2f8a55; }
-.carte-infos--mythique      { --rarete: #2c5fb8; }
-.carte-infos--legendaire    { --rarete: #a8141f; }
-.carte-infos--transcendante { --rarete: #c9a24a; }
+/* Couleur de la rareté */
+.carte-infos--commune       { --rarete: #b9b4ad; }
+.carte-infos--eveillee      { --rarete: #4fd987; }
+.carte-infos--mythique      { --rarete: #5b9bff; }
+.carte-infos--legendaire    { --rarete: #ff4b5c; }
+.carte-infos--transcendante { --rarete: #f6d27a; }
 
 .carte-infos {
   position: absolute;
-  left: 14.5%;
-  right: 14.5%;
-  top: 68.4%;
-  /* Descend jusqu'au bas du cadre noir : la rareté (en pied) se place plus bas */
-  height: 19.4%;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  padding: .6cqw 1.4cqw;
-  overflow: hidden;
+  left: 11.5%; right: 11.5%;
+  top: 66.5%; bottom: 11.4%;
+  display: flex; flex-direction: column; align-items: stretch;
+  gap: 1.2cqw;
   color: #efe6d2;
   font-family: "EB Garamond","EB Garamond Repli", serif;
-  line-height: 1.15;
+  line-height: 1.12;
   text-align: left;
   pointer-events: none;
 }
 
-/* Transcendante : pas de cadre noir dans l'illustration, un voile sombre léger et
-   transparent garde le texte lisible sans cacher l'image */
-.carte-infos--transcendante {
-  top: auto;
-  bottom: 13%;
-  height: auto;
-  min-height: 11%;
-  gap: .8cqw;
-  padding: 1.4cqw 2.4cqw;
-  border: 1px solid rgba(201,162,74,.35);
-  border-radius: 1.6cqw;
-  background: linear-gradient(to bottom, rgba(12,9,6,.35), rgba(12,9,6,.55));
-  backdrop-filter: blur(2px);
-}
-
+/* ---------- Cartouche du nom ---------- */
 .carte-infos__tete {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 2cqw;
-  padding-bottom: .5cqw;
-  border-bottom: 1px solid rgba(201,162,74,.35);
+  position: relative;
+  align-self: center;
+  display: flex; align-items: center; justify-content: center; gap: 1.6cqw;
+  max-width: 100%;
+  min-height: 7.4cqw;
+  padding: .6cqw 6cqw;
+  /* plaque sombre biseautée, liseré de la couleur de la rareté */
+  clip-path: polygon(3cqw 0, calc(100% - 3cqw) 0, 100% 50%, calc(100% - 3cqw) 100%, 3cqw 100%, 0 50%);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.10), transparent 45%),
+    linear-gradient(90deg, color-mix(in srgb, var(--rarete) 55%, #000), #16110f 22% 78%, color-mix(in srgb, var(--rarete) 55%, #000));
+  box-shadow: inset 0 0 0 .35cqw color-mix(in srgb, var(--rarete) 70%, #000);
 }
 .carte-infos__nom {
   min-width: 0;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+  overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
   font-family: "Cinzel","Cinzel Repli", serif;
-  font-size: 4.2cqw;
-  font-weight: 700;
-  letter-spacing: .02em;
-  text-shadow: 0 1px 2px #000;
+  font-size: 4.4cqw; font-weight: 700; letter-spacing: .03em;
+  color: #f6eedc;
+  text-shadow: 0 .3cqw .6cqw #000;
 }
-/* Rang façon "PV" : rouge sang (Cinzel simple : en Decorative, le « I » ressemble à un « 1 ») */
+/* Rang : petit écusson rouge sang à droite du nom (Cinzel simple : en Decorative le « I » ressemble à un « 1 ») */
 .carte-infos__rang {
   flex: none;
-  font-family: "Cinzel","Cinzel Repli", serif;
-  letter-spacing: .04em;
-  font-size: 3.2cqw;
-  font-weight: 700;
-  color: #d8434b;
-  text-shadow: 0 0 1.5cqw rgba(194,47,56,.6);
+  display: grid; place-items: center;
+  min-width: 5.4cqw; height: 5.4cqw; padding: 0 .6cqw;
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+  background: linear-gradient(160deg, #e0525b 0 45%, #8e1f27 45.1%);
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: 2.8cqw; font-weight: 800;
+  color: #fff;
+  font-size: 0;   /* on ne garde que le chiffre (le mot « Rang » est dans le title) */
 }
+.carte-infos__rang::after { content: attr(data-rang); font-size: 3cqw; }
 
-.carte-infos__attaques { display: flex; flex-direction: column; gap: .8cqw; }
+/* ---------- Attaques ---------- */
+.carte-infos__attaques {
+  flex: 1;
+  display: flex; flex-direction: column; justify-content: center;
+  gap: 1cqw;
+  padding: 0 1.2cqw;
+}
 .carte-attaque {
   display: grid;
-  grid-template-columns: 4.6cqw minmax(0, 1fr) auto;
+  grid-template-columns: 5.4cqw minmax(0, 1fr) auto;
   align-items: center;
-  column-gap: 1.4cqw;
+  column-gap: 1.6cqw;
+  padding: .5cqw .8cqw;
+  border-radius: .8cqw;
+  background: linear-gradient(90deg, rgba(255,255,255,.06), rgba(255,255,255,.015));
 }
+.carte-attaque + .carte-attaque { box-shadow: inset 0 1px 0 rgba(255,255,255,.05); }
 .carte-attaque__veine {
-  display: grid;
-  place-items: center;
-  width: 4.6cqw;
-  height: 4.6cqw;
-  border: 1px solid rgba(201,162,74,.5);
+  display: grid; place-items: center;
+  width: 5.4cqw; height: 5.4cqw;
   border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, rgba(255,255,255,.12), rgba(0,0,0,.5));
-  font-size: 2.8cqw;
-  line-height: 1;
+  border: .3cqw solid color-mix(in srgb, var(--rarete) 75%, #000);
+  background: radial-gradient(circle at 35% 30%, rgba(255,255,255,.18), rgba(0,0,0,.6));
+  font-size: 3cqw; line-height: 1;
 }
 .carte-attaque__texte { display: flex; flex-direction: column; min-width: 0; }
-.carte-attaque__nom,
-.carte-attaque__effet {
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-.carte-attaque__nom { font-family: "Cinzel","Cinzel Repli", serif; font-size: 3.1cqw; font-weight: 600; }
-.carte-attaque__effet { font-size: 2.5cqw; font-style: italic; color: #bcb2a4; }
+.carte-attaque__nom, .carte-attaque__effet { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.carte-attaque__nom { font-family: "Cinzel","Cinzel Repli", serif; font-size: 3.3cqw; font-weight: 700; color: #f2eadb; }
+.carte-attaque__effet { font-size: 2.6cqw; font-style: italic; color: #b6ab9c; }
+/* Puissance : écusson clair */
 .carte-attaque__puissance {
-  font-family: "Cinzel","Cinzel Repli", serif;
-  font-size: 3.8cqw;
-  font-weight: 700;
-  text-shadow: 0 1px 2px #000;
+  display: grid; place-items: center;
+  min-width: 6.2cqw; height: 5cqw; padding: 0 1cqw;
+  clip-path: polygon(1.2cqw 0, calc(100% - 1.2cqw) 0, 100% 50%, calc(100% - 1.2cqw) 100%, 1.2cqw 100%, 0 50%);
+  background: linear-gradient(180deg, #f4ead6, #b8a684);
+  color: #1d1612;
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: 3.2cqw; font-weight: 800;
 }
 
-/* Rareté : gemme de la couleur de la rareté + nom */
+/* ---------- Rareté, en pied ---------- */
 .carte-infos__rarete {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 1.2cqw;
+  display: flex; align-items: center; justify-content: center; gap: 1.2cqw;
   font-family: "Cinzel","Cinzel Repli", serif;
-  font-size: 2.3cqw;
-  letter-spacing: .12em;
-  text-transform: uppercase;
+  font-size: 2.4cqw; letter-spacing: .16em; text-transform: uppercase;
   color: var(--rarete);
-  filter: brightness(1.35);
-  /* Un peu plus bas, vers le bord du cadre noir (reste dans la marge du bas) */
-  transform: translateY(.6cqw);
+  text-shadow: 0 0 1.2cqw color-mix(in srgb, var(--rarete) 50%, transparent);
 }
 .carte-infos__gemme {
-  width: 1.9cqw;
-  height: 1.9cqw;
+  width: 2cqw; height: 2cqw;
   transform: rotate(45deg);
-  background: linear-gradient(135deg, rgba(255,255,255,.7), var(--rarete) 45%, rgba(0,0,0,.4));
+  background: linear-gradient(135deg, #fff, var(--rarete) 45%, rgba(0,0,0,.5));
   box-shadow: 0 0 1.4cqw var(--rarete);
 }
 
-/* Carte moyenne (grimoire, deck) : on garde les noms d'attaques et la puissance, sans les effets */
-@container carte (max-width: 300px) {
-  .carte-infos__nom { font-size: 4.6cqw; }
-  .carte-infos__rang { font-size: 3.8cqw; }
-  .carte-attaque { grid-template-columns: 5.4cqw minmax(0, 1fr) auto; }
-  .carte-attaque__veine { width: 5.4cqw; height: 5.4cqw; font-size: 3.3cqw; }
-  .carte-attaque__nom { font-size: 4cqw; }
-  .carte-attaque__effet { display: none; }
-  .carte-attaque__puissance { font-size: 4.4cqw; }
-  .carte-infos__rarete { font-size: 3cqw; }
-  .carte-infos__gemme { width: 2.4cqw; height: 2.4cqw; }
+/* Transcendante : illustration pleine carte, sans panneau noir. Le texte se pose sur un voile
+   sombre en bas de l'image, au-dessus de la bordure dorée. */
+.carte-infos--transcendante {
+  top: auto; bottom: 10.5%;
+  padding: 1.6cqw 1.6cqw 1.4cqw;
+  border-radius: 1.6cqw;
+  background: linear-gradient(to bottom, rgba(10,8,6,.15), rgba(10,8,6,.72) 30%, rgba(10,8,6,.82));
 }
-/* Petite carte : nom, rang et rareté seulement, en plus gros (le détail est dans la loupe 🔍) */
+.carte-infos--transcendante .carte-infos__tete { margin-top: -5cqw; }
+
+/* ---------- Carte moyenne (grimoire, deck) : sans les effets, tout un peu plus gros ---------- */
+@container carte (max-width: 300px) {
+  .carte-infos__tete { min-height: 9cqw; padding: .6cqw 7cqw; }
+  .carte-infos__nom { font-size: 5.4cqw; }
+  .carte-infos__rang { min-width: 6.4cqw; height: 6.4cqw; }
+  .carte-infos__rang::after { font-size: 3.8cqw; }
+  .carte-attaque { grid-template-columns: 6.4cqw minmax(0, 1fr) auto; padding: .4cqw .6cqw; }
+  .carte-attaque__veine { width: 6.4cqw; height: 6.4cqw; font-size: 3.6cqw; }
+  .carte-attaque__nom { font-size: 4.2cqw; }
+  .carte-attaque__effet { display: none; }
+  .carte-attaque__puissance { min-width: 7.4cqw; height: 6cqw; font-size: 4cqw; }
+  .carte-infos__rarete { font-size: 3.2cqw; letter-spacing: .1em; }
+  .carte-infos__gemme { width: 2.6cqw; height: 2.6cqw; }
+}
+/* ---------- Petite carte (grimoire) : le nom, les attaques en compact et la rareté ; les effets sont dans la loupe ---------- */
 @container carte (max-width: 190px) {
-  .carte-infos { justify-content: center; gap: 1.6cqw; }
-  .carte-infos__tete { flex-direction: column; align-items: center; gap: .4cqw; border: 0; padding: 0; }
-  .carte-infos__nom { max-width: 100%; font-size: 5cqw; }
-  .carte-infos__rang { font-size: 5cqw; }
-  .carte-infos__attaques { display: none; }
-  /* Nom (+ rang) centrés dans l'espace libre ; rareté toujours au même endroit, en bas,
-     qu'il y ait un rang ou non */
-  .carte-infos__tete { margin-block: auto; }
-  .carte-infos__rarete { font-size: 4cqw; letter-spacing: .06em; transform: none; padding-bottom: 1.4cqw; }
+  /* Petite carte (grimoire) : nom, attaques (nom + puissance) et rareté, en compact */
+  .carte-infos { gap: 1.2cqw; }
+  .carte-infos__tete { min-height: 9cqw; padding: .6cqw 5cqw; gap: 1.2cqw; }
+  .carte-infos__nom { font-size: 5.6cqw; white-space: normal; text-align: center; line-height: 1.02;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  .carte-infos__rang { min-width: 7cqw; height: 7cqw; }
+  .carte-infos__rang::after { font-size: 4.2cqw; }
+  .carte-infos__attaques { gap: .8cqw; padding: 0 .6cqw; }
+  .carte-attaque { grid-template-columns: 7cqw minmax(0, 1fr) auto; column-gap: 1.6cqw; padding: .4cqw .8cqw; border-radius: 1.2cqw; }
+  .carte-attaque__veine { width: 7cqw; height: 7cqw; font-size: 4cqw; border-width: .4cqw; }
+  .carte-attaque__nom { font-size: 5.2cqw; }
+  .carte-attaque__effet { display: none; }
+  .carte-attaque__puissance { min-width: 9cqw; height: 6.6cqw; padding: 0 1.2cqw; font-size: 4.8cqw;
+    clip-path: polygon(1.6cqw 0, calc(100% - 1.6cqw) 0, 100% 50%, calc(100% - 1.6cqw) 100%, 1.6cqw 100%, 0 50%); }
+  .carte-infos__rarete { font-size: 3.8cqw; letter-spacing: .06em; }
   .carte-infos__gemme { width: 3cqw; height: 3cqw; }
 }
+

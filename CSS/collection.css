@@ -181,13 +181,13 @@
 .page__num::before, .page__num::after { content: " ❧ "; opacity: .6; }
 
 /* ---------- Pochettes (étuis transparents) ----------
-   Découpées selon la silhouette du cadre des cartes (arche à pointes et « N »,
-   pointes sur les côtés, pointe en bas). Le tracé SVG est en coordonnées
+   Découpées selon la silhouette du cadre des cartes : rectangle à coins en pointe,
+   « N » qui dépasse en haut, petite pointe en bas. Le tracé SVG est en coordonnées
    1024 × 1536, comme les images de img/Cartes. */
 .pochette {
-  --forme: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1024 1536' preserveAspectRatio='none'><path d='M400 45L505 15L612 45L860 190L895 330L895 940L935 965L915 1000L925 1395L600 1410L515 1505L430 1410L105 1395L110 1000L90 965L130 940L130 330L160 190Z'/></svg>");
+  --forme: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1024 1536' preserveAspectRatio='none'><path d='M64 175L38 118L112 143L425 143L468 60L556 60L599 143L912 143L986 118L960 175L960 1366L986 1423L912 1398L566 1398L512 1458L458 1398L112 1398L38 1423L64 1366Z'/></svg>");
   position: relative;
-  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1024 1536' preserveAspectRatio='none'><defs><linearGradient id='g' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='%235a3a19' stop-opacity='.2'/><stop offset='1' stop-color='%235a3a19' stop-opacity='.08'/></linearGradient></defs><path d='M400 45L505 15L612 45L860 190L895 330L895 940L935 965L915 1000L925 1395L600 1410L515 1505L430 1410L105 1395L110 1000L90 965L130 940L130 330L160 190Z' fill='url(%23g)' stroke='%235a3a19' stroke-opacity='.6' stroke-width='1.2' stroke-linejoin='round' vector-effect='non-scaling-stroke'/></svg>") center / 100% 100% no-repeat;
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1024 1536' preserveAspectRatio='none'><defs><linearGradient id='g' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='%235a3a19' stop-opacity='.2'/><stop offset='1' stop-color='%235a3a19' stop-opacity='.08'/></linearGradient></defs><path d='M64 175L38 118L112 143L425 143L468 60L556 60L599 143L912 143L986 118L960 175L960 1366L986 1423L912 1398L566 1398L512 1458L458 1398L112 1398L38 1423L64 1366Z' fill='url(%23g)' stroke='%235a3a19' stroke-opacity='.6' stroke-width='1.2' stroke-linejoin='round' vector-effect='non-scaling-stroke'/></svg>") center / 100% 100% no-repeat;
 }
 /* Reflet de l'étui en plastique, par-dessus la carte, lui aussi à la forme du cadre */
 .pochette::after {
@@ -213,7 +213,7 @@
 .pochette--pleine::after { display: none; }
 
 .pochette.cible-survol {
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1024 1536' preserveAspectRatio='none'><defs><linearGradient id='g' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='%23c22f38' stop-opacity='.22'/><stop offset='1' stop-color='%23c22f38' stop-opacity='.12'/></linearGradient></defs><path d='M400 45L505 15L612 45L860 190L895 330L895 940L935 965L915 1000L925 1395L600 1410L515 1505L430 1410L105 1395L110 1000L90 965L130 940L130 330L160 190Z' fill='url(%23g)' stroke='%23c22f38' stroke-opacity='.95' stroke-width='2' stroke-linejoin='round' vector-effect='non-scaling-stroke'/></svg>");
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1024 1536' preserveAspectRatio='none'><defs><linearGradient id='g' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='%23c22f38' stop-opacity='.22'/><stop offset='1' stop-color='%23c22f38' stop-opacity='.12'/></linearGradient></defs><path d='M64 175L38 118L112 143L425 143L468 60L556 60L599 143L912 143L986 118L960 175L960 1366L986 1423L912 1398L566 1398L512 1458L458 1398L112 1398L38 1423L64 1366Z' fill='url(%23g)' stroke='%23c22f38' stroke-opacity='.95' stroke-width='2' stroke-linejoin='round' vector-effect='non-scaling-stroke'/></svg>");
 }
 .pochette--selection .carte-jeu:not(.carte-jeu--sans-image) {
   filter: drop-shadow(0 0 2px var(--blood)) drop-shadow(0 0 5px var(--blood));
@@ -221,7 +221,7 @@
 .pochette--selection .carte-jeu--sans-image { outline: 3px solid var(--blood); outline-offset: 2px; }
 /* Une carte est sélectionnée : les pochettes libres montrent qu'on peut y poser la carte */
 .grimoire:has(.pochette--selection) .pochette:not(.pochette--pleine) {
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1024 1536' preserveAspectRatio='none'><defs><linearGradient id='g' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='%23c22f38' stop-opacity='.1'/><stop offset='1' stop-color='%23c22f38' stop-opacity='.05'/></linearGradient></defs><path d='M400 45L505 15L612 45L860 190L895 330L895 940L935 965L915 1000L925 1395L600 1410L515 1505L430 1410L105 1395L110 1000L90 965L130 940L130 330L160 190Z' fill='url(%23g)' stroke='%23c22f38' stroke-opacity='.5' stroke-width='1.2' stroke-linejoin='round' vector-effect='non-scaling-stroke'/></svg>");
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1024 1536' preserveAspectRatio='none'><defs><linearGradient id='g' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='%23c22f38' stop-opacity='.1'/><stop offset='1' stop-color='%23c22f38' stop-opacity='.05'/></linearGradient></defs><path d='M64 175L38 118L112 143L425 143L468 60L556 60L599 143L912 143L986 118L960 175L960 1366L986 1423L912 1398L566 1398L512 1458L458 1398L112 1398L38 1423L64 1366Z' fill='url(%23g)' stroke='%23c22f38' stroke-opacity='.5' stroke-width='1.2' stroke-linejoin='round' vector-effect='non-scaling-stroke'/></svg>");
   cursor: pointer;
 }
 

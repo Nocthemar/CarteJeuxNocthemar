@@ -40,7 +40,9 @@
   font-family: "Cinzel","Cinzel Repli", serif; font-size: .8rem; font-weight: 700;
   cursor: help;
 }
-.page-boutique .booster__cartes img { width: 38px; height: 57px; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,.6)); }
+.page-boutique .booster__vignette { padding: 0; border: 0; background: none; cursor: zoom-in; transition: transform .15s ease; }
+.page-boutique .booster__vignette:hover, .page-boutique .booster__vignette:focus-visible { transform: translateY(-3px) scale(1.12); outline: none; }
+.page-boutique .booster__cartes img { display: block; width: 38px; height: 57px; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,.6)); }
 .page-boutique .btn-ouvrir {
   align-self: stretch;
   margin-top: 8px; padding: 10px 8px;
@@ -385,3 +387,6 @@ body.ob-ouvert { overflow: hidden; }
 .ob-carte--tourbillon .ob-carte__dos, .ob-carte--tremble .ob-carte__dos { animation: ob-lueur-dos .9s ease-in both; }
 .ob-carte--elevee .ob-carte__dos { animation: ob-lueur-dos 1.4s ease-in both; --c: #f6d27a; }
 @keyframes ob-lueur-dos { to { filter: drop-shadow(0 0 26px var(--c)) drop-shadow(0 0 8px #fff); } }
+
+/* Face d'une carte à l'ouverture : ses informations (CSS/carte-infos.css) suivent la taille de la carte */
+.ob-carte__face { container: carte / inline-size; }

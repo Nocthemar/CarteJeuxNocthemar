@@ -400,3 +400,7 @@ body.fete-ouverte { overflow: hidden; }
   .fete__blason { width: 116px; height: 132px; }
   .fete__blason svg { width: 92px; height: 108px; padding: 22px 20px; }
 }
+
+/* Carte récompense : cliquable, elle s'ouvre en grand avec ses informations */
+.recompense__loupe { display: grid; place-items: center; height: 100%; padding: 0; border: 0; background: none; cursor: zoom-in; pointer-events: auto; transition: transform .15s ease; }
+.recompense__loupe:hover, .recompense__loupe:focus-visible { transform: scale(1.08); outline: none; }
