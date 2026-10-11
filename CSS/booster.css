@@ -42,7 +42,8 @@
 }
 .page-boutique .booster__vignette { padding: 0; border: 0; background: none; cursor: zoom-in; transition: transform .15s ease; }
 .page-boutique .booster__vignette:hover, .page-boutique .booster__vignette:focus-visible { transform: translateY(-3px) scale(1.12); outline: none; }
-.page-boutique .booster__cartes img { display: block; width: 38px; height: 57px; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,.6)); }
+.page-boutique .booster__vignette { width: 52px; }
+.page-boutique .booster__vignette .carte-jeu { cursor: zoom-in; }
 .page-boutique .btn-ouvrir {
   align-self: stretch;
   margin-top: 8px; padding: 10px 8px;
@@ -390,3 +391,46 @@ body.ob-ouvert { overflow: hidden; }
 
 /* Face d'une carte à l'ouverture : ses informations (CSS/carte-infos.css) suivent la taille de la carte */
 .ob-carte__face { container: carte / inline-size; }
+
+
+/* =====================================================================
+   Ouverture « en pile » (JS/booster-ouverture.js : majPile, suivante, etaler)
+   - les cartes sont empilées au centre, en grand ; --p = place dans la pile (0 = dessus)
+   - la carte du dessus se révèle avec l'animation de sa rareté
+   - un tap : elle s'envole sur le côté, la suivante se révèle
+   - à la fin, toutes reviennent en ligne pour le récapitulatif (.ob__cartes--ligne)
+   ===================================================================== */
+.ob__cartes--pile { display: grid; place-items: center; }
+.ob__cartes--pile .ob-carte {
+  --lc: min(58vw, 46vh, 320px);
+  grid-area: 1 / 1;
+  z-index: calc(30 - var(--p, 0));
+  transform: translate(calc(var(--p, 0) * 7px), calc(var(--p, 0) * -7px)) rotate(calc(var(--p, 0) * 2.5deg)) scale(.3);
+  transition: opacity .45s ease, transform .55s cubic-bezier(.2,1.2,.4,1);
+  transition-delay: calc(var(--p, 0) * .06s);
+}
+.ob--ouvert .ob__cartes--pile .ob-carte {
+  transform: translate(calc(var(--p, 0) * 7px), calc(var(--p, 0) * -7px)) rotate(calc(var(--p, 0) * 2.5deg));
+}
+/* la carte en cours : droite, au premier plan */
+.ob--ouvert .ob__cartes--pile .ob-carte--actuelle { transform: none; z-index: 40; transition-delay: 0s; }
+/* sous la pile, seul le texte de la carte en cours se lit */
+.ob__cartes--pile .ob-carte:not(.ob-carte--actuelle) .ob-carte__info { opacity: 0; }
+/* la carte vue s'envole */
+.ob--ouvert .ob__cartes--pile .ob-carte--partie {
+  transform: translate(-75vw, -8vh) rotate(-28deg) scale(.8);
+  opacity: 0;
+  transition: transform .45s cubic-bezier(.5,0,.75,0), opacity .45s ease;
+  transition-delay: 0s;
+}
+.ob-carte__nom { font-size: clamp(.9rem, 2.6vw, 1.2rem); }
+.ob__cartes--pile .ob-carte__info { min-height: 4.2em; }
+
+/* Récapitulatif : toutes les cartes en ligne */
+.ob__cartes--ligne .ob-carte { transition: none; }
+@media (max-width: 600px) {
+  .ob__cartes--pile .ob-carte { --lc: min(70vw, 42vh); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ob__cartes--pile .ob-carte { transition: none; }
+}

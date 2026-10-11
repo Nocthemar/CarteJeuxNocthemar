@@ -245,7 +245,7 @@ export function ouvrirBoosterAnime(resultat, imageBooster, { restants = 0, surRo
         <svg class="ob__fissures" viewBox="0 0 640 960" preserveAspectRatio="none">${[1, 2, 3].map(fissure).join('')}</svg>
         <span class="ob__cristal"></span>
       </div>
-      <div class="ob__cartes" style="--n:${cartes.length}">${cartes.map((c, i) => htmlCarte(c, i, details)).join('')}</div>
+      <div class="ob__cartes ob__cartes--pile" style="--n:${cartes.length}">${cartes.map((c, i) => htmlCarte(c, i, details)).join('')}</div>
     </div>
     <p class="ob__aide" aria-live="polite">Tape sur le booster pour l'ouvrir</p>
     <div class="ob__fin" hidden>
@@ -318,23 +318,60 @@ export function ouvrirBoosterAnime(resultat, imageBooster, { restants = 0, surRo
         ov.classList.add('ob--ouvert');
         jouerSon('elan');
         jouerSon('cloche', 0.2);
-        aide('Tape pour retourner les cartes');
-        setTimeout(() => { occupe = false; }, reduit ? 0 : 900);
+        majPile();
+        setTimeout(suivante, reduit ? 0 : 900);
         return;
       }
       if (phase === 'cartes') {
-        const carte = ov.querySelector(`.ob-carte[data-i="${revelees}"]`);
-        if (!carte) return;
-        const c = cartes[revelees];
-        revelees += 1;
+        // La carte révélée s'envole : on passe à la suivante (ou, à la fin, au récapitulatif en ligne)
+        const actuelle = ov.querySelector(`.ob-carte[data-i="${revelees - 1}"]`);
         occupe = true;
         aide('');
-        revelerCarte(ov, $('.ob__particules'), carte, c).then(() => {
-          occupe = false;
-          if (revelees >= cartes.length) finir();
-          else aide(revelees === cartes.length - 1 ? 'La dernière…' : 'Tape pour la suivante');
-        });
+        if (revelees >= cartes.length) { etaler(); return; }
+        actuelle?.classList.add('ob-carte--partie');
+        jouerSon('elan');
+        setTimeout(suivante, reduit ? 0 : 380);
       }
+    }
+
+    // Place de chaque carte dans la pile (0 = dessus)
+    function majPile() {
+      ov.querySelectorAll('.ob-carte').forEach((el) => {
+        const i = Number(el.dataset.i);
+        el.style.setProperty('--p', Math.max(0, i - revelees));
+      });
+    }
+
+    // Révèle la carte du dessus de la pile, avec l'animation de sa rareté
+    function suivante() {
+      const carte = ov.querySelector(`.ob-carte[data-i="${revelees}"]`);
+      if (!carte) { occupe = false; return; }
+      const c = cartes[revelees];
+      majPile();
+      carte.classList.add('ob-carte--actuelle');
+      revelees += 1;
+      occupe = true;
+      revelerCarte(ov, $('.ob__particules'), carte, c).then(() => {
+        occupe = false;
+        aide(revelees >= cartes.length ? 'Tape pour voir tout ton butin' : `Tape pour la suivante (${revelees} / ${cartes.length})`);
+      });
+    }
+
+    // Toutes les cartes vues : elles reviennent et s'alignent pour le récapitulatif
+    function etaler() {
+      const zone = $('.ob__cartes');
+      const cartesEl = [...ov.querySelectorAll('.ob-carte')];
+      cartesEl.forEach((el) => el.classList.remove('ob-carte--partie', 'ob-carte--actuelle'));
+      zone.classList.remove('ob__cartes--pile');
+      zone.classList.add('ob__cartes--ligne');
+      if (!reduit) {
+        cartesEl.forEach((el, i) => el.animate([
+          { transform: 'translateY(60px) scale(.6)', opacity: 0 },
+          { transform: 'none', opacity: 1 },
+        ], { duration: 520, delay: i * 90, easing: 'cubic-bezier(.2,1.3,.4,1)', fill: 'backwards' }));
+      }
+      jouerSon('cloche');
+      setTimeout(finir, reduit ? 0 : 450 + cartesEl.length * 90);
     }
 
     // Toutes les cartes sont retournées : le bilan et les boutons

@@ -10,6 +10,7 @@
 // =====================================================================
 import { supabase, connexionDiscord, getMonJoueur, SITE_ROOT } from './supabase.js';
 import { $, esc, notifier } from './commun.js';
+import { htmlCarte, ouvrirApercu } from './cartes.js';
 import { CHAPITRES, DIFFICULTES, trouverNiveau, chapitreOuvert, etatNiveau } from './histoire-data.js';
 
 const CLE_RESULTAT = 'histoire-resultat';   // écrit par JS/jeu-cartes.js à la fin d'un niveau
@@ -90,7 +91,7 @@ function afficherResultat({ niveau: idNiveau, gagne, recompenses: r, erreur }) {
     gains = [
       r.or ? `<li><img src="${url('img/Equipement/Or-icone.webp')}" alt=""> +${r.or} pièces</li>` : '',
       r.xp ? `<li><span class="resultat__xp">XP</span> +${r.xp} XP de pass</li>` : '',
-      r.carte ? `<li class="resultat__carte">${r.carte_image ? `<img src="${esc(url(r.carte_image))}" alt="">` : ''} Nouvelle carte : <strong>${esc(r.carte)}</strong></li>` : '',
+      r.carte ? `<li class="resultat__carte"><span class="resultat__vignette" data-carte-nom="${esc(r.carte)}">${r.carte_image ? `<img src="${esc(url(r.carte_image))}" alt="">` : ''}</span> Nouvelle carte : <strong>${esc(r.carte)}</strong></li>` : '',
     ].join('');
   }
 
@@ -106,6 +107,16 @@ function afficherResultat({ niveau: idNiveau, gagne, recompenses: r, erreur }) {
     <button type="button" class="resultat__fermer" aria-label="Fermer le message">×</button>`;
   zone.hidden = false;
   zone.querySelector('.resultat__fermer').addEventListener('click', () => { zone.hidden = true; });
+  // La carte gagnée : le même rendu que partout (cadre, nom, rareté), lu dans le catalogue ; un clic l'ouvre en grand
+  const vignette = zone.querySelector('[data-carte-nom]');
+  if (vignette) {
+    supabase.from('cards').select('*').eq('name', vignette.dataset.carteNom).maybeSingle().then(({ data }) => {
+      if (!data) return;
+      vignette.innerHTML = htmlCarte(data);
+      vignette.title = 'Voir la carte en grand';
+      vignette.addEventListener('click', () => ouvrirApercu(data));
+    });
+  }
 }
 
 

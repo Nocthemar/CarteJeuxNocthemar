@@ -404,3 +404,6 @@ body.fete-ouverte { overflow: hidden; }
 /* Carte récompense : cliquable, elle s'ouvre en grand avec ses informations */
 .recompense__loupe { display: grid; place-items: center; height: 100%; padding: 0; border: 0; background: none; cursor: zoom-in; pointer-events: auto; transition: transform .15s ease; }
 .recompense__loupe:hover, .recompense__loupe:focus-visible { transform: scale(1.08); outline: none; }
+.recompense__loupe { width: 64px; }
+.recompense__loupe .carte-jeu { cursor: zoom-in; }
+@media (max-width: 600px) { .recompense__loupe { width: 52px; } }

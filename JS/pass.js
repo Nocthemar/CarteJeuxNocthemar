@@ -7,7 +7,7 @@
 // =====================================================================
 import { supabase, getMonJoueur, connexionDiscord, SITE_ROOT } from './supabase.js';
 import { $, esc, notifier } from './commun.js';
-import { ouvrirApercu } from './cartes.js';
+import { ouvrirApercu, htmlCarte } from './cartes.js';
 import { jouerSon } from './jeu-cartes-son.js';   // fanfare du déblocage premium (respecte le volume et le mode muet du jeu)
 
 const etat = {
@@ -134,7 +134,7 @@ function contenuRecompense(p) {
   }
   if (p.type_recompense === 'carte') {
     const c = etat.cartes.get(v.nom);
-    return `<span class="recompense__visuel recompense__visuel--carte">${c?.image ? `<button type="button" class="recompense__loupe" data-apercu-carte="${esc(v.nom)}" title="Voir la carte en grand" aria-label="Voir la carte ${esc(v.nom)}"><img src="${urlImage(c.image)}" alt="" loading="lazy"></button>` : svg('dos_carte')}</span>
+    return `<span class="recompense__visuel recompense__visuel--carte">${c?.image ? `<button type="button" class="recompense__loupe" data-apercu-carte="${esc(v.nom)}" title="Voir la carte en grand" aria-label="Voir la carte ${esc(v.nom)}">${htmlCarte(c)}</button>` : svg('dos_carte')}</span>
       <span class="recompense__nom">${esc(v.nom ?? 'Carte')}</span>`;
   }
   if (p.type_recompense === 'booster') {

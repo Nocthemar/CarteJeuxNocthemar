@@ -76,6 +76,9 @@
 .resultat__gains li { display: flex; align-items: center; gap: 8px; color: var(--parchment); }
 .resultat__gains img { width: 24px; height: 24px; object-fit: contain; }
 .resultat__carte img { width: 34px; height: auto; }
+.resultat__vignette { display: inline-block; width: 56px; flex: none; cursor: zoom-in; }
+.resultat__vignette .carte-jeu { cursor: zoom-in; }
+.resultat__vignette img { width: 100%; }
 .resultat__xp {
   display: inline-grid; place-items: center;
   min-width: 26px; height: 20px; padding: 0 4px;

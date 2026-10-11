@@ -7,7 +7,7 @@
 import { supabase } from './supabase.js';
 import { $, esc, etat, chargerSolde, notifier, piece } from './boutique-commun.js';
 import { ouvrirBoosterAnime, COULEURS_RARETE } from './booster-ouverture.js';
-import { ouvrirApercu } from './cartes.js';
+import { ouvrirApercu, htmlCarte } from './cartes.js';
 
 const NOMS_RARETE = { commune: 'Commune', eveillee: 'Éveillée', mythique: 'Mythique', legendaire: 'Légendaire', transcendante: 'Transcendante' };
 const boosters = { liste: [], cartes: new Map(), possedes: new Map() };
@@ -54,7 +54,7 @@ function htmlBooster(b) {
   const possibles = [...(boosters.cartes.get(b.id) ?? [])].sort((x, y) => RANG.indexOf(y.rarity) - RANG.indexOf(x.rarity));
   const montrees = possibles.slice(0, b.nb_cartes);
   const cartes = montrees
-    .map((c) => `<button type="button" class="booster__vignette" data-apercu-carte="${esc(c.name)}" title="${esc(c.name)} : voir la carte" aria-label="Voir la carte ${esc(c.name)}"><img src="${esc(c.image)}" alt="" loading="lazy"></button>`).join('');
+    .map((c) => `<button type="button" class="booster__vignette" data-apercu-carte="${esc(c.name)}" title="${esc(c.name)} : voir la carte" aria-label="Voir la carte ${esc(c.name)}">${htmlCarte(c)}</button>`).join('');
   let achat;
   if (!etat.moi) achat = '<button type="button" class="btn-acheter" disabled>Connecte-toi pour acheter</button>';
   else if (etat.solde < b.prix) achat = '<button type="button" class="btn-acheter" disabled>Pas assez de pièces</button>';
