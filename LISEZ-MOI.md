@@ -55,6 +55,8 @@ mêmes cartes, mêmes pièces, même progression.
    `mode_histoire.sql` est à lancer s'il ne l'a pas encore été.
    Pour le Pass de saison et les boosters, dans cet ordre : relancer `mode_histoire.sql` (XP 200 / 500),
    lancer `boosters.sql`, puis `pass_saison.sql`.
+   Pour les plateaux en boutique : lancer `plateaux.sql` (après `boosters.sql`).
+   Pour les thèmes Bleu, Violet et Orange en boutique : lancer `themes_couleurs.sql`.
 
 ## Bon à savoir
 

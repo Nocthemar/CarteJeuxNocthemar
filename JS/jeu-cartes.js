@@ -35,12 +35,27 @@ import { ouvrirSalon, nouveauCode, codeValide, TAILLE_SALON } from './jeu-cartes
 
 const NOM_ADVERSAIRE = "L'Ombre du Codex";
 
-// Le plateau suit la saison réelle (CSS/jeu-cartes.css : .saison-…) :
-// hiver de décembre à février, printemps de mars à mai, été de juin à août, automne de septembre à novembre.
-// Pour tester un autre plateau : jeu-cartes.html?saison=hiver (printemps, ete, automne)
+// Le plateau (CSS/jeu-cartes.css : classe plateau-… sur <body>) :
+// - celui que le joueur a choisi, s'il en a acheté un en boutique (SQL/plateaux.sql, choisi dans le profil) ;
+// - sinon celui de la saison réelle : hiver de décembre à février, printemps de mars à mai,
+//   été de juin à août, automne de septembre à novembre.
+// Pour tester un plateau : jeu-cartes.html?saison=hiver (printemps, ete, automne)
+const PLATEAUX = ['automne', 'ete', 'hiver', 'printemps'];   // ceux que le CSS sait afficher
 const SAISON_DU_MOIS = ['hiver', 'hiver', 'printemps', 'printemps', 'printemps', 'ete', 'ete', 'ete', 'automne', 'automne', 'automne', 'hiver'];
 const saisonForcee = new URLSearchParams(location.search).get('saison');
-document.body.classList.add(`saison-${SAISON_DU_MOIS.includes(saisonForcee) ? saisonForcee : SAISON_DU_MOIS[new Date().getMonth()]}`);
+function poserPlateau(id) {
+  document.body.classList.remove(...PLATEAUX.map((x) => `plateau-${x}`));
+  document.body.classList.add(`plateau-${id}`);
+}
+poserPlateau(PLATEAUX.includes(saisonForcee) ? saisonForcee : SAISON_DU_MOIS[new Date().getMonth()]);
+
+// Le plateau choisi par le joueur (rien si la table n'existe pas encore : plateau de la saison)
+async function chargerPlateauChoisi(discordId) {
+  if (PLATEAUX.includes(saisonForcee)) return;
+  const { data } = await supabase.from('joueur_plateaux').select('plateau_id')
+    .eq('discord_id', discordId).eq('equipe', true).maybeSingle();
+  if (PLATEAUX.includes(data?.plateau_id)) poserPlateau(data.plateau_id);
+}
 const CLE_SALON_EN_ATTENTE = 'duel-salon';   // salon à rejoindre après la connexion Discord
 
 let mode = 'solo';          // onglet de l'accueil : 'solo' | 'ligne'
@@ -84,6 +99,7 @@ async function init() {
     return;
   }
   moi = joueur;
+  if (moi) chargerPlateauChoisi(moi.discord_id).catch(() => {});
   unitesCatalogue = (data ?? []).filter(jouable).map(uniteDepuisCarte);
   if (moi) {
     const [deck, inventaire] = await Promise.all([
@@ -869,6 +885,7 @@ async function quitterSalon() {
   salon = null;
   role = null;
   p = null;
+  oublierAbsence();
   sessionStorage.removeItem(`duel-hote-${s.code}`);
   history.replaceState(null, '', location.pathname);
   await s.fermer();
@@ -887,6 +904,7 @@ function revenirAccueil() {
 function revenirAuSalon() {
   role = null;
   p = null;
+  oublierAbsence();
   revenirAccueil();
   majBoutonPret();
   surPresence(salon?.liste() ?? []);
@@ -916,8 +934,11 @@ $('btn-pret').addEventListener('click', async () => {
   surPresence(salon.liste());
 });
 
-function surPresence(liste) {
+function surPresence(tous) {
   if (!salon) return;
+  // Page rechargée : l'ancienne connexion reste visible quelques secondes ; on ne garde que la plus récente
+  // d'un même compte dans un même rôle
+  const liste = tous.filter((x) => !tous.some((y) => y !== x && y.discord_id === x.discord_id && y.role === x.role && y.rejoint > x.rejoint));
   // Salon de deux : les deux premiers arrivés jouent, les suivants repartent
   const dedans = liste.slice(0, TAILLE_SALON);
   if (liste.length > TAILLE_SALON && !dedans.some((x) => x.cle === salon.cle)) {
@@ -943,17 +964,51 @@ function surPresence(liste) {
   else if (!adversaire.pret) etat.textContent = `En attente de ${adversaire.nom}…`;
   else etat.textContent = 'Le duel commence !';
 
-  // L'adversaire a quitté le salon en plein duel
-  if (avant && !adversaire && role && p && !p.fini) {
-    p.fini = 'joueur';
-    terminer(`${avant.nom} a quitté le duel.`);
-    return;
+  // L'adversaire a disparu du salon en plein duel (onglet en arrière-plan, connexion coupée,
+  // page rechargée…) : on lui laisse le temps de revenir avant de finir le duel
+  if (role && p && !p.fini) {
+    if (!adversaire) {
+      if (!absence && avant) attendreRetour(avant.nom);
+      if (absence) return;
+    } else {
+      const revenu = !!absence;
+      oublierAbsence();
+      const autreOnglet = !!salon.cleDuel && adversaire.cle !== salon.cleDuel;   // il a rechargé sa page
+      if (autreOnglet && role === 'invite') {
+        // L'hôte a rechargé sa page : la partie (qu'il faisait tourner) est perdue
+        p.fini = 'joueur';
+        terminer(`${adversaire.nom} a rechargé la page : le duel est interrompu.`);
+        return;
+      }
+      if (revenu) notifier(`${adversaire.nom} est de retour.`);
+      if ((revenu || autreOnglet) && role === 'hote') {
+        salon.cleDuel = adversaire.cle;
+        envoyerEtat();   // messages perdus pendant l'absence, ou page rechargée : il retrouve la partie
+      }
+    }
   }
 
   // L'hôte lance le duel quand les deux joueurs sont prêts
   if (salon.role === 'hote' && !role && salon.presence.pret && adversaire?.pret && adversaire.role === 'invite') {
     commencerEnLigne(adversaire);
   }
+}
+
+// Délai laissé à un adversaire déconnecté pour revenir (ex. : il est passé sur Discord depuis son téléphone)
+const DELAI_RETOUR = 45000;
+let absence = null;
+function attendreRetour(nom) {
+  notifier(`${nom} s'est déconnecté : on l'attend encore ${DELAI_RETOUR / 1000} secondes…`, 'erreur');
+  absence = setTimeout(() => {
+    absence = null;
+    if (!salon || salon.adversaire || !role || !p || p.fini) return;
+    p.fini = 'joueur';
+    terminer(`${nom} a quitté le duel.`);
+  }, DELAI_RETOUR);
+}
+function oublierAbsence() {
+  clearTimeout(absence);
+  absence = null;
 }
 
 function afficherJoueurs(dedans) {
@@ -981,8 +1036,11 @@ function afficherJoueurs(dedans) {
 // ---------------------------------------------------------------------
 const hote = { pid: null, n: 0, historique: [], choixVus: new Set() };
 
-// Copie allégée (fiches des cartes réduites à l'image et la rareté)
-const alleger = (x) => JSON.parse(JSON.stringify(x, (k, v) => (k === 'carte' && v ? { id: v.id, image: v.image, rarity: v.rarity } : v)));
+// Copie allégée : des fiches des cartes, on garde seulement ce que la face affiche
+// (image, rareté, et le nom, le rang et les attaques écrits dans le cadre : htmlInfos de JS/cartes.js)
+const alleger = (x) => JSON.parse(JSON.stringify(x, (k, v) => (k === 'carte' && v
+  ? { id: v.id, image: v.image, rarity: v.rarity, name: v.name, rank: v.rank, attack_1: v.attack_1, attack_2: v.attack_2 }
+  : v)));
 
 // État envoyé à l'invité : la main et la pioche de l'hôte sont masquées
 function etatPourInvite() {
@@ -998,6 +1056,13 @@ function evenementPourInvite(ev) {
   if (e.qui === 'joueur' && e.pioche) e.pioche.piochees = e.pioche.piochees.map(() => ({ cache: true }));
   if (e.qui === 'joueur' && e.cartes) e.cartes = e.cartes.map(() => 0);   // Méditer : cartes cachées
   return e;
+}
+
+// L'état complet, sans animation : pour l'invité qui a manqué trop de messages ou rechargé la page
+const RENVOI_MAX = 6;
+function envoyerEtat() {
+  if (role !== 'hote' || !salon || !p || p.fini) return;
+  salon.envoyer('jeu', { pid: hote.pid, n: hote.n, etatComplet: true, ev: { type: 'etat' }, etat: etatPourInvite() });
 }
 
 // Envoie un événement du moteur à l'invité (rien en solo)
@@ -1016,6 +1081,7 @@ async function commencerEnLigne(adversaire) {
   await salon.annoncer({ pret: false });
   majBoutonPret();
   Object.assign(hote, { pid: crypto.randomUUID(), n: 0, historique: [], choixVus: new Set() });
+  salon.cleDuel = adversaire.cle;
   const premier = Math.random() < 0.5 ? 'joueur' : 'adverse';
   p = creerPartie(construireDeck(grimoireJoueur), construireDeck(sonGrimoire), salon.presence.nom, adversaire.nom, premier);
   montrerPlateau();
@@ -1085,15 +1151,25 @@ function surMessage(evenement, contenu) {
   if (!salon) return;
   if (salon.role === 'hote') {
     if (evenement === 'choix') traiterChoix(contenu);
-    // L'invité a manqué des messages : on les renvoie dans l'ordre
-    if (evenement === 'renvoi' && contenu.pid === hote.pid) {
-      hote.historique.filter((m) => m.n >= contenu.depuis).forEach((m) => salon.envoyer('jeu', m));
+    // L'invité a manqué des messages : on les renvoie dans l'ordre,
+    // ou, s'il en manque beaucoup (ou s'il a rechargé la page), l'état de la partie d'un coup
+    if (evenement === 'renvoi' && role === 'hote' && p) {
+      const manquants = contenu.pid === hote.pid ? hote.historique.filter((m) => m.n >= contenu.depuis) : null;
+      if (manquants && manquants.length <= RENVOI_MAX) manquants.forEach((m) => salon.envoyer('jeu', m));
+      else envoyerEtat();
     }
     return;
   }
   if (evenement !== 'jeu') return;
   // Les événements sont rejoués dans l'ordre, sans trou ni doublon.
   // Nouveau duel (même si son tout premier message s'est perdu) : on repart de zéro
+  if (contenu.etatComplet) {
+    // plus ancien que ce qu'on a déjà, ou duel que l'invité a déjà quitté (retour au salon)
+    if (contenu.pid === invite.pid && (contenu.n < invite.dernier || role !== 'invite')) return;
+    Object.assign(invite, { pid: contenu.pid, dernier: contenu.n, activite: Date.now(), choixEnvoye: null });
+    enFile(() => jouerEtat(contenu));
+    return;
+  }
   if (contenu.pid !== invite.pid) Object.assign(invite, { pid: contenu.pid, dernier: 0, choixEnvoye: null });
   if (contenu.n <= invite.dernier) return;
   if (contenu.n > invite.dernier + 1) {
@@ -1112,6 +1188,7 @@ async function jouerMessage(m) {
   if (ev.type === 'debut') {
     role = 'invite';
     p = etat;
+    if (salon) salon.cleDuel = salon.adversaire?.cle ?? null;
     await salon?.annoncer({ pret: false });
     majBoutonPret();
     montrerPlateau();
@@ -1144,6 +1221,28 @@ async function jouerMessage(m) {
   if (ev.type === 'tour' && $('renvoi').open) $('renvoi').close();
   if (ev.type !== 'debut' && ev.type !== 'renvoi') deverrouiller();
   else afficher();
+}
+
+// L'état complet reçu de l'hôte : le plateau est remis à jour d'un coup, sans rejouer les animations
+async function jouerEtat(m) {
+  const nouveau = role !== 'invite' || !p;
+  role = 'invite';
+  p = miroir(m.etat);
+  if (nouveau) {
+    if (salon) salon.cleDuel = salon.adversaire?.cle ?? null;
+    await salon?.annoncer({ pret: false });
+    majBoutonPret();
+    montrerPlateau();
+  }
+  invite.activite = Date.now();
+  if (p.fini) return terminer();
+  if (!renvoiFini(p)) {
+    if (!p.renvoi?.joueur) ouvrirRenvoi();
+    afficher();
+    return;
+  }
+  if ($('renvoi').open) $('renvoi').close();
+  deverrouiller();
 }
 
 // Veille de l'invité : si rien ne bouge depuis un moment alors qu'il attend l'hôte

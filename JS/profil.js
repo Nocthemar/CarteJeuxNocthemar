@@ -5,7 +5,7 @@
 //  profil.html?id=12345  -> profil public d'un autre joueur (ID Discord)
 // =====================================================================
 import { supabase, connexionDiscord, getMonJoueur, SITE_ROOT } from './supabase.js';
-import { $, esc, couleur, LIBELLES, SOURCES } from './commun.js';
+import { $, esc, couleur } from './commun.js';
 import { chargerDeck, Deck, activerGlisser, htmlCarte } from './cartes.js';
 import { OBJETS, TAILLE_DECK, objetDepuisNom } from './jeu-cartes-moteur.js';
 
@@ -19,8 +19,6 @@ const SELECT_JOUEUR = `
   title:items!players_title_item_id_fkey(*),
   theme:items!players_theme_item_id_fkey(*)
 `;
-
-const COSMETIQUES = ['banner', 'title', 'theme'];
 
 
 async function init() {
@@ -54,7 +52,6 @@ async function init() {
 
   // Partie privée : seulement sur mon propre profil
   if (estMoi) {
-    $('prive').hidden = false;
     $('duelliste').hidden = false;
     $('bourse').hidden = false;
     const objets = await chargerObjetsPossedes(discordId);
@@ -62,8 +59,6 @@ async function init() {
       afficherDuel(deckProfil, objets, discordId),
       afficherDuelliste(objets),
       afficherSolde(discordId),
-      afficherInventaire(discordId, joueur),
-      afficherHistorique(discordId),
     ]);
   }
 
@@ -140,7 +135,7 @@ function afficherDuelliste(objets) {
 // je peux le renommer, retirer des cartes et les réorganiser en les glissant.
 async function afficherDeck(discordId, estMoi) {
   const { nom, ids, cartes } = await chargerDeck(discordId);
-  const deck = new Deck($('deck'), { nom, ids, cartes, editable: estMoi, lienAjout: 'collection.html' });
+  const deck = new Deck($('deck'), { nom, ids, cartes, editable: estMoi, lienAjout: 'collection.html#grimoire' });
 
   if (!estMoi) return { nom, ids, cartes };
   $('lien-collection').hidden = false;
@@ -299,127 +294,5 @@ function afficherEtincelles(img, nombre) {
   }).join('');
 }
 
-
-async function afficherInventaire(discordId, joueur) {
-  const { data } = await supabase
-    .from('inventory')
-    .select('quantity, item:items(*)')
-    .eq('discord_id', discordId)
-    .order('acquired_at', { ascending: false });
-
-  // Les objets "rp" sont les objets de pouvoir du Duel : affichés dans « Le duelliste »
-  const objets = (data ?? []).filter(({ item }) => item.kind !== 'rp');
-
-  const zone = $('inventaire');
-
-  if (!objets.length) {
-    zone.innerHTML = `<p class="vide">Aucun cosmétique pour l'instant.</p>`;
-    return;
-  }
-
-  const equipes = [joueur.banner_item_id, joueur.title_item_id, joueur.theme_item_id];
-
-  // Dans sa colonne, « Bannière « Les Veines » » devient « Les Veines » (la colonne dit déjà le type)
-  const nomCourt = (nom) => nom.replace(/^(bannière|thème|titre)\s*«\s*(.+?)\s*»$/i, '$2');
-
-  const htmlObjet = ({ quantity, item }, avecType) => {
-    let action = '';
-    if (COSMETIQUES.includes(item.kind)) {
-      action = equipes.includes(item.id)
-        ? `<button type="button" class="btn-petit btn-petit--retirer" data-desequiper="${item.kind}">Retirer</button>`
-        : `<button type="button" class="btn-petit btn-petit--equiper" data-equiper="${item.id}">Équiper</button>`;
-    }
-    return `
-      <li class="objet">
-        <div>
-          ${avecType ? `<span class="objet__type">${esc(LIBELLES[item.kind] ?? item.kind)}</span>` : ''}
-          <strong>${esc(avecType ? item.name : nomCourt(item.name))}</strong>${quantity > 1 ? ` <span class="objet__qte">×${quantity}</span>` : ''}
-        </div>
-        ${action}
-      </li>`;
-  };
-
-  // Une colonne par cosmétique équipable ; les autres types (fonds, accès…) dans « Divers » s'il y en a
-  const COLONNES = [['banner', 'Bannières', 'Aucune bannière'], ['theme', 'Thèmes', 'Aucun thème'], ['title', 'Titres', 'Aucun titre']];
-  const divers = objets.filter(({ item }) => !COSMETIQUES.includes(item.kind));
-  const colonnes = COLONNES.map(([kind, titre, vide]) => {
-    const liste = objets.filter(({ item }) => item.kind === kind);
-    return `
-      <div class="collection-colonne">
-        <h3 class="collection-colonne__titre">${titre} <span>${liste.length}</span></h3>
-        ${liste.length
-          ? `<ul class="liste liste--defilante">${liste.map((o) => htmlObjet(o, false)).join('')}</ul>`
-          : `<p class="vide">${vide}</p>`}
-      </div>`;
-  });
-  if (divers.length) {
-    colonnes.push(`
-      <div class="collection-colonne">
-        <h3 class="collection-colonne__titre">Divers <span>${divers.length}</span></h3>
-        <ul class="liste liste--defilante">${divers.map((o) => htmlObjet(o, true)).join('')}</ul>
-      </div>`);
-  }
-  zone.innerHTML = colonnes.join('');
-
-  // 2 objets visibles par colonne, les suivants se font défiler (molette ou glisser)
-  zone.querySelectorAll('.liste--defilante').forEach((liste) => limiterHauteur(liste, 2));
-}
-
-
-// N'affiche que les `n` premiers éléments d'une liste, le reste est accessible en faisant défiler.
-// ResizeObserver : la liste est encore cachée au premier rendu, on mesure dès qu'elle devient visible.
-function limiterHauteur(liste, n) {
-  new ResizeObserver(() => {
-    const dernier = liste.children[n - 1];
-    liste.style.maxHeight = liste.children.length > n
-      ? `${dernier.offsetTop + dernier.offsetHeight}px`
-      : '';
-  }).observe(liste);
-}
-
-
-async function afficherHistorique(discordId) {
-  const { data: lignes } = await supabase
-    .from('transactions')
-    .select('*')
-    .eq('discord_id', discordId)
-    .order('created_at', { ascending: false })
-    .limit(3);
-
-  const zone = $('historique');
-
-  if (!lignes?.length) {
-    zone.innerHTML = `<p class="vide">Aucune transaction pour l'instant.</p>`;
-    return;
-  }
-
-  zone.innerHTML = lignes.map((t) => `
-    <li class="transac">
-      <div>
-        <span>${esc(t.reason ?? SOURCES[t.source])}</span>
-        <small>${new Date(t.created_at).toLocaleDateString('fr-FR')} · ${esc(SOURCES[t.source] ?? t.source)}</small>
-      </div>
-      <strong class="${t.amount >= 0 ? 'gain' : 'perte'}">${t.amount >= 0 ? '+' : ''}${t.amount}</strong>
-    </li>`).join('');
-}
-
-
-// Boutons "Équiper" / "Retirer" (un seul écouteur pour toute la liste)
-$('inventaire').addEventListener('click', async (e) => {
-  const bouton = e.target.closest('[data-equiper], [data-desequiper]');
-  if (!bouton || bouton.disabled) return;
-
-  bouton.disabled = true;
-  const { error } = bouton.dataset.equiper
-    ? await supabase.rpc('equip_cosmetic', { p_item_id: Number(bouton.dataset.equiper) })
-    : await supabase.rpc('unequip_cosmetic', { p_kind: bouton.dataset.desequiper });
-
-  if (error) {
-    alert(error.message);
-    bouton.disabled = false;
-  } else {
-    location.reload();
-  }
-});
 
 init();

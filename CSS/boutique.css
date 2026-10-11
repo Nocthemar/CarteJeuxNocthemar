@@ -291,3 +291,70 @@
 .notif--visible { opacity: 1; transform: translate(-50%, 0); }
 .notif--ok     { border-color: var(--gain); }
 .notif--erreur { border-color: var(--perte); }
+
+/* =====================================================================
+   Sommaire : à droite de l'écran, un lien par échoppe pour y aller directement ;
+   l'échoppe à l'écran est mise en avant (JS/boutique.js). Sur téléphone : une barre en bas.
+   ===================================================================== */
+html:has(.page-boutique) { scroll-behavior: smooth; }
+.page-boutique .echoppe { scroll-margin-top: 24px; }
+.sommaire {
+  position: fixed; right: clamp(10px, 2vw, 28px); top: 50%; z-index: 50;
+  translate: 0 -50%;
+  display: flex; flex-direction: column; gap: 6px;
+  padding: 10px 8px;
+  background: linear-gradient(180deg, rgba(34,27,24,.92), rgba(18,14,13,.92));
+  border: 1px solid var(--trait);
+  outline: 1px solid rgba(240,236,227,.06); outline-offset: -5px;
+  box-shadow: 0 14px 28px rgba(0,0,0,.55);
+}
+.sommaire a {
+  display: flex; align-items: center; gap: 10px;
+  padding: 7px 12px 7px 8px;
+  color: var(--texte-doux);
+  text-decoration: none;
+  border-left: 2px solid transparent;
+  transition: color .2s ease, background .2s ease, border-color .2s ease;
+}
+.sommaire__num {
+  display: grid; place-items: center;
+  width: 28px; height: 28px; flex: none;
+  border: 1px solid var(--trait);
+  font-family: "Cinzel","Cinzel Repli", serif; font-weight: 700; font-size: .78rem;
+  color: #f2e6cf;
+  transition: background .2s ease, color .2s ease, border-color .2s ease;
+}
+.sommaire__nom {
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: .72rem; letter-spacing: .1em; text-transform: uppercase;
+  white-space: nowrap;
+}
+.sommaire a:hover { color: var(--texte); background: rgba(216,185,120,.08); }
+.sommaire a:focus-visible { outline: 2px solid var(--or); outline-offset: -2px; }
+.sommaire a.est-actif { color: var(--or); border-left-color: var(--or); background: rgba(216,185,120,.1); }
+.sommaire a.est-actif .sommaire__num { background: var(--or); border-color: var(--or); color: #1a1410; }
+
+/* Écrans moyens : seulement les chiffres, le nom au survol */
+@media (max-width: 1400px) {
+  .sommaire__nom {
+    position: absolute; right: calc(100% + 10px);
+    padding: 4px 10px;
+    background: rgba(18,14,13,.95); border: 1px solid var(--trait);
+    opacity: 0; pointer-events: none;
+    transition: opacity .2s ease;
+  }
+  .sommaire a { position: relative; padding: 4px; border-left: 0; }
+  .sommaire a:hover .sommaire__nom, .sommaire a:focus-visible .sommaire__nom { opacity: 1; }
+}
+/* Téléphones : une barre en bas de l'écran */
+@media (max-width: 600px) {
+  .sommaire {
+    top: auto; bottom: 0; left: 0; right: 0; translate: none;
+    flex-direction: row; justify-content: space-around;
+    padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
+  }
+  .sommaire__nom { display: none; }
+  .page-boutique .marche { padding-bottom: 70px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html:has(.page-boutique) { scroll-behavior: auto; }
+}

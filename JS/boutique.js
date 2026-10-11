@@ -2,6 +2,8 @@
 //  Page boutique — point d'entrée
 //  - Boutique du jour    : JS/boutique-jour.js   (sélection gérée par le bot Discord)
 //  - Boutique du profil  : JS/boutique-profil.js (cosmétiques gérés par le site)
+//  - Boosters de cartes  : JS/boutique-boosters.js
+//  - Plateaux de duel    : JS/boutique-plateaux.js (SQL/plateaux.sql)
 //  - Code partagé        : JS/boutique-commun.js
 //  Les achats passent par les fonctions SQL buy_daily_item / buy_fun_item :
 //  le solde et le stock sont vérifiés côté serveur, impossible de tricher.
@@ -11,6 +13,7 @@ import { $, etat, chargerSolde, chargerPossedes, notifier } from './boutique-com
 import { afficherBoutiqueDuJour, acheterDuJour, demarrerCompteARebours } from './boutique-jour.js';
 import { afficherBoutiqueProfil, acheterProfil } from './boutique-profil.js';
 import { afficherBoosters } from './boutique-boosters.js';
+import { afficherPlateaux } from './boutique-plateaux.js';
 
 const ACHATS = { jour: acheterDuJour, profil: acheterProfil };
 
@@ -22,7 +25,7 @@ async function init() {
     await Promise.all([chargerSolde(), chargerPossedes()]);
   }
 
-  await Promise.all([afficherBoutiqueDuJour(), afficherBoutiqueProfil(), afficherBoosters()]);
+  await Promise.all([afficherBoutiqueDuJour(), afficherBoutiqueProfil(), afficherBoosters(), afficherPlateaux()]);
   demarrerCompteARebours();
 }
 
@@ -56,7 +59,22 @@ document.addEventListener('click', async (e) => {
 
   // Le solde est commun aux deux boutiques : on les recharge toutes les deux
   await Promise.all([chargerSolde(), chargerPossedes()]);
-  await Promise.all([afficherBoutiqueDuJour(), afficherBoutiqueProfil(), afficherBoosters()]);
+  await Promise.all([afficherBoutiqueDuJour(), afficherBoutiqueProfil(), afficherBoosters(), afficherPlateaux()]);
 });
 
 init();
+
+
+// Sommaire à droite : l'échoppe qui occupe le milieu de l'écran est mise en avant
+const liensSommaire = new Map([...document.querySelectorAll('#sommaire a')].map((a) => [a.hash.slice(1), a]));
+const surveillance = new IntersectionObserver((entrees) => {
+  for (const e of entrees) {
+    if (!e.isIntersecting) continue;
+    liensSommaire.forEach((a, id) => {
+      const actif = id === e.target.id;
+      a.classList.toggle('est-actif', actif);
+      if (actif) a.setAttribute('aria-current', 'location'); else a.removeAttribute('aria-current');
+    });
+  }
+}, { rootMargin: '-45% 0px -50% 0px' });
+liensSommaire.forEach((_, id) => { const s = document.getElementById(id); if (s) surveillance.observe(s); });

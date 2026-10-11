@@ -1471,6 +1471,9 @@ body.en-duel { overflow: hidden; padding: 0 !important; }
 .en-duel .tg-energie, .en-duel .tg-pile, .en-duel .tg-infos, .en-duel .tg-haut .main-adverse { justify-self: center; }
 .en-duel .tg-bas { margin-top: -1.2vh; }
 .en-duel .tg-haut { margin-bottom: -1.2vh; }
+/* La barre de l'adversaire (sa main, son héros, son énergie) plus petite : tout est réduit d'un bloc,
+   proportions gardées, et la place gagnée revient au plateau (zoom réduit aussi la place occupée) */
+.en-duel .tg-haut { zoom: .7; }
 
 /* --- Pile du deck : vrais dos de cartes empilés --- */
 .pile-deck {
@@ -1899,7 +1902,7 @@ body.en-duel { overflow: hidden; padding: 0 !important; }
 .menu .ligne__accueil { grid-template-columns: minmax(0, 1fr); gap: 10px; }
 .menu .ligne__bloc { min-width: 0; }
 
-/* --- Fond du plateau : la ruelle de Nocthémar (img/Fond/font plateux jeux.png),
+/* --- Fond du plateau : la ruelle de Nocthémar (img/Fond/font plateux jeux.jpg),
        assombrie sur les bords pour que la table ressorte --- */
 .en-duel .scene__fond {
   inset: -60px;
@@ -1907,7 +1910,7 @@ body.en-duel { overflow: hidden; padding: 0 !important; }
     radial-gradient(ellipse 60% 55% at 50% 52%, rgba(255,190,110,.08), transparent 70%),
     radial-gradient(ellipse 100% 85% at 50% 50%, transparent 40%, rgba(3,4,7,.85) 100%),
     linear-gradient(180deg, rgba(8,10,16,.35), rgba(8,10,16,.55) 60%, rgba(5,6,10,.8)),
-    url("../img/Fond/font%20plateux%20jeux.png") center / cover no-repeat,
+    url("../img/Fond/font%20plateux%20jeux.jpg") center / cover no-repeat,
     #07080d;
   filter: saturate(.95);
   transform: scale(1.04);
@@ -2051,8 +2054,9 @@ body.en-duel { overflow: hidden; padding: 0 !important; }
 
 /* =====================================================================
    Le plateau de Nocthémar : une île flottante (fond transparent), qui change avec la SAISON RÉELLE
-   (img/Plateaux de carte/plateau-automne|hiver|printemps|ete.webp, 1672 × 941, même disposition).
-   La saison est posée sur <body> par JS/jeu-cartes.js (classe saison-…) ; ?saison=hiver la force.
+   (img/Plateaux de carte/plateau-automne|hiver|printemps|ete.webp, 1672 × 941, disposition voisine).
+   Le plateau est posé sur <body> par JS/jeu-cartes.js (classe plateau-…) : celui choisi par le joueur
+   (acheté en boutique, SQL/plateaux.sql), sinon celui de la saison réelle ; ?saison=hiver le force.
    Tout y est placé en % de l'image (cqw = % de la largeur du plateau), mesuré au pixel :
    - les 10 emplacements peints : les troupes (5 en haut pour l'adversaire, 5 en bas pour toi) ;
      la rangée du bas est plus grande et plus espacée (perspective), d'où deux réglages
@@ -2083,10 +2087,10 @@ body.en-duel { overflow: hidden; padding: 0 !important; }
 }
 .en-duel .tg-perspective { perspective: none; }
 /* Plateau de la saison (automne par défaut) */
-.page-jeu.saison-hiver     .tg-bord { background-image: url("../img/Plateaux%20de%20carte/plateau-hiver.webp"); }
-.page-jeu.saison-printemps .tg-bord { background-image: url("../img/Plateaux%20de%20carte/plateau-printemps.webp"); }
-.page-jeu.saison-ete       .tg-bord { background-image: url("../img/Plateaux%20de%20carte/plateau-ete.webp"); }
-.page-jeu.saison-automne   .tg-bord { background-image: url("../img/Plateaux%20de%20carte/plateau-automne.webp"); }
+.page-jeu.plateau-hiver     .tg-bord { background-image: url("../img/Plateaux%20de%20carte/plateau-hiver.webp"); }
+.page-jeu.plateau-printemps .tg-bord { background-image: url("../img/Plateaux%20de%20carte/plateau-printemps.webp"); }
+.page-jeu.plateau-ete       .tg-bord { background-image: url("../img/Plateaux%20de%20carte/plateau-ete.webp"); }
+.page-jeu.plateau-automne   .tg-bord { background-image: url("../img/Plateaux%20de%20carte/plateau-automne.webp"); }
 
 /* Les troupes, sur les emplacements peints */
 .page-jeu .tg-bord .terrain {
@@ -2109,7 +2113,7 @@ body.en-duel { overflow: hidden; padding: 0 !important; }
 
 /* Le dé dans le cercle de pierre, la consigne juste dessous */
 .page-jeu .tg-bord .centre {
-  position: absolute; left: 50%; top: 46.8%;
+  position: absolute; left: var(--n-x, 50%); top: var(--n-y, 46.8%);
   translate: -50% -50%;
   margin: 0;
   justify-content: center;
@@ -2117,9 +2121,13 @@ body.en-duel { overflow: hidden; padding: 0 !important; }
 .page-jeu .tg-bord .centre::before,
 .page-jeu .tg-bord .centre::after { content: none; }
 .page-jeu .tg-tapis > .centre__consigne {
-  position: absolute; left: 50%; top: 54.4%;
-  translate: -50% 0;
-  width: 30%;
+  /* à gauche du cercle « N », entre les deux rangées : elle ne passe plus sur les cartes */
+  position: absolute; left: auto; right: calc(100% - var(--n-x, 50%) + 4.2cqw); top: var(--n-y, 46.8%);
+  translate: 0 -50%;
+  width: 17%;
+  margin: 0;
+  text-align: right;
+  line-height: 1.25;
   font-size: clamp(.62rem, .95cqw, .85rem);
   color: rgba(230,224,214,.8);
   text-shadow: 0 1px 3px #000, 0 0 8px #000;
@@ -2203,8 +2211,9 @@ body.en-duel { overflow: hidden; padding: 0 !important; }
   .en-duel .tg-perspective {
     /* Grand plateau : ses bords transparents (ciel, rochers du dessous) passent sous la barre
        de l'adversaire et sous la main, d'où les marges négatives */
-    width: min(calc((100vw - 2 * clamp(130px, 9vw, 170px)) * .9), calc((100vh - 2vh) * 1672 / 941 * .9));
-    margin: -5vh auto -14vh;
+    /* .78 : le plateau un peu plus petit, il laisse de l'air autour */
+    width: min(calc((100vw - 2 * clamp(130px, 9vw, 170px)) * .78), calc((100vh - 2vh) * 1672 / 941 * .78));
+    margin: calc(-8vh + 8px) auto calc(-6vh - 8px);   /* remonté de 8vh, puis redescendu de 8 px (~2 mm) ; même hauteur totale */
   }
   .en-duel .table__plateau { --carte-l-main: min(6.2vw, 11.5vh); }
 
@@ -2234,21 +2243,57 @@ body.en-duel { overflow: hidden; padding: 0 !important; }
 
 
 /* =====================================================================
-   Cartes posées sur le plateau : le cadre de la carte se pose EXACTEMENT sur le cadre peint de la case,
-   le « N » de la carte dépasse au-dessus.
-   Mesures (plateaux de saison 1672 × 941) : cadre extérieur d'une case = 128 × 173 px en haut,
-   136 × 180 px en bas. Cadre d'une carte (image 1024 × 1536) = 87,4 % × 81,7 % de l'image, centré.
-   Les cases sont plus trapues que les cartes : la carte est un peu élargie pour tomber trait sur trait.
+   Troupes posées sur le plateau : la carte d'origine, posée SUR la trace que les cartes ont laissée
+   dans le sol (à force d'y être posées), centrée dessus. Avec --zoom-cartes = 1, le cadre de la carte
+   (81,9 % de la hauteur de son image) a la hauteur de la trace ; plus grand, la carte déborde de sa trace.
+   Plateaux 1672 × 941 (img/Plateaux de carte/), traces mesurées au pixel sur chacun :
+   --h-… rangée du haut (l'adversaire), --b-… rangée du bas (toi)
+     x / l : gauche et largeur de la rangée (5 colonnes égales, centrées sur les traces)
+     y / h : haut et hauteur des traces
+     u     : largeur de l'image d'une carte
+   --n-x / --n-y : centre du cercle « N » (le dé)
    ===================================================================== */
-.page-jeu .tg-bord #terrain-adverse { left: 28.29%; width: 43.03%; top: 20.2%; height: 23.38%; --unite-l: 8.76cqw; --unite-ratio: .744; }
-.page-jeu .tg-bord #terrain-joueur  { left: 27.31%; width: 45.12%; top: 53.3%; height: 24.44%; --unite-l: 9.31cqw; --unite-ratio: .79; }
+.page-jeu .tg-bord {
+  --h-x: 28.63%; --h-l: 42.05%; --h-y: 27.84%; --h-h: 13.60%; --h-u: 6.23cqw;
+  --b-x: 27.39%; --b-l: 44.26%; --b-y: 57.70%; --b-h: 15.94%; --b-u: 7.30cqw;
+  --n-x: 49.64%; --n-y: 49.10%;
+}
+.page-jeu.plateau-ete .tg-bord {
+  --h-x: 27.86%; --h-l: 43.18%; --h-y: 27.31%; --h-h: 14.88%; --h-u: 6.82cqw;
+  --b-x: 27.17%; --b-l: 44.68%; --b-y: 58.02%; --b-h: 15.73%; --b-u: 7.21cqw;
+  --n-x: 49.34%; --n-y: 49.10%;
+}
+.page-jeu.plateau-hiver .tg-bord {
+  --h-x: 27.33%; --h-l: 45.16%; --h-y: 27.21%; --h-h: 13.92%; --h-u: 6.38cqw;
+  --b-x: 26.96%; --b-l: 46.17%; --b-y: 57.07%; --b-h: 14.67%; --b-u: 6.72cqw;
+  --n-x: 49.94%; --n-y: 49.42%;
+}
+.page-jeu.plateau-printemps .tg-bord {
+  --h-x: 27.19%; --h-l: 44.48%; --h-y: 30.39%; --h-h: 14.56%; --h-u: 6.67cqw;
+  --b-x: 27.09%; --b-l: 45.45%; --b-y: 61.85%; --b-h: 15.09%; --b-u: 6.91cqw;
+  --n-x: 49.64%; --n-y: 52.28%;
+}
+/* --zoom-cartes : les cartes plus grandes que leur trace (1 = cadre de la carte = hauteur de la trace) */
+.page-jeu .tg-bord { --zoom-cartes: 1.02; }
+.page-jeu .tg-bord #terrain-adverse { left: var(--h-x); width: var(--h-l); top: var(--h-y); height: var(--h-h); --unite-l: calc(var(--h-u) * var(--zoom-cartes)); }
+.page-jeu .tg-bord #terrain-joueur  { left: var(--b-x); width: var(--b-l); top: var(--b-y); height: var(--b-h); --unite-l: calc(var(--b-u) * var(--zoom-cartes)); }
 .page-jeu .tg-bord .dc-unite,
-.page-jeu .tg-bord .dc-place { width: var(--unite-l); aspect-ratio: var(--unite-ratio); }
-.page-jeu .tg-bord .dc-unite .dc-face--image { object-fit: fill; }
-/* les pastilles attaque / vie se posent sur le bas du cadre */
+.page-jeu .tg-bord .dc-place { width: var(--unite-l); aspect-ratio: 2 / 3; }
+/* Agrandie, la carte reste centrée sur sa trace (son cadre est centré dans son image) :
+   la rangée de la grille, plus haute que la trace, déborde autant en haut qu'en bas (align-content),
+   sinon la carte partirait du haut de la trace et pendrait en dessous */
+.page-jeu .tg-bord .terrain { align-items: center; align-content: center; }
+/* les pastilles attaque / vie se posent sur le bas du cadre de la carte */
 .page-jeu .tg-bord .dc-unite .dc-stat { bottom: 8.5%; }
 .page-jeu .tg-bord .dc-unite .dc-stat--a { left: 9%; }
 .page-jeu .tg-bord .dc-unite .dc-stat--h { right: 9%; }
+
+/* Grimoires et Tombeaux : les nouveaux plateaux n'ont plus d'emplacement peint pour eux ;
+   ceux de l'adversaire à gauche de sa rangée, les tiens à droite de la tienne, à mi-hauteur */
+.page-jeu .tg-bord .tombeau--adverse { left: calc(var(--h-x) - 5.6%); top: calc(var(--h-y) + var(--h-h) / 2 - 3.15cqw); }
+.page-jeu .tg-bord .plateau-pile--adverse { left: calc(var(--h-x) - 10.6%); top: calc(var(--h-y) + var(--h-h) / 2 - 3.15cqw); }
+.page-jeu .tg-bord .tombeau--joueur  { left: calc(var(--b-x) + var(--b-l) + 1.4%); top: calc(var(--b-y) + var(--b-h) / 2 - 3.15cqw); }
+.page-jeu .tg-bord .plateau-pile--joueur { left: calc(var(--b-x) + var(--b-l) + 6.4%); top: calc(var(--b-y) + var(--b-h) / 2 - 3.15cqw); }
 
 
 /* =====================================================================

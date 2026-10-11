@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Boutique — Nocthémar</title>
-  <link rel="icon" type="image/png" href="img/Logo/Nocthemar_logo.png">
+  <link rel="icon" type="image/png" href="img/Logo/favicon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800&family=Cinzel+Decorative:wght@700;900&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap" rel="stylesheet">
@@ -17,6 +17,7 @@
   <link rel="stylesheet" href="CSS/cartes-jeu.css">
   <link rel="stylesheet" href="CSS/carte-infos.css">
   <link rel="stylesheet" href="CSS/booster.css">
+  <link rel="stylesheet" href="CSS/plateaux.css">
 <!-- Thème clair / sombre (bouton dans la barre latérale) : appliqué avant l'affichage -->
 <script>try{if(localStorage.getItem('nocthemar-theme')==='jour')document.documentElement.dataset.theme='jour'}catch(e){}</script>
 <link rel="stylesheet" href="CSS/theme-jour.css">
@@ -42,7 +43,7 @@
     </header>
 
     <!-- Échoppe I : sélection du marchand, renouvelée par le bot -->
-    <section class="echoppe">
+    <section class="echoppe" id="etal-marchand">
       <!-- Solde (connecté), dans le coin de l'échoppe -->
       <div id="bourse" class="bourse" hidden>
         <img class="bourse__piece" src="img/Equipement/Or-icone.webp" alt="">
@@ -62,7 +63,7 @@
     </section>
 
     <!-- Échoppe II : cosmétiques du profil -->
-    <section class="echoppe">
+    <section class="echoppe" id="armoire-apparences">
       <div class="enseigne">
         <span class="enseigne__num">II</span>
         <span class="enseigne__sur">Boutique du profil</span>
@@ -73,7 +74,7 @@
     </section>
 
     <!-- Échoppe III : boosters de cartes (achat et ouverture) -->
-    <section class="echoppe">
+    <section class="echoppe" id="porte-cartes">
       <div class="enseigne">
         <span class="enseigne__num">III</span>
         <span class="enseigne__sur">Boosters de cartes</span>
@@ -83,7 +84,26 @@
       <div id="boosters" class="etal etal--boosters"><p class="vide">Chargement…</p></div>
     </section>
 
+    <!-- Échoppe IV : plateaux du Duel des Couronnes -->
+    <section class="echoppe" id="atelier-plateaux">
+      <div class="enseigne">
+        <span class="enseigne__num">IV</span>
+        <span class="enseigne__sur">Plateaux de duel</span>
+        <h2>L'atelier des plateaux</h2>
+      </div>
+      <p class="echoppe__intro">Sans plateau choisi, tu joues sur celui de la saison. Achète ton plateau préféré pour le garder toute l'année ; change-le quand tu veux depuis ton profil.</p>
+      <div id="plateaux" class="etal etal--plateaux"><p class="vide">Chargement…</p></div>
+    </section>
+
   </main>
+
+  <!-- Sommaire : aller directement à une échoppe (JS/boutique.js : l'échoppe à l'écran est mise en avant) -->
+  <nav class="sommaire" id="sommaire" aria-label="Échoppes de la boutique">
+    <a href="#etal-marchand"><span class="sommaire__num">I</span><span class="sommaire__nom">Le marchand</span></a>
+    <a href="#armoire-apparences"><span class="sommaire__num">II</span><span class="sommaire__nom">Apparences</span></a>
+    <a href="#porte-cartes"><span class="sommaire__num">III</span><span class="sommaire__nom">Boosters</span></a>
+    <a href="#atelier-plateaux"><span class="sommaire__num">IV</span><span class="sommaire__nom">Plateaux</span></a>
+  </nav>
 
   <div id="notif" class="notif" role="status" aria-live="polite"></div>
 

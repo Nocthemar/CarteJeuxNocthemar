@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Grimoire des cartes — Nocthémar</title>
-  <link rel="icon" type="image/png" href="img/Logo/Nocthemar_logo.png">
+  <title>Collection — Nocthémar</title>
+  <link rel="icon" type="image/png" href="img/Logo/favicon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800&family=Cinzel+Decorative:wght@700;900&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap" rel="stylesheet">
@@ -14,6 +14,7 @@
   <link rel="stylesheet" href="CSS/cartes-jeu.css">
   <link rel="stylesheet" href="CSS/carte-infos.css">
   <link rel="stylesheet" href="CSS/collection.css">
+  <link rel="stylesheet" href="CSS/collection-roue.css">
 <!-- Thème clair / sombre (bouton dans la barre latérale) : appliqué avant l'affichage -->
 <script>try{if(localStorage.getItem('nocthemar-theme')==='jour')document.documentElement.dataset.theme='jour'}catch(e){}</script>
 <link rel="stylesheet" href="CSS/theme-jour.css">
@@ -35,8 +36,10 @@
   <main class="collection-wrap">
 
     <a class="retour" href="profil.html">← Retour au profil</a>
+    <!-- Grimoire ou roue ouverts : on revient aux deux choix (texte posé par collection.js) -->
+    <button type="button" class="retour retour--bouton" id="btn-fermer" hidden>← Refermer</button>
 
-    <p id="chargement" class="vide">Ouverture du grimoire…</p>
+    <p id="chargement" class="vide">Ouverture de ta collection…</p>
 
     <!-- Pas connecté -->
     <section id="non-connecte" class="carte centre" hidden>
@@ -48,7 +51,61 @@
       </button>
     </section>
 
+    <!-- Deux choix : ouvrir le grimoire (les cartes), ou tourner la roue des apparences -->
+    <section id="choix" class="choix" hidden>
+      <h1 class="choix__titre">Ta collection</h1>
+      <div class="choix__grille">
+
+        <!-- I. Le grimoire, fermé : on l'ouvre pour voir ses cartes -->
+        <button type="button" class="choix-livre" id="btn-ouvrir-livre" aria-describedby="livre-aide">
+          <span class="choix-livre__livre" aria-hidden="true">
+            <span class="choix-livre__tranche"></span>
+            <span class="choix-livre__couverture">
+              <span class="choix-livre__cadre"></span>
+              <span class="choix-livre__embleme">✦</span>
+              <span class="choix-livre__nom">Grimoire<br>des cartes</span>
+              <span class="choix-livre__compte" id="livre-compte"></span>
+            </span>
+          </span>
+          <span class="choix__libelle">Ouvrir le grimoire</span>
+          <small class="choix__aide" id="livre-aide">Tes cartes collectionnées et ton deck</small>
+        </button>
+
+        <!-- II. La roue des apparences, fermée : on l'ouvre pour la faire tourner en grand -->
+        <button type="button" class="choix-roue" id="btn-ouvrir-roue" aria-describedby="roue-medaillon-aide">
+          <span class="medaillon" aria-hidden="true">
+            <span class="medaillon__rayons"></span>
+            <span class="medaillon__signe medaillon__signe--1">▣</span>
+            <span class="medaillon__signe medaillon__signe--2">◐</span>
+            <span class="medaillon__signe medaillon__signe--3">❝</span>
+            <span class="medaillon__signe medaillon__signe--4">⚑</span>
+            <span class="medaillon__coeur">✦</span>
+          </span>
+          <span class="choix__libelle">La roue des apparences</span>
+          <small class="choix__aide" id="roue-medaillon-aide">Plateaux, thèmes, titres et bannières : <span id="roue-compte">…</span></small>
+        </button>
+
+      </div>
+    </section>
+
+    <!-- La roue ouverte, en grand au centre de la page (JS/collection-roue.js) -->
+    <section id="vue-roue" class="vue-roue" aria-labelledby="roue-titre" hidden>
+      <h1 class="choix__titre" id="roue-titre">La roue des apparences</h1>
+      <div class="roue-categories" id="roue-categories" role="tablist" aria-label="Que veux-tu changer ?"></div>
+      <div class="roue" id="roue" tabindex="0" aria-roledescription="roue" aria-describedby="roue-aide">
+        <span class="roue__repere" aria-hidden="true"></span>
+        <div class="roue__disque" id="roue-disque"></div>
+        <div class="roue__centre" id="roue-centre" aria-live="polite"></div>
+      </div>
+      <div class="roue__nav">
+        <button type="button" class="roue__fleche" id="roue-prec" aria-label="Tourner vers la gauche">‹</button>
+        <small class="choix__aide" id="roue-aide">Fais tourner la roue (glisse, molette ou flèches), puis applique</small>
+        <button type="button" class="roue__fleche" id="roue-suiv" aria-label="Tourner vers la droite">›</button>
+      </div>
+    </section>
+
     <div id="collection" hidden>
+
 
       <p id="collection-vide" class="collection-vide" hidden>
         Ton grimoire est encore vide. Les cartes s'obtiennent à la boutique, lors d'événements

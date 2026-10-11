@@ -28,11 +28,11 @@
   /* Grain du papier */
   --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .24 0 0 0 0 .1 0 0 0 .18 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
 
-  /* Paysage de Nocthémar (img/Fond/profiljoueur.png), fixe derrière les affiches,
+  /* Paysage de Nocthémar (img/Fond/profiljoueur.jpg), fixe derrière les affiches,
      avec un léger assombrissement des bords pour que les affiches ressortent */
   background:
     radial-gradient(ellipse 110% 90% at 50% 40%, transparent 55%, rgba(8,12,20,.45) 100%),
-    url("../img/Fond/profiljoueur.png") center / cover no-repeat,
+    url("../img/Fond/profiljoueur.jpg") center / cover no-repeat,
     #2b4a63;
   background-attachment: fixed;
 }
@@ -461,19 +461,6 @@
 }
 .page-fiche #prive .liste > li { border-bottom: 1px dashed rgba(236,230,218,.25); }
 .page-fiche #prive .vide { color: #b8b2a6; }
-/* Colonnes de la collection : titres à la craie, séparées par un trait de craie */
-.page-fiche #inventaire { gap: 0; }
-.page-fiche .collection-colonne { padding: 0 4px 0 12px; }
-.page-fiche .collection-colonne:first-child { padding-left: 0; }
-.page-fiche .collection-colonne + .collection-colonne { border-left: 1px dashed rgba(236,230,218,.25); }
-.page-fiche .collection-colonne__titre {
-  border-bottom: 2px solid rgba(236,230,218,.4);
-  font-weight: 700;
-  font-size: .68rem;
-  letter-spacing: .08em;
-  white-space: nowrap;
-  color: #f2ece0;
-}
 .page-fiche #prive strong { font-family: "IM Fell English", serif; font-weight: 400; font-size: 1.1rem; color: #f2ece0; }
 .page-fiche #inventaire strong { font-size: .98rem; line-height: 1.2; }
 .page-fiche #prive .objet__type,
@@ -588,23 +575,25 @@
 .page-fiche .vitrine .deck-tete { margin-bottom: 18px; }
 
 
-/* Chaque carte sous sa propre vitrine de musée : une cloche de verre cintrée,
-   cerclée de laiton, posée sur un socle de bois gravé de son nom. */
+/* Chaque carte posée sur un socle de bois gravé de son nom (sans cadre autour ;
+   une vitrine vide garde sa cloche de verre cintrée, cerclée de laiton, pour montrer la place).
+   Ajustée à la carte : l'image d'une carte a une marge transparente (son cadre va de 6,3 à 93,6 %
+   en largeur, de 9,4 à 91,3 % en hauteur, le « N » monte jusqu'à 2,7 %) ; la cloche épouse la carte
+   visible (quelques pixels d'air), son arche passe juste au-dessus du « N », le socle est juste dessous. */
 .page-fiche .vitrine .deck-emplacements {
   align-items: end;
-  gap: clamp(16px, 3vw, 34px);
-  padding: 22px clamp(10px, 2.4vw, 26px) 46px;
+  gap: clamp(12px, 2.4vw, 26px);
+  padding: 18px clamp(10px, 2.4vw, 26px) 30px;
 }
 .page-fiche .vitrine .deck-emplacement {
-  --cloche: 50% 50% 4px 4px / 16% 16% 4px 4px;   /* haut cintré, bas droit */
+  --cloche: 50% 50% 4px 4px / 13% 13% 4px 4px;   /* haut cintré, bas droit */
 }
 
-/* La cloche de verre : par-dessus la carte, verre clair sans reflet, liseré de laiton */
-.page-fiche .vitrine .deck-emplacement--plein::before,
+/* La cloche de verre : seulement sur une vitrine vide (une carte posée se montre sans cadre) */
 .page-fiche .vitrine .deck-emplacement:not(.deck-emplacement--plein)::before {
   content: "";
   position: absolute;
-  inset: -12px -11px -6px;
+  inset: -5% 3.5% 3.5% 3.5%;
   z-index: 3;
   border-radius: var(--cloche);
   border: 1px solid rgba(255,255,255,.35);
@@ -631,7 +620,7 @@
 .page-fiche .vitrine .deck-emplacement:not(.deck-emplacement--plein)::after {
   content: attr(data-nom);
   position: absolute;
-  left: -10px; right: -10px; top: calc(100% + 6px);
+  left: 1%; right: 1%; top: calc(96.5% + 3px);
   z-index: 4;
   height: 26px;
   padding: 0 6px;
@@ -686,12 +675,10 @@
 .page-fiche .vitrine .carte-loupe { z-index: 6; }
 
 @media (max-width: 600px) {
-  .page-fiche .vitrine .deck-emplacements { gap: 16px; padding: 16px 8px 40px; }
-  .page-fiche .vitrine .deck-emplacement--plein::before,
-  .page-fiche .vitrine .deck-emplacement:not(.deck-emplacement--plein)::before { inset: -6px -4px -4px; }
+  .page-fiche .vitrine .deck-emplacements { gap: 10px; padding: 14px 6px 26px; }
   .page-fiche .vitrine .deck-emplacement--plein::after,
   .page-fiche .vitrine .deck-emplacement:not(.deck-emplacement--plein)::after {
-    left: -5px; right: -5px; height: 20px; line-height: 22px; font-size: .45rem; letter-spacing: 0;
+    left: 0; right: 0; height: 20px; line-height: 22px; font-size: .45rem; letter-spacing: 0;
   }
 }
 @media (prefers-reduced-motion: reduce) {

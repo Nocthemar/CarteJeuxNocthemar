@@ -703,30 +703,3 @@
   .perso__bourse { min-height: 200px; }
 }
 
-/* Collection du profil : une colonne par type de cosmétique (JS/profil.js).
-   Le bloc garde sa taille (à côté de l'Historique) : chaque colonne défile après 3 objets. */
-.collection-colonnes {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: minmax(0, 1fr);
-  gap: 0 14px;
-}
-.collection-colonne { min-width: 0; }
-.collection-colonne__titre {
-  margin: 0 0 4px;
-  padding-bottom: 6px;
-  border-bottom: 1px solid var(--bord);
-  font-family: "Cinzel","Cinzel Repli", serif;
-  font-size: .8rem;
-  letter-spacing: .14em;
-  text-transform: uppercase;
-}
-.collection-colonne__titre span { margin-left: 4px; opacity: .55; font-size: .9em; }
-/* Colonnes étroites : nom au-dessus, petit bouton en dessous */
-.collection-colonne .liste > li { flex-direction: column; align-items: flex-start; gap: 6px; padding: 8px 0; }
-.collection-colonne .liste > li > div { min-width: 0; overflow-wrap: break-word; hyphens: auto; line-height: 1.25; }
-.collection-colonne .liste strong { font-size: .95rem; }
-/* ascenseur visible : on voit qu'il y a d'autres objets à faire défiler */
-.collection-colonne .liste--defilante { overscroll-behavior: contain; scrollbar-width: thin; }
-.collection-colonne .btn-petit { padding: 2px 10px; font-size: .85rem; }
-.collection-colonne .vide { margin: 10px 0 0; font-size: .95rem; }

@@ -44,6 +44,66 @@ function fissure(niveau) {
   return `<g class="ob__fissure ob__fissure--${niveau}">${traits.join('')}</g>`;
 }
 
+// ---------------------------------------------------------------------
+//  Le décor : une chapelle dans la pénombre. Derrière la porte (puis derrière les cartes), un grand
+//  vitrail en éclats de verre sur toute la hauteur de l'écran, dont les verres prennent la couleur de la rareté (--rarete) ;
+//  une brume au sol, des braises. Rien ne tourne.
+// ---------------------------------------------------------------------
+// Vitrail en éclats : un champ de verre découpé au hasard (toujours le même tirage) en éclats
+// irréguliers par des plombs droits, une bordure de grands panneaux sur les côtés ; le haut et le bas
+// sont ouverts (le vitrail continue au-delà de l'écran).
+// Aucun motif : seulement des verres, dans des nuances de la couleur de la rareté (.t0 à .t5).
+function vitrail() {
+  const W = 600, H = 1000, B = 34;   // largeur, hauteur, bordure
+  let graine = 7;
+  const hasard = () => ((graine = (graine * 16807) % 2147483647) - 1) / 2147483646;
+  const aire = (p) => Math.abs(p.reduce((s, [x, y], i) => { const [x2, y2] = p[(i + 1) % p.length]; return s + x * y2 - x2 * y; }, 0)) / 2;
+  const centre = (p) => p.reduce(([a, b], [x, y]) => [a + x / p.length, b + y / p.length], [0, 0]);
+  // coupe un polygone par la droite (point, angle) : renvoie les deux morceaux
+  const couper = (p, [cx, cy], ang) => {
+    const nx = Math.cos(ang), ny = Math.sin(ang), d = (x, y) => (x - cx) * nx + (y - cy) * ny;
+    const A = [], Bm = [];
+    p.forEach(([x, y], i) => {
+      const [x2, y2] = p[(i + 1) % p.length], d1 = d(x, y), d2 = d(x2, y2);
+      (d1 >= 0 ? A : Bm).push([x, y]);
+      if ((d1 >= 0) !== (d2 >= 0)) { const t = d1 / (d1 - d2); const q = [x + (x2 - x) * t, y + (y2 - y) * t]; A.push(q); Bm.push(q); }
+    });
+    return [A, Bm];
+  };
+  const eclats = [];
+  const decouper = (p, n) => {
+    const s = aire(p);
+    if (n > 8 || s < 7500 || (s < 22000 && hasard() < .4)) { eclats.push(p); return; }
+    const [cx, cy] = centre(p);
+    const [a, b] = couper(p, [cx + (hasard() - .5) * 40, cy + (hasard() - .5) * 60], hasard() * Math.PI);
+    if (a.length < 3 || b.length < 3) { eclats.push(p); return; }
+    decouper(a, n + 1); decouper(b, n + 1);
+  };
+  decouper([[B, 0], [W - B, 0], [W - B, H], [B, H]], 0);
+  const pts = (p) => p.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
+  const TONS = [0, 0, 1, 1, 2, 2, 3, 4, 5];
+  const champ = eclats.map((p) => `<polygon class="t${TONS[Math.floor(hasard() * TONS.length)]}" points="${pts(p)}"/>`).join('');
+  // bordure : grands panneaux le long des côtés et des coins coupés
+  let bord = '';
+  const panneau = (p, k) => { bord += `<polygon class="t${k % 2 ? 2 : 1}" points="${pts(p)}"/>`; };
+  let y = 0, k = 0;
+  while (y < H) { const h = 110 + hasard() * 90, y2 = Math.min(H, y + h); panneau([[0, y], [B, y], [B, y2], [0, y2]], k); panneau([[W - B, y], [W, y], [W, y2], [W - B, y2]], k + 1); y = y2; k++; }
+  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid slice">
+    <defs>
+      <radialGradient id="vit-lumiere" cx=".5" cy=".38" r=".7"><stop offset="0" stop-color="#fff" stop-opacity=".35"/><stop offset=".55" stop-color="#fff" stop-opacity=".05"/><stop offset="1" stop-color="#000" stop-opacity=".45"/></radialGradient>
+    </defs>
+    <g class="verres">${champ}${bord}</g>
+    <path d="M0 0H${W}V${H}H0Z" fill="url(#vit-lumiere)"/>
+    <path d="M0 0V${H}M${W} 0V${H}" class="plomb-bord"/>
+  </svg>`;
+}
+// Braises qui montent doucement (CSS : .ob__braise)
+const htmlBraises = (n = 16) => Array.from({ length: n }, () => {
+  const x = (Math.random() * 100).toFixed(1), d = (6 + Math.random() * 7).toFixed(1), r = (-Math.random() * 13).toFixed(1);
+  const t = (2 + Math.random() * 3).toFixed(1), dx = ((Math.random() - .5) * 120).toFixed(0);
+  return `<span class="ob__braise" style="left:${x}%;--d:${d}s;--r:${r}s;--t:${t}px;--dx:${dx}px"></span>`;
+}).join('');
+
 function htmlCarte(c, i, details) {
   const detail = details?.get(c.nom);   // la carte complète du catalogue (attaques, rang)
   return `
@@ -84,9 +144,9 @@ function eclats(zone, x, y, couleur, n = 26, force = 260) {
 //  Effets par rareté : plus la rareté est haute, plus c'est spectaculaire
 //   commune       : un retournement simple, quelques étincelles
 //   éveillée      : lueur verte, feuilles et étincelles qui montent
-//   mythique      : la carte tourbillonne avant de se retourner, double onde bleue
+//   mythique      : la carte se gonfle d'énergie (sans tourner) avant de se retourner, double onde bleue
 //   légendaire    : la carte tremble et rougeoie, flash, secousse, pluie de braises, grand titre
-//   transcendante : l'écran s'assombrit, la carte s'élève au centre dans des rayons d'or,
+//   transcendante : l'écran s'assombrit, la carte s'élève au centre dans un halo d'or,
 //                   explosion de lumière, pluie d'étoiles, grand titre « TRANSCENDANTE »
 // ---------------------------------------------------------------------
 const attendre = (ms) => new Promise((r) => setTimeout(r, reduit ? 0 : ms));
@@ -149,8 +209,9 @@ function titre(ov, texte, couleur, classe = '') {
   t.textContent = texte;
   ov.appendChild(t);
   t.animate([
-    { transform: 'translate(-50%, -50%) scale(2.4)', opacity: 0, letterSpacing: '.6em' },
-    { transform: 'translate(-50%, -50%) scale(1)', opacity: 1, letterSpacing: '.18em', offset: 0.2 },
+    // (transform et opacité seulement : animer l'espacement des lettres recalculait la mise en page à chaque image)
+    { transform: 'translate(-50%, -50%) scale(2.4)', opacity: 0 },
+    { transform: 'translate(-50%, -50%) scale(1)', opacity: 1, offset: 0.2 },
     { transform: 'translate(-50%, -50%) scale(1.04)', opacity: 1, offset: 0.75 },
     { transform: 'translate(-50%, -50%) scale(1.1)', opacity: 0 },
   ], { duration: 1900, easing: 'cubic-bezier(.2,.8,.3,1)' }).onfinish = () => t.remove();
@@ -195,6 +256,7 @@ async function revelerCarte(ov, zone, carte, c) {
   }
 
   carte.classList.add('ob-carte--revelee');
+  ov.style.setProperty('--rarete', coul);   // le fond (lumière, rais, brume, braises) prend la couleur de cette carte
   const r = carte.querySelector('.ob-carte__corps').getBoundingClientRect();
   const x = r.left + r.width / 2;
   const y = r.top + r.height * 0.45;
@@ -236,8 +298,10 @@ export function ouvrirBoosterAnime(resultat, imageBooster, { restants = 0, surRo
   ov.tabIndex = -1;
   ov.style.setProperty('--rarete', couleur);
   ov.innerHTML = `
+    <div class="ob__vitrail" aria-hidden="true">${vitrail()}</div>
     <div class="ob__lumiere" aria-hidden="true"></div>
-    <div class="ob__rayons" aria-hidden="true"></div>
+    <div class="ob__brume" aria-hidden="true"><span></span><span></span></div>
+    <div class="ob__braises" aria-hidden="true">${reduit ? '' : htmlBraises()}</div>
     <div class="ob__scene">
       <div class="ob__porte" aria-hidden="true">
         <div class="ob__battant ob__battant--g" style="background-image:url('${esc(imageBooster)}')"></div>
@@ -258,6 +322,10 @@ export function ouvrirBoosterAnime(resultat, imageBooster, { restants = 0, surRo
     <div class="ob__particules" aria-hidden="true"></div>`;
   document.body.appendChild(ov);
   document.body.classList.add('ob-ouvert');
+  // Les images des cartes sont décodées pendant que le joueur tape sur la porte :
+  // le retournement n'a plus à attendre le décodage (sinon : saccade au moment de la révélation)
+  ov.querySelectorAll('img').forEach((img) => img.decode?.().catch(() => {}));
+  const masquerPage = setTimeout(() => document.body.classList.add('ob-plein'), reduit ? 0 : 320);
   ov.focus();
 
   const $ = (s) => ov.querySelector(s);
@@ -275,6 +343,8 @@ export function ouvrirBoosterAnime(resultat, imageBooster, { restants = 0, surRo
 
   return new Promise((resolve) => {
     const fermer = (rouvrir = false) => {
+      clearTimeout(masquerPage);
+      document.body.classList.remove('ob-plein');
       ov.classList.add('ob--sortie');
       setTimeout(() => {
         ov.remove();
@@ -363,6 +433,7 @@ export function ouvrirBoosterAnime(resultat, imageBooster, { restants = 0, surRo
       const cartesEl = [...ov.querySelectorAll('.ob-carte')];
       cartesEl.forEach((el) => el.classList.remove('ob-carte--partie', 'ob-carte--actuelle'));
       zone.classList.remove('ob__cartes--pile');
+      ov.style.setProperty('--rarete', couleur);   // récapitulatif : la couleur de la meilleure rareté
       zone.classList.add('ob__cartes--ligne');
       if (!reduit) {
         cartesEl.forEach((el, i) => el.animate([

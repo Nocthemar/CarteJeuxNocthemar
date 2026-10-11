@@ -53,14 +53,24 @@
   font-family: "Cinzel","Cinzel Repli", serif; font-weight: 800;
   font-size: .76rem; letter-spacing: .14em; text-transform: uppercase;
   cursor: pointer;
+  position: relative;
+}
+/* Lueur qui appelle : une ombre fixe sur un calque dont seule l'opacité bouge (une ombre animée se redessine à chaque image) */
+.page-boutique .btn-ouvrir::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  box-shadow: 0 0 16px rgba(240,200,115,.55);
+  opacity: 0;
   animation: ouvrir-appel 2.4s ease-in-out infinite;
 }
 .page-boutique .btn-ouvrir:hover { filter: brightness(1.1); }
-@keyframes ouvrir-appel { 50% { box-shadow: 0 0 16px rgba(240,200,115,.55); } }
+@keyframes ouvrir-appel { 50% { opacity: 1; } }
 
 /* ---------- Animation d'ouverture ---------- */
+/* --rarete est une vraie couleur (animable) : le fond glisse d'une rareté à l'autre à chaque carte */
+@property --rarete { syntax: "<color>"; inherits: true; initial-value: #ffffff; }
 .ob {
   --rarete: #ffffff;
+  transition: --rarete .9s ease;
   position: fixed; inset: 0; z-index: 400;
   display: grid; grid-template-rows: 1fr auto auto; justify-items: center;
   overflow: hidden;
@@ -75,6 +85,8 @@
 @keyframes ob-entree { from { opacity: 0; } }
 @keyframes ob-sortie { to { opacity: 0; } }
 body.ob-ouvert { overflow: hidden; }
+/* Une fois l'écran d'ouverture affiché, la page derrière n'est plus dessinée (ses animations ne coûtent plus rien) */
+body.ob-plein > :not(.ob) { visibility: hidden; }
 
 /* Lumière de fond : blanche pendant les fissures, couleur de la rareté ensuite */
 .ob__lumiere {
@@ -87,25 +99,82 @@ body.ob-ouvert { overflow: hidden; }
 }
 .ob[data-taps="2"] .ob__lumiere { background: radial-gradient(circle, rgba(255,255,255,.22), transparent 65%); }
 .ob--couleur .ob__lumiere { background: radial-gradient(circle, color-mix(in srgb, var(--rarete) 55%, transparent), transparent 66%); scale: 1.3; }
-.ob__rayons {
-  position: absolute; left: 50%; top: 45%;
-  width: 110vmax; height: 110vmax; translate: -50% -50%;
-  will-change: transform;
-  background: repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--rarete) 22%, transparent) 0deg 5deg, transparent 5deg 15deg);
-  border-radius: 50%;
-  opacity: 0;
+/* ---------- La chapelle : vitrail, brume, pénombre ---------- */
+/* Le vitrail : une grande lancette de verre, du haut au bas de l'écran, derrière la porte puis derrière
+   les cartes ; seulement le verre et ses plombs (pas de cadre). Éteint (gris) pendant qu'on brise le
+   cristal, il s'allume quand la rareté est révélée, puis prend la couleur de chaque carte retournée (--rarete). */
+.ob__vitrail {
+  position: absolute; left: 50%; top: 0; bottom: 0;
+  aspect-ratio: 600 / 1000;
+  max-width: 96vw;
+  translate: -50% 0;
   pointer-events: none;
-  transition: opacity .5s ease;
-  animation: ob-rayons 16s linear infinite;
+  opacity: .4;
+  filter: saturate(.15) brightness(.6);
+  transition: opacity 1s ease, filter 1.2s ease;
 }
-/* Le fondu des rayons vers les bords : un dégradé rond par-dessus (identique quelle que soit la rotation),
-   bien plus léger qu'un masque recalculé à chaque image */
-.ob__rayons::after {
-  content: ""; position: absolute; inset: -1px; border-radius: 50%;
-  background: radial-gradient(closest-side, transparent 0, rgba(7,6,10,.5) 35%, #07060a 72%);
+.ob--couleur .ob__vitrail { opacity: .5; filter: none; }   /* légèrement transparent */
+/* la lumière qui traverse le vitrail et baigne la pièce */
+.ob__vitrail::before {
+  content: ""; position: absolute; inset: 0 -45%; z-index: -1;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--rarete) 30%, transparent), transparent 85%);
 }
-.ob--couleur .ob__rayons { opacity: 1; }
-@keyframes ob-rayons { to { rotate: 360deg; } }
+.ob__vitrail svg { width: 100%; height: 100%; display: block; }
+/* les verres : des nuances de la couleur de la rareté (plus claire, plus sombre, violette, dorée) */
+.ob__vitrail .verres polygon { stroke: #141018; stroke-width: 4.5; stroke-linejoin: round; }
+.ob__vitrail .t0 { fill: var(--rarete); }
+.ob__vitrail .t1 { fill: color-mix(in srgb, var(--rarete) 62%, #fff); }
+.ob__vitrail .t2 { fill: color-mix(in srgb, var(--rarete) 55%, #0a0814); }
+.ob__vitrail .t3 { fill: color-mix(in srgb, var(--rarete) 50%, #3a1f6a); }
+.ob__vitrail .t4 { fill: color-mix(in srgb, var(--rarete) 55%, #e8b45a); }
+.ob__vitrail .t5 { fill: color-mix(in srgb, var(--rarete) 82%, #fff); }
+.ob__vitrail .plomb-bord { fill: none; stroke: #141018; stroke-width: 6; }
+/* le grain du verre soufflé : un léger nuage par-dessus */
+.ob__vitrail::after {
+  content: ""; position: absolute; inset: 0;
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.012' numOctaves='4' seed='3'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .9 -.25'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>") 0 0 / 300px 300px;
+  mix-blend-mode: soft-light;
+  opacity: .55;
+}
+.ob__porte, .ob__cartes { z-index: 1; }
+
+/* Brume au sol : deux nappes qui glissent lentement de côté */
+.ob__brume { position: absolute; left: 0; right: 0; bottom: -8vh; height: 42vh; pointer-events: none; opacity: 0; transition: opacity 1.2s ease; }
+.ob--couleur .ob__brume { opacity: 1; }
+.ob__brume span {
+  position: absolute; bottom: 0; width: 90vw; height: 100%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at 50% 70%, color-mix(in srgb, var(--rarete) 35%, rgba(200,190,210,.25)), transparent 68%);
+  will-change: transform;
+  animation: ob-brume 18s ease-in-out infinite alternate;
+}
+.ob__brume span:nth-child(1) { left: -20vw; }
+.ob__brume span:nth-child(2) { right: -20vw; animation-duration: 23s; animation-direction: alternate-reverse; opacity: .8; }
+@keyframes ob-brume { to { transform: translateX(18vw); } }
+
+/* Pénombre sur les bords (sous les cartes et les textes) */
+.ob::after {
+  content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background: radial-gradient(ellipse 75% 70% at 50% 48%, transparent 45%, rgba(0,0,0,.65) 100%);
+}
+.ob__scene, .ob__aide, .ob__fin { position: relative; z-index: 2; }
+.ob__particules { z-index: 3; }
+
+/* Braises qui montent, teintées de la rareté */
+.ob__braises { position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity 1s ease; }
+.ob--couleur .ob__braises { opacity: 1; }
+.ob__braise {
+  position: absolute; bottom: -10px;
+  width: var(--t); aspect-ratio: 1; border-radius: 50%;
+  background: radial-gradient(circle, #fff6dc, color-mix(in srgb, var(--rarete) 70%, #ffb347) 55%, transparent 72%);
+  will-change: transform, opacity;
+  animation: ob-braise var(--d) linear var(--r) infinite;
+}
+@keyframes ob-braise {
+  0%   { transform: translate(0, 0); opacity: 0; }
+  12%  { opacity: .9; }
+  100% { transform: translate(var(--dx), -105vh); opacity: 0; }
+}
 
 .ob__scene {
   position: relative;
@@ -115,14 +184,21 @@ body.ob-ouvert { overflow: hidden; }
 }
 
 /* La porte (le booster) : deux battants découpés dans la même image */
+.ob__scene { --lp: min(62vw, 46vh, 360px); }   /* largeur de la porte (le vitrail en dépend) */
 .ob__porte {
-  --l: min(62vw, 46vh, 360px);
+  --l: var(--lp);
   position: relative;
   width: var(--l); aspect-ratio: 2 / 3;
   perspective: 1200px;
   animation: ob-porte .7s cubic-bezier(.2,1.3,.4,1) both;
-  filter: drop-shadow(0 20px 30px rgba(0,0,0,.7));
 }
+/* Ombre au sol : un dégradé derrière la porte (un filtre sur la porte se recalculait à chaque image du cristal) */
+.ob__porte::before {
+  content: ""; position: absolute; z-index: -1; left: 8%; right: 8%; bottom: -6%; height: 16%;
+  background: radial-gradient(closest-side, rgba(0,0,0,.75), transparent);
+  pointer-events: none;
+}
+.ob--ouvert .ob__porte::before { opacity: 0; transition: opacity .9s ease; }
 @keyframes ob-porte { from { transform: translateY(40px) scale(.7); opacity: 0; } }
 .ob__battant {
   position: absolute; top: 0; bottom: 0; width: 50%;
@@ -136,17 +212,20 @@ body.ob-ouvert { overflow: hidden; }
 .ob--ouvert .ob__battant--d { transform: rotateY(105deg); opacity: 0; }
 
 /* Fissures : apparaissent tap après tap, puis prennent la couleur de la rareté */
-.ob__fissures { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; transition: opacity .4s ease; }
+.ob__fissures {
+  position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; transition: opacity .4s ease;
+  filter: drop-shadow(0 0 4px #fff);   /* une seule lueur pour tout le dessin, pas une par trait */
+}
+.ob--couleur .ob__fissures { filter: drop-shadow(0 0 6px var(--rarete)); }
 .ob__fissure polyline {
   fill: none; stroke: #fff; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round;
   stroke-dasharray: 1; stroke-dashoffset: 1;
-  filter: drop-shadow(0 0 4px #fff);
   transition: stroke-dashoffset .35s ease-out, stroke .4s ease;
 }
 .ob[data-taps="1"] .ob__fissure--1 polyline,
 .ob[data-taps="2"] .ob__fissure--1 polyline, .ob[data-taps="2"] .ob__fissure--2 polyline,
 .ob[data-taps="3"] .ob__fissure polyline { stroke-dashoffset: 0; }
-.ob--couleur .ob__fissure polyline { stroke: var(--rarete); filter: drop-shadow(0 0 6px var(--rarete)); }
+.ob--couleur .ob__fissure polyline { stroke: var(--rarete); }
 .ob--ouvert .ob__fissures { opacity: 0; }
 
 /* Le cristal du centre (50 % / 50,5 % de l'image) */
@@ -250,7 +329,9 @@ body.ob-ouvert { overflow: hidden; }
 .ob--transcendante.ob--couleur .ob__lumiere { scale: 1.6; }
 
 @media (prefers-reduced-motion: reduce) {
-  .ob, .ob__porte, .ob__rayons, .ob__cristal, .ob__aide, .page-boutique .btn-ouvrir { animation: none; }
+  .ob, .ob__porte, .ob__brume span, .ob__cristal, .ob__aide,
+  .page-boutique .btn-ouvrir::after { animation: none; }
+  .ob__braises { display: none; }
   .ob__battant, .ob-carte, .ob-carte__corps, .ob-carte__info { transition: none; }
 }
 @media (max-width: 600px) {
@@ -336,8 +417,9 @@ body.ob-ouvert { overflow: hidden; }
 .ob__titre {
   position: absolute; left: 50%; top: 18%; z-index: 6;
   font-family: "Cinzel Decorative","Cinzel Decorative Repli", serif; font-weight: 900;
-  font-size: clamp(1.8rem, 6vw, 4rem); text-transform: uppercase; white-space: nowrap;
+  font-size: clamp(1.8rem, 6vw, 4rem); text-transform: uppercase; white-space: nowrap; letter-spacing: .18em;
   color: var(--c);
+  will-change: transform, opacity;
   text-shadow: 0 0 24px var(--c), 0 0 60px var(--c), 0 4px 10px #000;
   pointer-events: none;
 }
@@ -347,12 +429,14 @@ body.ob-ouvert { overflow: hidden; }
   filter: drop-shadow(0 0 18px rgba(246,210,122,.9)) drop-shadow(0 4px 8px #000);
 }
 
-/* Mythique : la carte tourbillonne avant de se retourner */
+/* Mythique : la carte se gonfle d'énergie sur place (sans tourner) avant de se retourner */
 .ob-carte--tourbillon .ob-carte__corps { animation: ob-tourbillon .65s cubic-bezier(.4,0,.2,1) both; }
 @keyframes ob-tourbillon {
-  0%   { transform: translateY(0) rotateZ(0) scale(1); }
-  60%  { transform: translateY(-30px) rotateZ(360deg) scale(1.12); }
-  100% { transform: translateY(0) rotateZ(360deg) scale(1); }
+  0%   { transform: translateY(0) scale(1); }
+  35%  { transform: translateY(-14px) scale(1.08); }
+  55%  { transform: translateY(-12px) scale(1.05); }
+  75%  { transform: translateY(-16px) scale(1.1); }
+  100% { transform: translateY(0) scale(1); }
 }
 
 /* Légendaire : la carte tremble et rougeoit de plus en plus */
@@ -364,8 +448,8 @@ body.ob-ouvert { overflow: hidden; }
   100% { translate: 0 0; }
 }
 
-/* Transcendante : l'écran s'assombrit, la carte s'élève au centre dans des rayons d'or */
-.ob--nuit .ob__lumiere, .ob--nuit .ob__rayons { opacity: .15; transition: opacity .6s ease; }
+/* Transcendante : l'écran s'assombrit, la carte s'élève au centre dans un halo d'or */
+.ob--nuit .ob__lumiere, .ob--nuit .ob__brume, .ob--nuit .ob__vitrail { opacity: .15; transition: opacity .6s ease; }
 .ob--nuit .ob-carte:not(.ob-carte--elevee) { opacity: .25 !important; transition: opacity .6s ease; }
 .ob-carte--elevee { position: relative; z-index: 4; }
 .ob-carte--elevee .ob-carte__corps { animation: ob-elevee 1.4s cubic-bezier(.3,0,.2,1) both; }
@@ -373,12 +457,13 @@ body.ob-ouvert { overflow: hidden; }
   content: ""; position: absolute; left: 50%; top: 50%; z-index: -1;
   width: 320%; aspect-ratio: 1; translate: -50% -50%;
   border-radius: 50%;
-  background: repeating-conic-gradient(from 0deg, rgba(246,210,122,.55) 0 4deg, transparent 4deg 14deg);
-  /* masque gardé ici (petit élément, 1,4 s seulement) ; calque à part pour tourner sans tout redessiner */
-  -webkit-mask: radial-gradient(closest-side, #000 35%, transparent); mask: radial-gradient(closest-side, #000 35%, transparent);
-  will-change: transform;
-  animation: ob-rayons 4s linear infinite, ob-apparait .8s ease both;
+  /* un halo d'or qui respire (sans tourner) */
+  background: radial-gradient(closest-side, rgba(255,236,180,.55), rgba(246,210,122,.28) 45%, transparent 75%);
+  will-change: transform, opacity;
+  animation: ob-halo 1.6s ease-in-out infinite alternate, ob-fondu .8s ease both;
 }
+@keyframes ob-halo { from { scale: .9; } to { scale: 1.08; } }
+@keyframes ob-fondu { from { opacity: 0; } }
 @keyframes ob-elevee {
   0%   { transform: translateY(0) scale(1); }
   100% { transform: translateY(-40px) scale(1.25); }

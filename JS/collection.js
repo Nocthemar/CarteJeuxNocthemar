@@ -1,5 +1,9 @@
 // =====================================================================
-//  Page collection : le grimoire de cartes du joueur connecté
+//  Page collection : deux choix
+//  - ouvrir le grimoire : les cartes du joueur connecté (ce fichier) ; collection.html#grimoire l'ouvre d'office
+//  - ouvrir la roue des apparences, en grand : plateaux, thèmes, titres, bannières (JS/collection-roue.js) ;
+//    collection.html#roue l'ouvre d'office
+//  Le grimoire :
 //  - 9 pochettes par page, rangement libre par glisser-déposer
 //    (ou : toucher une carte, puis la pochette où la poser)
 //  - Deck du profil en haut de page (5 cartes max)
@@ -9,6 +13,7 @@
 import { supabase, connexionDiscord, getMonJoueur } from './supabase.js';
 import { $, notifier } from './commun.js';
 import { htmlCarte, chargerDeck, Deck, activerGlisser, boutonLoupe, ouvrirApercu } from './cartes.js';
+import { initRoue } from './collection-roue.js';
 
 const PAR_PAGE = 9;
 const PAGES_MAX = 100;
@@ -56,9 +61,54 @@ async function init() {
   $('collection-vide').hidden = etat.cartes.size > 0;
   afficher();
 
+  const n = etat.cartes.size;
+  $('livre-compte').textContent = `${n} carte${n > 1 ? 's' : ''}`;
   $('chargement').hidden = true;
-  $('collection').hidden = false;
+  const vue = VUES[location.hash.slice(1)] ? location.hash.slice(1) : null;
+  if (vue) ouvrir(vue, false);
+  else $('choix').hidden = false;
+  initRoue(moi).then((n) => {
+    $('roue-compte').textContent = `${n} objet${n > 1 ? 's' : ''}`;
+  }).catch((e) => {
+    console.error(e);
+    $('roue-centre').innerHTML = '<span class="roue__vide">Impossible de charger ta collection.</span>';
+  });
 }
+
+
+// ---------------------------------------------------------------------
+//  Les deux choix : le grimoire ou la roue s'ouvre (et se referme) à la place de l'écran de choix
+// ---------------------------------------------------------------------
+const VUES = {
+  grimoire: { vue: 'collection', bouton: 'btn-ouvrir-livre', classe: 'collection--ouverture', fermer: '← Refermer le grimoire' },
+  roue: { vue: 'vue-roue', bouton: 'btn-ouvrir-roue', classe: 'vue-roue--ouverture', fermer: '← Refermer la roue' },
+};
+let vueOuverte = null;
+function ouvrir(nom, anime = true) {
+  const v = VUES[nom];
+  $('choix').hidden = true;
+  for (const autre of Object.values(VUES)) $(autre.vue).hidden = autre !== v;
+  $(v.vue).classList.toggle(v.classe, anime && !sansAnimation.matches);
+  history.replaceState(null, '', `#${nom}`);
+  vueOuverte = nom;
+  $('btn-fermer').textContent = v.fermer;
+  $('btn-fermer').hidden = false;
+  if (nom === 'grimoire') afficher();
+  scrollTo(0, 0);
+  if (nom === 'roue') $('roue').focus({ preventScroll: true });
+}
+function fermer(nom) {
+  vueOuverte = null;
+  $('btn-fermer').hidden = true;
+  $(VUES[nom].vue).hidden = true;
+  $('choix').hidden = false;
+  history.replaceState(null, '', location.pathname);
+  scrollTo(0, 0);
+  $(VUES[nom].bouton).focus();
+}
+$('btn-ouvrir-livre').addEventListener('click', () => ouvrir('grimoire'));
+$('btn-fermer').addEventListener('click', () => { if (vueOuverte) fermer(vueOuverte); });
+$('btn-ouvrir-roue').addEventListener('click', () => ouvrir('roue'));
 
 
 // ---------------------------------------------------------------------
