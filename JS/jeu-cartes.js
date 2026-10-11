@@ -34,6 +34,13 @@ import { jouerSon, basculerMuet, estMuet, lireVolume, reglerVolume } from './jeu
 import { ouvrirSalon, nouveauCode, codeValide, TAILLE_SALON } from './jeu-cartes-ligne.js';
 
 const NOM_ADVERSAIRE = "L'Ombre du Codex";
+
+// Le plateau suit la saison réelle (CSS/jeu-cartes.css : .saison-…) :
+// hiver de décembre à février, printemps de mars à mai, été de juin à août, automne de septembre à novembre.
+// Pour tester un autre plateau : jeu-cartes.html?saison=hiver (printemps, ete, automne)
+const SAISON_DU_MOIS = ['hiver', 'hiver', 'printemps', 'printemps', 'printemps', 'ete', 'ete', 'ete', 'automne', 'automne', 'automne', 'hiver'];
+const saisonForcee = new URLSearchParams(location.search).get('saison');
+document.body.classList.add(`saison-${SAISON_DU_MOIS.includes(saisonForcee) ? saisonForcee : SAISON_DU_MOIS[new Date().getMonth()]}`);
 const CLE_SALON_EN_ATTENTE = 'duel-salon';   // salon à rejoindre après la connexion Discord
 
 let mode = 'solo';          // onglet de l'accueil : 'solo' | 'ligne'

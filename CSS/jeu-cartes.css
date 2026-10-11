@@ -2052,20 +2052,22 @@ body.en-duel { overflow: hidden; padding: 0 !important; }
 
 
 /* =====================================================================
-   Le plateau de Nocthémar (img/Plateaux de carte/…, 1944 × 809) : une île flottante, fond transparent.
+   Le plateau de Nocthémar : une île flottante (fond transparent), qui change avec la SAISON RÉELLE
+   (img/Plateaux de carte/plateau-automne|hiver|printemps|ete.webp, 1672 × 941, même disposition).
+   La saison est posée sur <body> par JS/jeu-cartes.js (classe saison-…) ; ?saison=hiver la force.
    Tout y est placé en % de l'image (cqw = % de la largeur du plateau), mesuré au pixel :
    - les 10 emplacements peints : les troupes (5 en haut pour l'adversaire, 5 en bas pour toi) ;
      la rangée du bas est plus grande et plus espacée (perspective), d'où deux réglages
-   - la clairière en haut à gauche : le Grimoire et le Tombeau de l'adversaire
-   - la clairière en bas à droite : les tiens
-   - le cercle de pierre au centre : le dé
+   - en haut à gauche : le Grimoire et le Tombeau de l'adversaire
+   - en bas à droite : les tiens
+   - le cercle de pierre « N » au centre : le dé
    ===================================================================== */
 .page-jeu .tg-bord {
   container-type: inline-size;
-  aspect-ratio: 1944 / 809;
+  aspect-ratio: 1672 / 941;
   padding: 0;
   border-radius: 0;
-  background: url("../img/Plateaux%20de%20carte/Plateau%20de%20bataille%20gothique%20au%20cr%C3%A9puscule.png") center / 100% 100% no-repeat;
+  background: url("../img/Plateaux%20de%20carte/plateau-automne.webp") center / 100% 100% no-repeat;
   box-shadow: none;
   transform: none;
   filter: drop-shadow(0 30px 40px rgba(0,0,0,.7));
@@ -2082,6 +2084,11 @@ body.en-duel { overflow: hidden; padding: 0 !important; }
   box-shadow: none;
 }
 .en-duel .tg-perspective { perspective: none; }
+/* Plateau de la saison (automne par défaut) */
+.page-jeu.saison-hiver     .tg-bord { background-image: url("../img/Plateaux%20de%20carte/plateau-hiver.webp"); }
+.page-jeu.saison-printemps .tg-bord { background-image: url("../img/Plateaux%20de%20carte/plateau-printemps.webp"); }
+.page-jeu.saison-ete       .tg-bord { background-image: url("../img/Plateaux%20de%20carte/plateau-ete.webp"); }
+.page-jeu.saison-automne   .tg-bord { background-image: url("../img/Plateaux%20de%20carte/plateau-automne.webp"); }
 
 /* Les troupes, sur les emplacements peints */
 .page-jeu .tg-bord .terrain {
@@ -2092,19 +2099,19 @@ body.en-duel { overflow: hidden; padding: 0 !important; }
   align-items: center;
   gap: 0;
 }
-/* Une colonne par emplacement, centrée sur son cadre peint (centres mesurés : 168 px d'écart en haut, 177 en bas).
-   Les cases ont été retouchées au format des cartes (2 x 3 : 92 x 137 px en haut, 104 x 155 px en bas ;
-   original : « … (cases larges, original).png ») : la carte recouvre le fond et le cadre. Les images
-   des vraies cartes ont ~3,5 % de marge transparente autour de leur cadre : on les agrandit d'autant */
-.page-jeu .tg-bord #terrain-adverse { left: 28.43%; width: 43.34%; top: 20.89%; height: 16.93%; --unite-l: 5.1cqw; }
-.page-jeu .tg-bord #terrain-joueur  { left: 27.40%; width: 45.42%; top: 59.33%; height: 19.16%; --unite-l: 5.75cqw; }
+/* Une colonne par emplacement, centrée sur son cadre peint (centres mesurés : 144 px d'écart en haut, 151 en bas).
+   Les cases sont au format des cartes (≈ 88 × 125 px en haut, 90 × 134 px en bas) : la carte recouvre
+   le fond et le cadre. Les images des vraies cartes ont ~3,5 % de marge transparente autour de leur
+   cadre : on les agrandit d'autant (plus bas, .dc-face--hote) */
+.page-jeu .tg-bord #terrain-adverse { left: 28.30%; width: 43.03%; top: 24.76%; height: 13.28%; --unite-l: 5.9cqw; }
+.page-jeu .tg-bord #terrain-joueur  { left: 27.31%; width: 45.12%; top: 58.24%; height: 14.24%; --unite-l: 6.3cqw; }
 .page-jeu .tg-bord .dc-unite,
 .page-jeu .tg-bord .dc-place { width: var(--unite-l); }
 .page-jeu .tg-bord .dc-place { opacity: 0; }   /* emplacement vide : le cadre peint suffit */
 
 /* Le dé dans le cercle de pierre, la consigne juste dessous */
 .page-jeu .tg-bord .centre {
-  position: absolute; left: 49.9%; top: 47.4%;
+  position: absolute; left: 50%; top: 46.8%;
   translate: -50% -50%;
   margin: 0;
   justify-content: center;
@@ -2112,7 +2119,7 @@ body.en-duel { overflow: hidden; padding: 0 !important; }
 .page-jeu .tg-bord .centre::before,
 .page-jeu .tg-bord .centre::after { content: none; }
 .page-jeu .tg-tapis > .centre__consigne {
-  position: absolute; left: 49.9%; top: 55.2%;
+  position: absolute; left: 50%; top: 54.4%;
   translate: -50% 0;
   width: 30%;
   font-size: clamp(.62rem, .95cqw, .85rem);
@@ -2129,8 +2136,8 @@ body.en-duel { overflow: hidden; padding: 0 !important; }
   background: url("../img/Cartes/Verso-Carte.webp") center / contain no-repeat;
   filter: drop-shadow(.25cqw .25cqw 0 #2a1a14) drop-shadow(.25cqw .25cqw 0 #3a261c) drop-shadow(0 .6cqw .8cqw rgba(0,0,0,.7));
 }
-.plateau-pile--adverse { left: 16.6%; top: 17%; }
-.plateau-pile--joueur  { left: 81.6%; top: 57%; }
+.plateau-pile--adverse { left: 17.4%; top: 24.6%; }
+.plateau-pile--joueur  { left: 77.9%; top: 58.4%; }
 .plateau-pile b {
   translate: 0 50%;
   display: grid; place-items: center;
@@ -2153,8 +2160,8 @@ body.en-duel { overflow: hidden; padding: 0 !important; }
   cursor: pointer;
 }
 /* emplacement du Tombeau : un cadre de carte sombre, la dernière carte posée dessus */
-.page-jeu .tg-bord .tombeau--adverse { left: 22.2%; top: 17%; }
-.page-jeu .tg-bord .tombeau--joueur  { left: 75.6%; top: 57%; }
+.page-jeu .tg-bord .tombeau--adverse { left: 22.9%; top: 24.6%; }
+.page-jeu .tg-bord .tombeau--joueur  { left: 72.4%; top: 58.4%; }
 .page-jeu .tg-bord .tombeau--adverse, .page-jeu .tg-bord .tombeau--joueur {
   width: 4.2cqw; aspect-ratio: 2 / 3;
   border-radius: .5cqw;
@@ -2184,7 +2191,7 @@ body.en-duel { overflow: hidden; padding: 0 !important; }
 /* =====================================================================
    Disposition du duel sur ordinateur : un grand plateau au milieu
    - le plateau prend toute la place libre (largeur moins les boutons à droite,
-     hauteur moins la barre de l'adversaire et la main), en gardant sa forme 1944 / 809
+     hauteur moins la barre de l'adversaire et la main), en gardant sa forme 1672 / 941
    - ton énergie et ton héros : une plaque en bas à gauche de l'écran
    - la main : des cartes plus petites, qui grossissent au survol
    (vient en dernier : ces règles l'emportent)
@@ -2196,8 +2203,10 @@ body.en-duel { overflow: hidden; padding: 0 !important; }
 @media (min-width: 1101px) {
   .en-duel .tg-table { width: 100%; }
   .en-duel .tg-perspective {
-    width: min(calc(100vw - 2 * clamp(150px, 11vw, 190px)), calc((100vh - 13vh - var(--carte-l-main) * 1.5 - 40px) * 1944 / 809));
-    margin: 0 auto;
+    /* Grand plateau : ses bords transparents (ciel, rochers du dessous) passent sous la barre
+       de l'adversaire et sous la main, d'où les marges négatives */
+    width: min(calc(100vw - 2 * clamp(130px, 9vw, 170px)), calc((100vh - 2vh) * 1672 / 941));
+    margin: -8vh auto -17vh;
   }
   .en-duel .table__plateau { --carte-l-main: min(6.2vw, 11.5vh); }
 
@@ -2223,4 +2232,63 @@ body.en-duel { overflow: hidden; padding: 0 !important; }
 
 /* Vraies cartes posées sur le plateau : l'image est agrandie de sa marge transparente (~3,5 % de chaque côté),
    pour que le cadre de la carte remplisse la case comme une troupe du Codex */
-.page-jeu .tg-bord .dc-unite .dc-face--hote { scale: 1.075; }
+/* (ancien agrandissement des vraies cartes : remplacé par le calage « cadre sur cadre » plus bas) */
+
+
+/* =====================================================================
+   Cartes posées sur le plateau : le cadre de la carte se pose EXACTEMENT sur le cadre peint de la case,
+   le « N » de la carte dépasse au-dessus.
+   Mesures (plateaux de saison 1672 × 941) : cadre extérieur d'une case = 128 × 173 px en haut,
+   136 × 180 px en bas. Cadre d'une carte (image 1024 × 1536) = 87,4 % × 81,7 % de l'image, centré.
+   Les cases sont plus trapues que les cartes : la carte est un peu élargie pour tomber trait sur trait.
+   ===================================================================== */
+.page-jeu .tg-bord #terrain-adverse { left: 28.29%; width: 43.03%; top: 20.2%; height: 23.38%; --unite-l: 8.76cqw; --unite-ratio: .744; }
+.page-jeu .tg-bord #terrain-joueur  { left: 27.31%; width: 45.12%; top: 53.3%; height: 24.44%; --unite-l: 9.31cqw; --unite-ratio: .79; }
+.page-jeu .tg-bord .dc-unite,
+.page-jeu .tg-bord .dc-place { width: var(--unite-l); aspect-ratio: var(--unite-ratio); }
+.page-jeu .tg-bord .dc-unite .dc-face--image { object-fit: fill; }
+/* les pastilles attaque / vie se posent sur le bas du cadre */
+.page-jeu .tg-bord .dc-unite .dc-stat { bottom: 8.5%; }
+.page-jeu .tg-bord .dc-unite .dc-stat--a { left: 9%; }
+.page-jeu .tg-bord .dc-unite .dc-stat--h { right: 9%; }
+
+
+/* =====================================================================
+   Cartes du Codex (troupes, sorts, objets de pouvoir) : même cadre que les nouvelles cartes
+   (img/Cartes/Cadre-codex.webp argenté, Cadre-objet.webp doré, tirés de l'illustration d'une vraie carte).
+   Fenêtre de l'illustration et panneau noir placés en % de l'image (1024 × 1536).
+   ===================================================================== */
+.dc-face--codex {
+  clip-path: none;
+  background: none;
+  container-type: inline-size;
+}
+.dc-face--codex .dc-face__art {
+  position: absolute; left: 11.6%; top: 10.2%; width: 76.4%; height: 58.4%;
+  overflow: hidden;
+  border-radius: 4% / 3%;
+  background: #0b0e14;
+}
+.dc-face--codex.rar-sort .dc-face__art { background: radial-gradient(circle at 50% 45%, #2b3a63, #0b0e1a 75%); }
+.dc-face--codex .dc-face__art--objet {
+  display: grid; place-items: center;
+  background: radial-gradient(circle at 50% 55%, rgba(255,200,120,.35), transparent 65%), linear-gradient(180deg, #2a2030, #120e16);
+}
+.dc-face--codex .dc-face__art--objet img { width: 82%; height: 82%; object-fit: contain; filter: drop-shadow(0 4px 6px rgba(0,0,0,.7)); }
+.dc-face__cadre-img { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.dc-face--codex .dc-face__panneau {
+  position: absolute; left: 12%; right: 12%; top: 71.5%; height: 17%;
+  margin: 0; padding: 0 2%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1.5cqw;
+  background: none; box-shadow: none; border-radius: 0;
+}
+.dc-face--codex .dc-face__nom { font-size: 7.6cqw; color: #f2eee6; }
+.dc-face--codex .dc-face__texte {
+  font-size: 5.8cqw; line-height: 1.15; color: #bcb2a4;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+}
+.dc-face--codex.rar-objet .dc-face__nom { font-size: 7cqw; color: #f6d995; }
+.dc-face--codex.rar-objet .dc-face__texte { font-size: 5.4cqw; }
+.dc-unite .dc-face--codex .dc-face__nom { font-size: 9cqw; }
+/* reflet : sur la fenêtre et le panneau, sans déborder du cadre */
+.dc-reflet--codex { clip-path: inset(6% 7% 8% 7%); }

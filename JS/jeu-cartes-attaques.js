@@ -60,6 +60,7 @@ const CIERGE = ['#fff3c4', '#ffe08a', '#ffffff'];
 const OMBRE = ['#3a2a4a', '#1a1222', '#6e4a8a'];
 const ACIER = ['#c5cad3', '#8a919c', '#ffffff'];
 const GLU = ['#8ee07a', '#4fae3c', '#c8f5b0'];
+const GIVRE = ['#ffffff', '#dff4ff', '#9fd2f0'];
 
 const VEINES_FX = {
   sang: {
@@ -359,6 +360,65 @@ const ATTAQUES = {
       voile('rgba(70,95,80,.45)', 900);
       particules(cib, { n: 26, couleurs: ['#9fb3a0', '#5f7a6a', '#c3d1c4'], vitesse: 35, monte: 40, gravite: -15, rond: true, depuis: 'surface', taille: [10, 20], duree: 1500 });
       jouerSon('eau', 0.2);
+    },
+  },
+  // Fée des Neiges (version bleue)
+  'Souffle de Givre': {
+    charge: aura(GIVRE),
+    async coup(att, cib) {
+      jouerSon('eau');
+      await salve(att, cib, 4, { forme: '❄', couleur: '#dff4ff', taille: 22, duree: 420, arc: 35, rotation: 180 }, 60);
+      flash(cib, 'rgba(200,235,255,.95)', 2.2);
+      onde(cib, '#bfe6ff', 2, 600);
+      particules(cib, { n: 20, couleurs: GIVRE, vitesse: 110, gravite: 30, taille: [3, 7] });
+    },
+  },
+  'Berceuse des Neiges': {
+    charge: aura(GIVRE),
+    async coup(att, cib) {
+      jouerSon('reve');
+      await projectile(att, cib, { forme: '❄', couleur: '#e8f6ff', taille: 32, duree: 620, arc: 70, rotation: 360 });
+      symbole(cib, 'z Z', { couleur: '#dff4ff', taille: 38, duree: 1100, monte: 50 });
+      // la neige tombe doucement sur la cible
+      particules(cib, { n: 24, couleurs: ['#ffffff', '#dff4ff', '#bfe6ff'], vitesse: 25, monte: -40, gravite: 90, rond: true, depuis: 'surface', duree: 1500, taille: [3, 6] });
+      voile('rgba(190,225,255,.3)', 800);
+    },
+  },
+  // Fée des Neiges dorée
+  'Larmes de Cristal': {
+    charge: (att) => { aura([...GIVRE, '#f6d995'])(att); symbole(att, '💧', { taille: 30, duree: 900, monte: 20 }); },
+    async coup(att, cib) {
+      jouerSon('magie');
+      await salve(att, cib, 5, { forme: '◆', couleur: '#e8f6ff', taille: 18, duree: 400, arc: 45, rotation: 90 }, 55);
+      jouerSon('acier');
+      flash(cib, 'rgba(230,245,255,.95)', 2.6);
+      particules(cib, { n: 30, couleurs: ['#ffffff', '#dff4ff', '#f6d995'], vitesse: 200, gravite: 70, taille: [3, 8] });
+      griffes(cib, { n: 3, couleur: '#dff4ff', angle: -60, ecart: 14, epaisseur: 4 });
+    },
+  },
+  'Blizzard d\'Erynedhal': {
+    charge: aura([...GIVRE, '#f6d995']),
+    async coup(att, cib) {
+      jouerSon('tonnerre');
+      jouerSon('eau', 0.1);
+      voile('rgba(220,240,255,.55)', 1200);
+      secousseEcran(10, 700);
+      // une tempête de flocons balaie tout l'écran vers la cible
+      const r = cib.getBoundingClientRect();
+      const vent = document.createElement('span');
+      Object.assign(vent.style, { position: 'fixed', left: '0px', top: `${r.top + r.height / 2}px`, width: '1px', height: '1px' });
+      document.body.appendChild(vent);
+      const rafales = [];
+      for (let i = 0; i < 7; i++) {
+        vent.style.top = `${r.top + r.height / 2 + (i - 3) * 40}px`;
+        rafales.push(projectile(vent, cib, { forme: '❄', couleur: '#ffffff', taille: 20 + (i % 3) * 8, duree: 520, arc: 15, rotation: 540 }));
+        await pause(45);
+      }
+      await Promise.all(rafales);
+      vent.remove();
+      symbole(cib, '❄', { couleur: '#f6d995', taille: 84, duree: 1000 });
+      onde(cib, '#ffffff', 3, 800);
+      particules(cib, { n: 34, couleurs: ['#ffffff', '#dff4ff', '#f6d995'], vitesse: 230, gravite: 40, taille: [3, 9] });
     },
   },
   // Veilleuse Écarlate

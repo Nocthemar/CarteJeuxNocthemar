@@ -36,6 +36,8 @@ mêmes cartes, mêmes pièces, même progression.
 - `JS/embers.js` : les particules
 - `CSS/` : les styles (ceux du site dont le jeu a besoin, et ceux du jeu)
 - `img/` : cartes, objets de pouvoir, fonds, plateaux, carte du mode Histoire, logo
+- **Plateau de saison** : le plateau du duel change avec la saison réelle (`img/Plateaux de carte/plateau-automne|hiver|printemps|ete.webp`) ;
+  pour en voir un autre : `jeu-cartes.html?saison=hiver`
 - `SQL/` : les tables et fonctions Supabase des cartes et du mode Histoire
 
 ## À faire pour le mettre en ligne

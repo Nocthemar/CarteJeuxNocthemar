@@ -86,16 +86,17 @@ function faceCarte(c) {
       <img class="dc-face dc-face--image" src="${url}" alt="" draggable="false" loading="lazy">
       ${htmlInfos(c.carte)}
     </span>`;
+  // Carte du Codex : le même cadre que les vraies cartes (img/Cartes/Cadre-codex.webp, argenté ;
+  // Cadre-objet.webp, doré, pour les objets de pouvoir), l'illustration dans la fenêtre, le texte dans le panneau noir
   return `
     <span class="dc-face dc-face--codex rar-${c.image ? 'objet' : rarete(c)}">
-      <span class="dc-face__cadre">
-        <span class="dc-face__art${c.image ? ' dc-face__art--objet' : ''}">${c.image
-          ? `<img src="${esc(new URL(c.image, SITE_ROOT))}" alt="" draggable="false" loading="lazy">`
-          : artSVG(c)}</span>
-        <span class="dc-face__panneau">
-          <span class="dc-face__nom">${esc(c.n)}</span>
-          <span class="dc-face__texte">${esc(texteCarte(c))}</span>
-        </span>
+      <span class="dc-face__art${c.image ? ' dc-face__art--objet' : ''}">${c.image
+        ? `<img src="${esc(new URL(c.image, SITE_ROOT))}" alt="" draggable="false" loading="lazy">`
+        : artSVG(c)}</span>
+      <img class="dc-face__cadre-img" src="img/Cartes/${c.image ? 'Cadre-objet' : 'Cadre-codex'}.webp" alt="" draggable="false">
+      <span class="dc-face__panneau">
+        <span class="dc-face__nom">${esc(c.n)}</span>
+        <span class="dc-face__texte">${esc(texteCarte(c))}</span>
       </span>
     </span>`;
 }
