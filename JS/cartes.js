@@ -9,11 +9,12 @@ import { esc, notifier } from './commun.js';
 
 export const DECK_MAX = 5;
 export const NOM_DECK_DEFAUT = 'Deck de cartes';
-// Dos de carte selon la rareté (vert pour les éveillées, bleu pour les mythiques, doré pour les transcendantes, rouge sinon)
+// Dos de carte selon la rareté : gris (communes), vert (éveillées), bleu (mythiques), rouge (légendaires), doré (transcendantes)
 const VERSO_DEFAUT = 'img/Cartes/Verso-Carte.webp';
 // Dos d'une carte selon sa rareté (collection, ouverture des boosters)
 export const versoDe = (rarete) => VERSOS[rarete] ?? VERSO_DEFAUT;
 const VERSOS = {
+  commune: 'img/Cartes/Verso-gris.webp',
   eveillee: 'img/Cartes/Verso-Eveillee.webp',
   mythique: 'img/Cartes/Verso-Bleue.webp',
   transcendante: 'img/Cartes/Verso-Or-Carte.webp',
