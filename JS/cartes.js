@@ -11,6 +11,8 @@ export const DECK_MAX = 5;
 export const NOM_DECK_DEFAUT = 'Deck de cartes';
 // Dos de carte selon la rareté (vert pour les éveillées, bleu pour les mythiques, doré pour les transcendantes, rouge sinon)
 const VERSO_DEFAUT = 'img/Cartes/Verso-Carte.webp';
+// Dos d'une carte selon sa rareté (collection, ouverture des boosters)
+export const versoDe = (rarete) => VERSOS[rarete] ?? VERSO_DEFAUT;
 const VERSOS = {
   eveillee: 'img/Cartes/Verso-Eveillee.webp',
   mythique: 'img/Cartes/Verso-Bleue.webp',

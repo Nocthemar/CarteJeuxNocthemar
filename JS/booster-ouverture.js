@@ -10,6 +10,7 @@
 //  Usage : await ouvrirBoosterAnime(resultat, imageBooster, { restants, surRouvrir })
 // =====================================================================
 import { jouerSon } from './jeu-cartes-son.js';
+import { versoDe } from './cartes.js';
 
 const reduit = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const RARETES = ['commune', 'eveillee', 'mythique', 'legendaire', 'transcendante'];
@@ -18,7 +19,7 @@ export const COULEURS_RARETE = {
   commune: '#c5cad3', eveillee: '#4fd987', mythique: '#5b9bff', legendaire: '#ff4b5c', transcendante: '#f6d27a',
 };
 const TAPS_FISSURE = 3;
-const DOS = 'img/Cartes/Verso-gris.webp';   // dos gris, neutre : ne trahit pas la rareté avant le retournement
+// Chaque carte sort avec son vrai dos, celui de sa rareté (comme dans la collection : JS/cartes.js)
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 // Fissures : des lignes brisées qui partent du cristal (centre de l'image : 320, 485 sur 640 × 960)
@@ -47,7 +48,7 @@ function htmlCarte(c, i) {
   return `
     <div class="ob-carte" data-i="${i}" style="--c:${COULEURS_RARETE[c.rarete] ?? '#fff'}; --i:${i}">
       <div class="ob-carte__corps">
-        <div class="ob-carte__dos"><img src="${DOS}" alt=""></div>
+        <div class="ob-carte__dos"><img src="${versoDe(c.rarete)}" alt=""></div>
         <div class="ob-carte__face"><img src="${esc(c.image)}" alt="${esc(c.nom)}"></div>
       </div>
       <div class="ob-carte__info">
