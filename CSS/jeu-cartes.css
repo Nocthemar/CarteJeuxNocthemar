@@ -692,7 +692,6 @@
   clip-path: var(--silhouette);
   background: linear-gradient(160deg, #eef1f6, #7b8494 32%, #cfd5df 52%, #5d6574 78%, #dfe4ec);
 }
-.dc-face--codex.rar-sort { background: linear-gradient(160deg, #c3cff0, #4d5d85 36%, #a7b7dc 56%, #3d4a6b 80%, #b9c6e8); }
 .dc-face__cadre {
   position: absolute; inset: 3.5%;
   clip-path: var(--silhouette);
@@ -1567,7 +1566,6 @@ body.en-duel { overflow: hidden; padding: 0 !important; }
 }
 
 /* --- Cartes de pouvoir (objets) : cadre ambré, illustration de l'objet sur un fond chaud --- */
-.dc-face--codex.rar-objet { background: linear-gradient(160deg, #fbe3a6, #8a6a2c 32%, #f0d08a 52%, #6e5322 78%, #f6d995); }
 .dc-face__art--objet {
   display: grid; place-items: center;
   background: radial-gradient(circle at 50% 55%, rgba(255,200,120,.35), transparent 65%), linear-gradient(180deg, #2a2030, #120e16);
@@ -2205,8 +2203,8 @@ body.en-duel { overflow: hidden; padding: 0 !important; }
   .en-duel .tg-perspective {
     /* Grand plateau : ses bords transparents (ciel, rochers du dessous) passent sous la barre
        de l'adversaire et sous la main, d'où les marges négatives */
-    width: min(calc(100vw - 2 * clamp(130px, 9vw, 170px)), calc((100vh - 2vh) * 1672 / 941));
-    margin: -8vh auto -17vh;
+    width: min(calc((100vw - 2 * clamp(130px, 9vw, 170px)) * .9), calc((100vh - 2vh) * 1672 / 941 * .9));
+    margin: -5vh auto -14vh;
   }
   .en-duel .table__plateau { --carte-l-main: min(6.2vw, 11.5vh); }
 
