@@ -129,10 +129,13 @@
 /* Transcendante : illustration pleine carte, sans panneau noir. Le texte se pose sur un voile
    sombre en bas de l'image, au-dessus de la bordure dorée. */
 .carte-infos--transcendante {
-  top: auto; bottom: 10.5%;
-  padding: 1.6cqw 1.6cqw 1.4cqw;
-  border-radius: 1.6cqw;
-  background: linear-gradient(to bottom, rgba(10,8,6,.15), rgba(10,8,6,.72) 30%, rgba(10,8,6,.82));
+  /* le voile remplit toute la fenêtre de l'illustration, d'un bord à l'autre du cadre doré
+     et jusqu'à la bordure du bas (mesuré : 10,9 % sur les côtés, 10 % en bas) */
+  left: 10.9%; right: 10.9%;
+  top: auto; bottom: 10%;
+  padding: 2cqw 2.4cqw 3.4cqw;
+  border-radius: 0 0 2.6cqw 2.6cqw;
+  background: linear-gradient(to bottom, rgba(10,8,6,0), rgba(10,8,6,.78) 22%, rgba(10,8,6,.9));
 }
 .carte-infos--transcendante .carte-infos__tete { margin-top: -5cqw; }
 
@@ -150,23 +153,62 @@
   .carte-infos__rarete { font-size: 3.2cqw; letter-spacing: .1em; }
   .carte-infos__gemme { width: 2.6cqw; height: 2.6cqw; }
 }
-/* ---------- Petite carte (grimoire) : le nom, les attaques en compact et la rareté ; les effets sont dans la loupe ---------- */
+/* ---------- Petite carte (grimoire, deck) : simple et élégante
+   - le nom en lettres dorées, encadré de deux filets ornés d'un losange
+   - le rang dans son petit écusson rouge
+   - la rareté dans une plaquette à sa couleur, avec sa gemme
+   - une lueur douce de la couleur de la rareté au fond du panneau
+   (les attaques et leurs effets sont dans la loupe) ---------- */
 @container carte (max-width: 190px) {
-  /* Petite carte (grimoire) : nom, attaques (nom + puissance) et rareté, en compact */
-  .carte-infos { gap: 1.2cqw; }
-  .carte-infos__tete { min-height: 9cqw; padding: .6cqw 5cqw; gap: 1.2cqw; }
-  .carte-infos__nom { font-size: 5.6cqw; white-space: normal; text-align: center; line-height: 1.02;
-    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
-  .carte-infos__rang { min-width: 7cqw; height: 7cqw; }
-  .carte-infos__rang::after { font-size: 4.2cqw; }
-  .carte-infos__attaques { gap: .8cqw; padding: 0 .6cqw; }
-  .carte-attaque { grid-template-columns: 7cqw minmax(0, 1fr) auto; column-gap: 1.6cqw; padding: .4cqw .8cqw; border-radius: 1.2cqw; }
-  .carte-attaque__veine { width: 7cqw; height: 7cqw; font-size: 4cqw; border-width: .4cqw; }
-  .carte-attaque__nom { font-size: 5.2cqw; }
-  .carte-attaque__effet { display: none; }
-  .carte-attaque__puissance { min-width: 9cqw; height: 6.6cqw; padding: 0 1.2cqw; font-size: 4.8cqw;
-    clip-path: polygon(1.6cqw 0, calc(100% - 1.6cqw) 0, 100% 50%, calc(100% - 1.6cqw) 100%, 1.6cqw 100%, 0 50%); }
-  .carte-infos__rarete { font-size: 3.8cqw; letter-spacing: .06em; }
-  .carte-infos__gemme { width: 3cqw; height: 3cqw; }
-}
+  .carte-infos { top: 70.5%; justify-content: space-evenly; gap: 0; }
+  .carte-infos::before {
+    content: ""; position: absolute; inset: 4% 2%; z-index: -1;
+    background: radial-gradient(ellipse 70% 60% at 50% 45%, color-mix(in srgb, var(--rarete) 22%, transparent), transparent 75%);
+  }
 
+  /* Nom : sans plaque, entre deux filets */
+  .carte-infos__tete {
+    clip-path: none; background: none; box-shadow: none;
+    align-self: stretch;
+    min-height: 0; padding: 0 1cqw; gap: 1.8cqw;
+  }
+  .carte-infos__tete::before, .carte-infos__tete::after {
+    content: ""; flex: 1 1 4cqw; min-width: 3cqw; height: 1.6cqw;
+    background:
+      linear-gradient(45deg, transparent 40%, color-mix(in srgb, var(--rarete) 80%, #fff) 40% 60%, transparent 60%) right center / 1.6cqw 1.6cqw no-repeat,
+      linear-gradient(90deg, transparent, color-mix(in srgb, var(--rarete) 70%, #d8b978)) left center / calc(100% - 2cqw) .35cqw no-repeat;
+  }
+  .carte-infos__tete::after { transform: scaleX(-1); }
+  .carte-infos__nom {
+    flex: 0 1 auto;
+    font-size: 6.4cqw; letter-spacing: .04em; line-height: 1.05;
+    white-space: normal; text-align: center;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    background: linear-gradient(180deg, #fffaf0 15%, #e9d6a8 60%, #c9a45e);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    text-shadow: none;
+    filter: drop-shadow(0 .4cqw .5cqw rgba(0,0,0,.9));
+  }
+  .carte-infos__rang { min-width: 7.6cqw; height: 7.6cqw; order: 1; }
+  .carte-infos__tete::after { order: 2; }
+  .carte-infos__rang::after { font-size: 4.4cqw; }
+  .carte-infos__attaques { display: none; }
+
+  /* Rareté : plaquette à sa couleur */
+  .carte-infos__rarete {
+    align-self: center;
+    gap: 1.6cqw;
+    padding: .9cqw 3.6cqw;
+    border: .3cqw solid color-mix(in srgb, var(--rarete) 65%, transparent);
+    border-radius: 99px;
+    background: linear-gradient(180deg, rgba(0,0,0,.25), rgba(0,0,0,.55));
+    box-shadow: 0 0 2.4cqw color-mix(in srgb, var(--rarete) 35%, transparent), inset 0 .3cqw 0 rgba(255,255,255,.06);
+    font-size: 3.6cqw; letter-spacing: .14em;
+    color: color-mix(in srgb, var(--rarete) 80%, #fff);
+  }
+  .carte-infos__gemme { width: 2.8cqw; height: 2.8cqw; }
+
+  /* Transcendante : sur l'illustration, voile plus léger */
+  .carte-infos--transcendante { top: auto; bottom: 10%; padding: 4cqw 2cqw 3.4cqw; gap: 1.6cqw; }
+  .carte-infos--transcendante .carte-infos__tete { margin-top: 0; }
+}
