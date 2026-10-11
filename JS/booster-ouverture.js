@@ -160,12 +160,12 @@ function titre(ov, texte, couleur, classe = '') {
 function eclaterCristal(ov, zone, x, y, rarete) {
   const c = COULEURS_RARETE[rarete];
   const rang = RARETES.indexOf(rarete);
-  eclats(zone, x, y, c, 30 + rang * 14, 300 + rang * 60);
+  eclats(zone, x, y, c, 18 + rang * 8, 300 + rang * 60);
   onde(zone, x, y, c, 4 + rang, 800 + rang * 100);
   if (rang >= 1) pluie(zone, [c, '#ffffff'], 10 + rang * 6, { monte: true, forme: rang === 1 ? 'feuille' : 'losange' });
   if (rang >= 2) { setTimeout(() => onde(zone, x, y, '#ffffff', 5 + rang, 900, 2), 140); flashEcran(ov, c, 500, 0.35); }
   if (rang >= 3) { secouer(ov.querySelector('.ob__scene'), 10 + (rang - 3) * 8, 600); flashEcran(ov, '#ffffff', 450, 0.6); }
-  if (rang >= 4) { pluie(zone, ['#f6d27a', '#fff6d6', '#ffffff'], 60, { forme: 'etoile', duree: 2600 }); setTimeout(() => onde(zone, x, y, c, 12, 1300, 8), 250); }
+  if (rang >= 4) { pluie(zone, ['#f6d27a', '#fff6d6', '#ffffff'], 30, { forme: 'etoile', duree: 2600 }); setTimeout(() => onde(zone, x, y, c, 12, 1300, 8), 250); }
   jouerSon(rang >= 3 ? 'tonnerre' : rang >= 1 ? 'magie' : 'cloche');
   if (rang >= 3) setTimeout(() => jouerSon('fanfare'), 300);
 }
@@ -198,7 +198,7 @@ async function revelerCarte(ov, zone, carte, c) {
   const r = carte.querySelector('.ob-carte__corps').getBoundingClientRect();
   const x = r.left + r.width / 2;
   const y = r.top + r.height * 0.45;
-  eclats(zone, x, y, coul, 10 + rang * 10, 140 + rang * 50);
+  eclats(zone, x, y, coul, 8 + rang * 6, 140 + rang * 50);
   if (rang === 0) jouerSon('pioche');
   if (rang >= 1) { onde(zone, x, y, coul, 2 + rang * 0.6, 700); jouerSon(rang >= 3 ? 'fanfare' : 'magie'); }
   if (rang === 1) pluie(zone, [coul, '#d5f5de'], 14, { monte: true, forme: 'feuille', duree: 1800 });
@@ -206,7 +206,7 @@ async function revelerCarte(ov, zone, carte, c) {
   if (rang >= 3) {
     flashEcran(ov, coul, 600, 0.5);
     secouer(ov.querySelector('.ob__scene'), 8 + (rang - 3) * 10, 550);
-    pluie(zone, rang === 4 ? ['#f6d27a', '#fff6d6', '#ffffff'] : ['#ff4b5c', '#ffb38a', '#ff8a8f'], rang === 4 ? 80 : 40,
+    pluie(zone, rang === 4 ? ['#f6d27a', '#fff6d6', '#ffffff'] : ['#ff4b5c', '#ffb38a', '#ff8a8f'], rang === 4 ? 36 : 20,
       { forme: rang === 4 ? 'etoile' : 'losange', duree: 2400 });
     titre(ov, rang === 4 ? 'Transcendante' : 'Légendaire', coul, rang === 4 ? 'ob__titre--or' : '');
     jouerSon('tonnerre');
