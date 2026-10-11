@@ -48,7 +48,11 @@ function htmlBooster(b) {
   const n = boosters.possedes.get(b.id) ?? 0;
   const chances = Object.entries(b.chances ?? {}).filter(([, v]) => v > 0)
     .map(([r, v]) => `<li style="--c:${COULEURS_RARETE[r]}">${esc(NOMS_RARETE[r] ?? r)} ${v} %</li>`).join('');
-  const cartes = (boosters.cartes.get(b.id) ?? [])
+  // Aperçu : autant de cartes que le booster en contient (les plus rares d'abord)
+  const RANG = ['commune', 'eveillee', 'mythique', 'legendaire', 'transcendante'];
+  const possibles = [...(boosters.cartes.get(b.id) ?? [])].sort((x, y) => RANG.indexOf(y.rarity) - RANG.indexOf(x.rarity));
+  const montrees = possibles.slice(0, b.nb_cartes);
+  const cartes = montrees
     .map((c) => `<img src="${esc(c.image)}" alt="${esc(c.name)}" title="${esc(c.name)}" loading="lazy">`).join('');
   let achat;
   if (!etat.moi) achat = '<button type="button" class="btn-acheter" disabled>Connecte-toi pour acheter</button>';
