@@ -2320,20 +2320,33 @@ body.en-duel { overflow: hidden; padding: 0 !important; }
 }
 .dc-face--codex .dc-face__art--objet img { width: 82%; height: 82%; object-fit: contain; filter: drop-shadow(0 4px 6px rgba(0,0,0,.7)); }
 .dc-face__cadre-img { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+/* Panneau noir : tout tient dedans, quelle que soit la taille de la carte (tailles en cqw) :
+   le nom sur deux lignes au plus, un filet doré, l'effet sur deux lignes au plus (« … » au-delà ;
+   le texte entier est dans la loupe : clic droit sur la carte) */
 .dc-face--codex .dc-face__panneau {
   position: absolute; left: 12%; right: 12%; top: 71.5%; height: 17%;
-  margin: 0; padding: 0 2%;
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1.5cqw;
+  margin: 0; padding: 0 3%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1cqw;
   background: none; box-shadow: none; border-radius: 0;
+  overflow: hidden;
 }
-.dc-face--codex .dc-face__nom { font-size: 7.6cqw; color: #f2eee6; }
+.dc-face--codex .dc-face__nom {
+  max-width: 100%;
+  font-size: 5.4cqw; line-height: 1.05; letter-spacing: .01em; color: #f2eee6;
+  text-wrap: balance;
+  -webkit-line-clamp: 2;
+}
 .dc-face--codex .dc-face__texte {
-  font-size: 5.8cqw; line-height: 1.15; color: #bcb2a4;
-  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+  max-width: 100%;
+  padding-top: 1cqw;
+  border-top: 1px solid rgba(217,164,65,.35);
+  font-size: 4.6cqw; line-height: 1.15; color: #bcb2a4;
+  text-wrap: balance;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
 }
-.dc-face--codex.rar-objet .dc-face__nom { font-size: 7cqw; color: #f6d995; }
-.dc-face--codex.rar-objet .dc-face__texte { font-size: 5.4cqw; }
-.dc-unite .dc-face--codex .dc-face__nom { font-size: 9cqw; }
+.dc-face--codex.rar-objet .dc-face__nom { font-size: 5.2cqw; color: #f6d995; }
+.dc-face--codex.rar-objet .dc-face__texte { font-size: 4.5cqw; }
+.dc-unite .dc-face--codex .dc-face__nom { font-size: 7.4cqw; }   /* troupe posée : seulement le nom */
 /* reflet : sur la fenêtre et le panneau, sans déborder du cadre */
 .dc-reflet--codex { clip-path: inset(6% 7% 8% 7%); }
 
