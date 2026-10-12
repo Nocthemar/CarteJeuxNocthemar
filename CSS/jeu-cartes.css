@@ -761,7 +761,8 @@
           mask: var(--masque) center / contain no-repeat;
   opacity: 0; transition: opacity .2s;
 }
-.dc-carte:hover .dc-reflet, .dc-carte.incline .dc-reflet { opacity: 1; }
+/* (reflet retiré : plus d'éclat blanc au survol des cartes) */
+.dc-reflet { display: none; }
 
 /* --- Main du joueur --- */
 .main { min-height: calc(clamp(78px, 8vw, 108px) * 1.5 + 14px); }
