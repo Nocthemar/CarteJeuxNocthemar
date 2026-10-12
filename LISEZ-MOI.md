@@ -36,7 +36,7 @@ mêmes cartes, mêmes pièces, même progression.
 - `JS/embers.js` : les particules
 - `CSS/` : les styles (ceux du site dont le jeu a besoin, et ceux du jeu)
 - `img/` : cartes, objets de pouvoir, fonds, plateaux, carte du mode Histoire, logo
-- **Plateaux** : l’arène par défaut (`plateau-defaut.webp`) et ses versions de saison (`img/Plateaux de carte/plateau-automne|hiver|printemps|ete.webp`, toutes en 1672 × 941, même disposition des cases) ;
+- **Plateaux** : l’arène par défaut (`plateau-defaut.webp`) et ses versions de saison (`img/Plateaux de carte/plateau-automne|hiver|printemps|ete.webp`, et l’arène aux cristaux d’or `plateau-cristaux.webp`, toutes en 1672 × 941, même disposition des cases) ;
   pour en voir un autre : `jeu-cartes.html?saison=hiver`
 - `SQL/` : les tables et fonctions Supabase des cartes et du mode Histoire
 

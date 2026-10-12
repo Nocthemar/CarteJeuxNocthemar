@@ -2054,7 +2054,7 @@ body.en-duel { overflow: hidden; padding: 0 !important; }
 
 /* =====================================================================
    Le plateau de Nocthémar : une île flottante (fond transparent), qui change avec la SAISON RÉELLE
-   (img/Plateaux de carte/plateau-defaut|automne|hiver|printemps|ete.webp, 1672 × 941, même disposition).
+   (img/Plateaux de carte/plateau-defaut|automne|hiver|printemps|ete|cristaux.webp, 1672 × 941, même disposition).
    Le plateau est posé sur <body> par JS/jeu-cartes.js (classe plateau-…) : celui choisi par le joueur
    (acheté en boutique, SQL/plateaux.sql), sinon celui de la saison réelle ; ?saison=hiver le force.
    Tout y est placé en % de l'image (cqw = % de la largeur du plateau), mesuré au pixel :
@@ -2093,6 +2093,7 @@ body.en-duel { overflow: hidden; padding: 0 !important; }
 .page-jeu.plateau-automne   .tg-bord { background-image: url("../img/Plateaux%20de%20carte/plateau-automne.webp"); }
 /* Plateau par défaut (sans plateau choisi) : l'arène de pierre ; les saisons sont la même arène, décorée */
 .page-jeu.plateau-defaut    .tg-bord { background-image: url("../img/Plateaux%20de%20carte/plateau-defaut.webp"); }
+.page-jeu.plateau-cristaux  .tg-bord { background-image: url("../img/Plateaux%20de%20carte/plateau-cristaux.webp"); }
 
 /* Les troupes, sur les emplacements peints */
 .page-jeu .tg-bord .terrain {
@@ -2246,7 +2247,7 @@ body.en-duel { overflow: hidden; padding: 0 !important; }
 
 /* =====================================================================
    Troupes posées sur le plateau : la carte d'origine, centrée sur la grande dalle de son camp.
-   Les cinq plateaux (l'arène par défaut et ses quatre versions de saison, 1672 × 941,
+   Les plateaux (l’arène par défaut, ses quatre versions de saison et les cristaux d’or, 1672 × 941,
    img/Plateaux de carte/) ont exactement la même disposition : un seul réglage, mesuré au pixel.
    Avec --zoom-cartes = 1, le cadre de la carte (81,9 % de la hauteur de son image) a la hauteur h.
    --h-… rangée du haut (l'adversaire), --b-… rangée du bas (toi)

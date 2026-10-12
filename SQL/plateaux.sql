@@ -124,7 +124,7 @@ grant execute on function public.acheter_plateau(text), public.equiper_plateau(t
 
 
 -- ---------------------------------------------------------------------
---  4. Les plateaux en vente : les quatre saisons
+--  4. Les plateaux en vente : les quatre saisons et l’arène aux cristaux d’or
 -- ---------------------------------------------------------------------
 insert into public.plateaux (id, nom, description, prix, image, miniature, ordre) values
   ('printemps', 'Arène du Printemps',     'L''arène de pierre couverte de lierre et de fleurs de cerisier.',
@@ -134,6 +134,8 @@ insert into public.plateaux (id, nom, description, prix, image, miniature, ordre
   ('automne',   'Arène d''Automne',        'L''arène de pierre sous les érables rouges et les feuilles mortes.',
     500, 'img/Plateaux de carte/plateau-automne.webp',   'img/Plateaux de carte/plateau-automne-mini.webp',   3),
   ('hiver',     'Arène de l''Hiver',       'L''arène de pierre prise dans la neige et les cristaux de glace.',
-    500, 'img/Plateaux de carte/plateau-hiver.webp',     'img/Plateaux de carte/plateau-hiver-mini.webp',     4)
+    500, 'img/Plateaux de carte/plateau-hiver.webp',     'img/Plateaux de carte/plateau-hiver-mini.webp',     4),
+  ('cristaux',  'Arène des Cristaux d''Or', 'L''arène fissurée, hérissée de cristaux d''or et parcourue de brume dorée.',
+    750, 'img/Plateaux de carte/plateau-cristaux.webp',  'img/Plateaux de carte/plateau-cristaux-mini.webp',  5)
 on conflict (id) do update set nom = excluded.nom, description = excluded.description, prix = excluded.prix,
   image = excluded.image, miniature = excluded.miniature, ordre = excluded.ordre;
