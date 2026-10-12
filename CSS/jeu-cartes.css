@@ -1146,7 +1146,6 @@
   animation: orbe 3s ease-in-out infinite;
 }
 .orbe strong { font-family: "Cinzel","Cinzel Repli", serif; font-size: 1.9rem; font-weight: 800; color: #fff; text-shadow: 0 0 10px rgba(255,255,255,.6), 0 2px 3px rgba(30,10,70,.8); line-height: 1; }
-.orbe small { font-family: "Cinzel","Cinzel Repli", serif; font-size: .75rem; color: #e6dcff; }
 @keyframes orbe { 50% { box-shadow: 0 0 0 3px #1a1230, 0 0 0 5px rgba(201,178,251,.6), 0 0 38px 10px rgba(154,108,240,.7), inset 0 -8px 16px rgba(20,8,50,.6); } }
 .tg-energie .energie { flex-wrap: wrap; max-width: 130px; }
 .tg-energie .energie__texte { display: none; }
@@ -1246,8 +1245,9 @@ body.en-duel { overflow: hidden; padding: 0 !important; }
 .en-duel .tg-tapis { padding: 1.6vh 30px; }
 .en-duel .dc-heros__cadre { width: min(88px, 9.5vh); height: min(98px, 10.6vh); }
 .en-duel .dc-heros__portrait { width: min(80px, 8.6vh); height: min(90px, 9.7vh); }
-.en-duel .orbe { width: min(86px, 9.5vh); height: min(86px, 9.5vh); padding-top: min(20px, 2.2vh); }
-.en-duel .orbe strong { font-size: min(2.1rem, 3.6vh); }
+/* bulle d'énergie plus petite */
+.en-duel .orbe { width: min(62px, 7vh); height: min(62px, 7vh); padding: 0; align-items: center; }
+.en-duel .orbe strong { font-size: min(1.5rem, 2.6vh); }
 .en-duel .tg-tapis .d20 { width: min(58px, 6.4vh); height: min(58px, 6.4vh); }
 
 /* La main sort du bas de l'écran ; une carte survolée remonte en entier */

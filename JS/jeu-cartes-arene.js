@@ -229,7 +229,6 @@ export function rendre(p, sel, avatars = {}) {
     <span class="energie energie--adverse" title="Énergie de l'adversaire">${htmlEnergie(a)}</span>`;
   $('energie').innerHTML = htmlEnergie(j);
   $('orbe-valeur').textContent = j.energie;
-  $('orbe-max').textContent = `/ ${j.energieMax}`;
   $('pioche-joueur').innerHTML = pileTapis(j.deck.length);
   $('pioche-adverse').innerHTML = pileTapis(a.deck.length);
   for (const [qui, camp] of [['joueur', j], ['adverse', a]]) {
