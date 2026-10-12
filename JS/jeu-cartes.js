@@ -36,20 +36,18 @@ import { ouvrirSalon, nouveauCode, codeValide, TAILLE_SALON } from './jeu-cartes
 const NOM_ADVERSAIRE = "L'Ombre du Codex";
 
 // Le plateau (CSS/jeu-cartes.css : classe plateau-… sur <body>) :
-// - celui que le joueur a choisi, s'il en a acheté un en boutique (SQL/plateaux.sql, choisi dans le profil) ;
-// - sinon celui de la saison réelle : hiver de décembre à février, printemps de mars à mai,
-//   été de juin à août, automne de septembre à novembre.
-// Pour tester un plateau : jeu-cartes.html?saison=hiver (printemps, ete, automne)
-const PLATEAUX = ['automne', 'ete', 'hiver', 'printemps'];   // ceux que le CSS sait afficher
-const SAISON_DU_MOIS = ['hiver', 'hiver', 'printemps', 'printemps', 'printemps', 'ete', 'ete', 'ete', 'automne', 'automne', 'automne', 'hiver'];
+// - celui que le joueur a choisi, s'il en a acheté un en boutique (SQL/plateaux.sql, choisi dans la Collection) ;
+// - sinon le plateau par défaut : l'arène de pierre (plateau-defaut).
+// Pour tester un plateau de saison : jeu-cartes.html?saison=hiver (printemps, ete, automne)
+const PLATEAUX = ['defaut', 'automne', 'ete', 'hiver', 'printemps'];   // ceux que le CSS sait afficher
 const saisonForcee = new URLSearchParams(location.search).get('saison');
 function poserPlateau(id) {
   document.body.classList.remove(...PLATEAUX.map((x) => `plateau-${x}`));
   document.body.classList.add(`plateau-${id}`);
 }
-poserPlateau(PLATEAUX.includes(saisonForcee) ? saisonForcee : SAISON_DU_MOIS[new Date().getMonth()]);
+poserPlateau(PLATEAUX.includes(saisonForcee) ? saisonForcee : 'defaut');
 
-// Le plateau choisi par le joueur (rien si la table n'existe pas encore : plateau de la saison)
+// Le plateau choisi par le joueur (rien si la table n'existe pas encore : plateau par défaut)
 async function chargerPlateauChoisi(discordId) {
   if (PLATEAUX.includes(saisonForcee)) return;
   const { data } = await supabase.from('joueur_plateaux').select('plateau_id')

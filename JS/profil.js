@@ -46,6 +46,11 @@ async function init() {
   }
 
   const estMoi = moi?.discord_id === discordId;
+  // Profil d'un autre joueur, quand on est connecté : lui proposer un échange de cartes (le marché du grimoire)
+  if (moi && !estMoi) {
+    $('lien-echange').href = `collection.html?avec=${encodeURIComponent(discordId)}#grimoire`;
+    $('lien-echange').hidden = false;
+  }
 
   afficherEntete(joueur);
   const deckProfil = await afficherDeck(discordId, estMoi);

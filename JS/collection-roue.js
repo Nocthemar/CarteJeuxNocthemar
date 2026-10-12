@@ -6,7 +6,7 @@
 //  (glisser, molette, flèches du clavier ou boutons ‹ ›) : celui qui arrive sous le repère du haut
 //  s'affiche au centre, avec « Appliquer » (ou « Retirer » s'il est déjà équipé).
 //  Équiper : equip_cosmetic / unequip_cosmetic (thèmes, titres, bannières, gérés par le bot),
-//            equiper_plateau (plateaux, SQL/plateaux.sql ; null = plateau de la saison).
+//            equiper_plateau (plateaux, SQL/plateaux.sql ; null = plateau par défaut, l'arène de pierre).
 // =====================================================================
 import { supabase, SITE_ROOT } from './supabase.js';
 import { $, esc, couleur, notifier } from './commun.js';
@@ -42,7 +42,7 @@ export async function initRoue(moi) {
   roue.moi = moi;
   const [{ data: inventaire }, { data: plateaux }] = await Promise.all([
     supabase.from('inventory').select('item:items(*)').eq('discord_id', moi.discord_id),
-    // Plateaux achetés en boutique (table absente : aucun, seulement celui de la saison)
+    // Plateaux achetés en boutique (table absente : aucun, seulement le plateau par défaut)
     supabase.from('joueur_plateaux').select('equipe, plateau:plateaux(id, nom, image, miniature, ordre)').eq('discord_id', moi.discord_id),
   ]);
 
@@ -54,7 +54,7 @@ export async function initRoue(moi) {
   const achetes = (plateaux ?? []).filter((l) => l.plateau).sort((a, b) => a.plateau.ordre - b.plateau.ordre);
   roue.plateauChoisi = achetes.find((l) => l.equipe)?.plateau.id ?? null;
   roue.objets.plateau = [
-    { kind: 'plateau', id: null, nom: 'Plateau de la saison', saison: true },
+    { kind: 'plateau', id: null, nom: 'Plateau par défaut', defaut: true, image: 'img/Plateaux de carte/plateau-defaut-mini.webp' },
     ...achetes.map(({ plateau: p }) => ({ kind: 'plateau', id: p.id, nom: p.nom, image: p.miniature ?? p.image })),
   ];
 
@@ -90,9 +90,7 @@ function afficherCategories() {
 // Petit aperçu d'un objet (sur la roue et, en grand, au centre)
 function apercu(o) {
   if (o.kind === 'plateau') {
-    return o.saison
-      ? '<span class="apercu-roue apercu-roue--saison"><span>❄</span><span>✿</span><span>☀</span><span>❦</span></span>'
-      : `<img class="apercu-roue apercu-roue--plateau" src="${esc(o.image)}" alt="" draggable="false">`;
+    return `<img class="apercu-roue apercu-roue--plateau" src="${esc(o.image)}" alt="" draggable="false">`;
   }
   if (o.kind === 'banner') {
     return o.payload.image
@@ -177,7 +175,7 @@ function majCentre() {
     <span class="roue__apercu">${apercu(o)}</span>
     <span class="roue__type">${LIBELLE[o.kind]}${objets.length > 1 ? ` · ${i + 1} / ${objets.length}` : ''}</span>
     <strong class="roue__nom">${esc(o.nom)}</strong>
-    ${o.saison ? '<small class="roue__note">Gratuit, change avec les saisons</small>' : ''}
+    ${o.defaut ? '<small class="roue__note">Gratuit : l’arène de pierre</small>' : ''}
     ${equipe && (o.kind !== 'plateau' || o.id) ? '<small class="roue__note">Équipé</small>' : ''}
     ${action}`;
 }
@@ -213,7 +211,7 @@ async function agir(action) {
     return;
   }
   notifier(action === 'retirer'
-    ? (o.kind === 'plateau' ? 'Retour au plateau de la saison.' : `${LIBELLE[o.kind]} retiré${o.kind === 'banner' ? 'e' : ''}.`)
+    ? (o.kind === 'plateau' ? 'Retour au plateau par défaut.' : `${LIBELLE[o.kind]} retiré${o.kind === 'banner' ? 'e' : ''}.`)
     : `${o.nom} : appliqué !`);
   document.querySelectorAll('.roue__objet').forEach((b) => {
     b.classList.toggle('est-equipe', estEquipe(objetsCourants()[Number(b.dataset.i)]));

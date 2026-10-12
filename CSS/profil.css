@@ -778,3 +778,16 @@
 /* L or de la bourse, plus bas dans le bloc (les étincelles suivent : même marge) */
 .page-fiche .duelliste .perso__bourse-valeur .piece-icone,
 .page-fiche .duelliste .bourse-etincelles { margin-top: 56px; }
+
+/* Profil d'un autre joueur : lui proposer un échange de cartes */
+.btn-echange {
+  display: inline-block; margin-top: 8px;
+  padding: 5px 14px;
+  border: 1px solid rgba(240,207,138,.6);
+  background: rgba(20,12,6,.55);
+  color: #f0cf8a;
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: .78rem; letter-spacing: .08em;
+  text-decoration: none;
+}
+.btn-echange:hover, .btn-echange:focus-visible { background: rgba(240,207,138,.18); }
+.btn-echange[hidden] { display: none; }

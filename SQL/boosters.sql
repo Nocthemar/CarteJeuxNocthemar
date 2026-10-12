@@ -251,8 +251,8 @@ grant execute on function public.ouvrir_booster(text)       to authenticated;
 
 -- ---------------------------------------------------------------------
 --  4. Les boosters des Cendres : 1 carte (100 or), 3 cartes (250 or), 5 cartes (375 or), mêmes cartes et chances
---     Cartes : TOUTES les cartes du catalogue (Slime, Mange-cœur, Fée des Neiges, Kaéliss, Dalek,
---     Seigneur des Marais, Maître du Jeu, Fée des Neiges dorée…). Relancer ce fichier ajoute aussi
+--     Cartes : TOUTES les cartes du catalogue (Slime, Mange-cœur, Elfe des Neiges, Kaéliss, Dalek,
+--     Seigneur des Marais, Maître du Jeu, Elfe des Neiges dorée…). Relancer ce fichier ajoute aussi
 --     les nouvelles cartes créées depuis.
 --     Pour ajouter une carte : insert into booster_cartes (booster_id, card_id)
 --       select b.id, c.id from cards c, (values ('eclat'), ('cendres'), ('grand')) b(id) where c.name = '…';
@@ -269,7 +269,7 @@ select b.id, c.id from public.cards c cross join (values ('eclat'), ('cendres'),
 -- Toutes les vraies cartes du catalogue (illustrées et disponibles), sauf la carte d'exemple
 where c.is_available and c.image is not null and c.description is distinct from 'Carte d''exemple'
 on conflict do nothing;
--- (le Seigneur des Marais et les Fées des Neiges ne sont ajoutés que si leurs fichiers SQL
+-- (le Seigneur des Marais et les Elfes des Neiges ne sont ajoutés que si leurs fichiers SQL
 --  ont déjà été lancés ; sinon, ce sont ces fichiers-là qui les ajoutent aux boosters)
 
 notify pgrst, 'reload schema';

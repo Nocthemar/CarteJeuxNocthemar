@@ -2066,7 +2066,7 @@ body.en-duel { overflow: hidden; padding: 0 !important; }
    ===================================================================== */
 .page-jeu .tg-bord {
   container-type: inline-size;
-  aspect-ratio: 1448 / 910;
+  aspect-ratio: var(--plateau-ratio, 1448 / 910);
   padding: 0;
   border-radius: 0;
   background: url("../img/Plateaux%20de%20carte/plateau-automne.webp") center / 100% 100% no-repeat;
@@ -2091,6 +2091,9 @@ body.en-duel { overflow: hidden; padding: 0 !important; }
 .page-jeu.plateau-printemps .tg-bord { background-image: url("../img/Plateaux%20de%20carte/plateau-printemps.webp"); }
 .page-jeu.plateau-ete       .tg-bord { background-image: url("../img/Plateaux%20de%20carte/plateau-ete.webp"); }
 .page-jeu.plateau-automne   .tg-bord { background-image: url("../img/Plateaux%20de%20carte/plateau-automne.webp"); }
+/* Plateau par défaut (sans plateau choisi) : l'arène de pierre, 1672 × 941 (les saisons : 1448 × 910) */
+.page-jeu.plateau-defaut    .tg-bord { background-image: url("../img/Plateaux%20de%20carte/plateau-defaut.webp"); }
+.page-jeu.plateau-defaut { --plateau-ratio: 1672 / 941; --plateau-r: 1.7768; }
 
 /* Les troupes, sur les emplacements peints */
 .page-jeu .tg-bord .terrain {
@@ -2212,7 +2215,7 @@ body.en-duel { overflow: hidden; padding: 0 !important; }
     /* Grand plateau : ses bords transparents (ciel, rochers du dessous) passent sous la barre
        de l'adversaire et sous la main, d'où les marges négatives */
     /* .78 : le plateau un peu plus petit, il laisse de l'air autour */
-    width: min(calc((100vw - 2 * clamp(130px, 9vw, 170px)) * .78), calc((100vh - 2vh) * 1448 / 910 * .78));
+    width: min((100vw - 2 * clamp(130px, 9vw, 170px)) * .78, (100vh - 2vh) * var(--plateau-r, 1.5912) * .78);
     margin: calc(-8vh + 8px) auto calc(-6vh - 8px);   /* remonté de 8vh, puis redescendu de 8 px (~2 mm) ; même hauteur totale */
   }
   .en-duel .table__plateau { --carte-l-main: min(6.2vw, 11.5vh); }
@@ -2274,8 +2277,15 @@ body.en-duel { overflow: hidden; padding: 0 !important; }
   --b-x: 25.55%; --b-l: 48.95%; --b-y: 63.96%; --b-h: 12.75%; --b-u: 6.52cqw;
   --n-x: 50.07%; --n-y: 54.40%;
 }
+.page-jeu.plateau-defaut .tg-bord {
+  --h-x: 27.57%; --h-l: 44.86%; --h-y: 31.35%; --h-h: 15.41%; --h-u: 7.06cqw;
+  --b-x: 26.08%; --b-l: 47.85%; --b-y: 61.32%; --b-h: 17.00%; --b-u: 7.79cqw;
+  --n-x: 50.12%; --n-y: 50.90%;
+}
 /* --zoom-cartes : les cartes plus grandes que leur trace (1 = cadre de la carte = hauteur de la trace) */
-.page-jeu .tg-bord { --zoom-cartes: 1.02; }
+.page-jeu .tg-bord { --zoom-cartes: 1.082; }   /* (1.09 avant que le plateau grandisse de ~2 mm : même taille de carte à l'écran) */
+/* les deux rangées un peu remontées par rapport aux traces (environ 8 px sur un grand écran) */
+.page-jeu .tg-bord #terrain-adverse, .page-jeu .tg-bord #terrain-joueur { translate: 0 -.8cqw; }
 .page-jeu .tg-bord #terrain-adverse { left: var(--h-x); width: var(--h-l); top: var(--h-y); height: var(--h-h); --unite-l: calc(var(--h-u) * var(--zoom-cartes)); }
 .page-jeu .tg-bord #terrain-joueur  { left: var(--b-x); width: var(--b-l); top: var(--b-y); height: var(--b-h); --unite-l: calc(var(--b-u) * var(--zoom-cartes)); }
 .page-jeu .tg-bord .dc-unite,

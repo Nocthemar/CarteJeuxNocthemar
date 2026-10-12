@@ -362,7 +362,7 @@ const ATTAQUES = {
       jouerSon('eau', 0.2);
     },
   },
-  // Fée des Neiges (version bleue)
+  // Elfe des Neiges (version bleue)
   'Souffle de Givre': {
     charge: aura(GIVRE),
     async coup(att, cib) {
@@ -384,7 +384,7 @@ const ATTAQUES = {
       voile('rgba(190,225,255,.3)', 800);
     },
   },
-  // Fée des Neiges dorée
+  // Elfe des Neiges dorée
   'Larmes de Cristal': {
     charge: (att) => { aura([...GIVRE, '#f6d995'])(att); symbole(att, '💧', { taille: 30, duree: 900, monte: 20 }); },
     async coup(att, cib) {

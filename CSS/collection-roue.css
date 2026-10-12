@@ -372,3 +372,16 @@
   .roue-categorie, .roue-categories__curseur { transition: none; }
   .collection--ouverture .grimoire, .vue-roue--ouverture .roue { animation: none; }
 }
+
+/* Lien vers les échanges, sous les deux choix */
+.choix__echanges {
+  display: block; width: fit-content;
+  margin: 30px auto 0;
+  padding: 8px 20px;
+  border: 1px solid var(--bord);
+  color: var(--texte);
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: .85rem; letter-spacing: .1em; text-transform: uppercase;
+  text-decoration: none;
+  transition: border-color .2s ease, color .2s ease;
+}
+.choix__echanges:hover, .choix__echanges:focus-visible { border-color: var(--accent); color: var(--accent); }

@@ -1,0 +1,391 @@
+/* =====================================================================
+   Le marché du grimoire : échanger des cartes avec un ami
+   (collection.html : signet « Échanges » et volet #marche ; JS/collection-echanges.js)
+   - le signet, sur le bord du livre, avec le nombre de lettres reçues
+   - dans les pages : les cartes posées sur la table (ruban doré), celles que l'ami a déjà (grisées)
+   - le marché : onglets Proposer / Courrier / Registre ; la table de velours et le grimoire de l'ami ;
+     les propositions comme des lettres scellées
+   ===================================================================== */
+.page-collection {
+  --lettre-papier: #e9dcbd;
+  --lettre-ombre: #c9b48a;
+  --lettre-encre: #3b2715;
+  --lettre-encre-douce: #6d5638;
+  --cire: #8e1f24;
+  --or: #d9b46a;
+  --bois: #3a2516;
+  --bois-sombre: #1d120a;
+  --velours: #1f2a24;
+}
+
+.echanges__vide { margin: 0; padding: 18px; text-align: center; color: var(--texte-doux); font-style: italic; border: 1px dashed var(--bord); }
+.echanges__lettres { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 480px), 1fr)); gap: 20px; }
+
+/* ---------- Boutons ---------- */
+.btn-dc-or {
+  padding: 9px 22px;
+  border: 0;
+  background: linear-gradient(180deg, #f6d995, #c8902f);
+  box-shadow: 0 3px 0 #7a5418, 0 6px 14px rgba(0,0,0,.35);
+  color: #1a1410;
+  font-family: "Cinzel","Cinzel Repli", serif; font-weight: 800; font-size: .8rem; letter-spacing: .1em; text-transform: uppercase;
+  cursor: pointer;
+  transition: translate .12s ease, filter .15s ease;
+}
+.btn-dc-or:hover { filter: brightness(1.08); }
+.btn-dc-or:active { translate: 0 2px; box-shadow: 0 1px 0 #7a5418, 0 3px 8px rgba(0,0,0,.35); }
+.btn-dc-or:disabled { opacity: .45; cursor: not-allowed; filter: none; translate: none; }
+
+/* ---------- Cartes en éventail (lettres et table) ---------- */
+.eventail {
+  --w: 78px;
+  position: relative;
+  display: flex; justify-content: center; align-items: flex-end;
+  min-height: calc(var(--w) * 1.55);
+  padding: 6px 0 4px;
+}
+.eventail__carte {
+  position: relative;
+  width: var(--w); flex: none;
+  margin: 0 calc(var(--w) * -0.22);
+  rotate: calc(var(--k) * 7deg);
+  translate: 0 calc(var(--k) * var(--k) * 3px);
+  transform-origin: 50% 110%;
+  transition: rotate .2s ease, translate .2s ease, scale .2s ease;
+}
+.eventail__carte:hover, .eventail__carte:focus-visible { z-index: 5; rotate: 0deg; translate: 0 -8px; scale: 1.08; }
+.eventail--vide {
+  align-items: center;
+  border: 1px dashed currentColor; border-radius: 6px;
+  opacity: .55;
+  font-style: italic; font-size: .9rem;
+}
+.echange__loupe {
+  position: absolute; top: 3px; right: 3px; z-index: 2;
+  width: 22px; height: 22px; padding: 0;
+  border: 0; border-radius: 50%;
+  background: rgba(0,0,0,.7); color: #fff; font-size: .7rem;
+  cursor: zoom-in;
+  opacity: 0; transition: opacity .15s ease;
+}
+.eventail__carte:hover .echange__loupe, .coffre__tuile:hover .echange__loupe, .proposer__tuile:hover .echange__loupe,
+.echange__loupe:focus-visible { opacity: 1; }
+@media (hover: none) { .echange__loupe { opacity: 1; } }
+
+/* ---------- Les lettres ---------- */
+.lettre {
+  position: relative;
+  padding: 22px 24px 18px;
+  color: var(--lettre-encre);
+  background:
+    radial-gradient(ellipse 120% 90% at 50% 40%, transparent 55%, rgba(120,80,30,.28) 100%),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='p'><feTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3'/><feColorMatrix values='0 0 0 0 .45  0 0 0 0 .32  0 0 0 0 .15  0 0 0 .18 0'/></filter><rect width='100%25' height='100%25' filter='url(%23p)'/></svg>"),
+    linear-gradient(170deg, #f1e6c9, var(--lettre-papier) 50%, #dcc89f);
+  box-shadow: 0 14px 28px rgba(0,0,0,.45), inset 0 0 0 1px rgba(120,80,30,.25);
+  border-radius: 3px;
+}
+.lettre__cachet {
+  position: absolute; top: 14px; right: 18px;
+  display: grid; place-items: center;
+  width: 40px; height: 40px;
+  border-radius: 46% 54% 50% 50% / 52% 48% 52% 48%;
+  background: radial-gradient(circle at 35% 30%, #c4434a, var(--cire) 55%, #4f0d10);
+  box-shadow: 0 3px 6px rgba(0,0,0,.45), inset 0 0 0 4px rgba(0,0,0,.15);
+  color: rgba(255,220,200,.7); font-size: 1rem; font-weight: 700;
+  rotate: -12deg;
+}
+.lettre__tete { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding-right: 50px; }
+.lettre__tete .proposer__avatar { width: 34px; height: 34px; box-shadow: 0 0 0 2px var(--lettre-ombre); }
+.lettre__de { font-family: "Cinzel","Cinzel Repli", serif; font-size: .95rem; }
+.lettre__de b { color: #2a1a0c; }
+.lettre__tete time { margin-left: auto; color: var(--lettre-encre-douce); font-size: .85rem; font-style: italic; }
+.lettre__statut {
+  padding: 1px 8px;
+  border: 1px solid currentColor;
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: .68rem; letter-spacing: .1em; text-transform: uppercase;
+}
+.lettre--accepte .lettre__statut { color: #2f6b3a; }
+.lettre--refuse .lettre__statut, .lettre--impossible .lettre__statut { color: var(--cire); }
+.lettre--annule .lettre__statut { color: var(--lettre-encre-douce); }
+.lettre--fait { opacity: .9; }
+.lettre__mot {
+  margin: 12px 0 0;
+  font-family: "IM Fell English", "EB Garamond", serif; font-style: italic; font-size: 1.05rem;
+  color: #4a3218;
+}
+.lettre__raison { margin: 8px 0 0; color: var(--cire); font-size: .92rem; }
+.lettre__marche {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 8px; align-items: center;
+  margin-top: 12px;
+}
+.lettre__cote h4 {
+  margin: 0 0 2px; text-align: center;
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: .68rem; letter-spacing: .16em; text-transform: uppercase;
+  color: var(--lettre-encre-douce);
+}
+.lettre__cote .eventail { --w: 66px; color: var(--lettre-encre-douce); }
+.lettre__balance { font-size: 1.6rem; color: #8a6424; }
+.lettre__actions {
+  display: flex; justify-content: flex-end; align-items: center; gap: 12px; flex-wrap: wrap;
+  margin-top: 14px; padding-top: 12px;
+  border-top: 1px solid rgba(120,80,30,.3);
+}
+.lettre__attente { margin-right: auto; color: var(--lettre-encre-douce); font-style: italic; font-size: .9rem; }
+.lettre .btn-petit--retirer { border-color: var(--cire); color: var(--cire); background: transparent; }
+.lettre .btn-petit--retirer:hover { background: var(--cire); color: #fff; }
+
+/* ---------- Proposer : choix de l'ami ---------- */
+.table-echange__ami {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px;
+  margin-bottom: 18px;
+}
+.table-echange__ami label { font-family: "Cinzel","Cinzel Repli", serif; letter-spacing: .06em; }
+.proposer__recherche { position: relative; flex: 1 1 260px; max-width: 380px; }
+.proposer__recherche input, .plateau-echange__envoi input {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--bord);
+  background: rgba(0,0,0,.3);
+  color: var(--texte);
+  font: inherit;
+}
+.proposer__recherche input:focus, .plateau-echange__envoi input:focus { outline: none; border-color: var(--or); }
+.proposer__resultats {
+  position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 20;
+  list-style: none; margin: 0; padding: 4px;
+  border: 1px solid var(--bord);
+  background: #15110f;
+  box-shadow: 0 12px 24px rgba(0,0,0,.6);
+}
+.proposer__resultats button {
+  display: flex; align-items: center; gap: 10px;
+  width: 100%; padding: 6px 8px;
+  border: 0; background: none; color: var(--texte); font: inherit; text-align: left;
+  cursor: pointer;
+}
+.proposer__resultats button:hover, .proposer__resultats button:focus-visible { background: rgba(255,255,255,.06); }
+.proposer__resultats .vide { padding: 6px 8px; }
+.proposer__avatar {
+  display: inline-grid; place-items: center;
+  width: 28px; height: 28px; flex: none;
+  border-radius: 50%; object-fit: cover;
+  background: rgba(255,255,255,.1); color: var(--or);
+}
+.proposer__choisi { display: flex; align-items: center; gap: 10px; }
+.proposer__choisi .proposer__avatar { width: 36px; height: 36px; box-shadow: 0 0 0 2px var(--or); }
+
+/* ---------- Proposer : la table et le grimoire de l'ami ---------- */
+/* Un coffre : bois sombre cerclé de fer */
+.coffre {
+  display: flex; flex-direction: column;
+  padding: 16px 14px 14px;
+  background:
+    repeating-linear-gradient(90deg, rgba(0,0,0,.18) 0 2px, transparent 2px 46px),
+    linear-gradient(180deg, var(--bois), var(--bois-sombre));
+  box-shadow:
+    inset 0 0 0 2px #0e0905,
+    inset 0 0 0 5px #4a4a52,
+    inset 0 0 0 6px #0e0905,
+    inset 0 12px 24px rgba(0,0,0,.5),
+    0 14px 26px rgba(0,0,0,.5);
+  border-radius: 6px;
+  min-width: 0;
+}
+.coffre__titre {
+  margin: 0; text-align: center;
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: .95rem; letter-spacing: .16em; text-transform: uppercase;
+  color: #f0d9a0;
+}
+.coffre__aide { margin: 4px 0 10px; text-align: center; color: rgba(240,217,160,.6); font-size: .82rem; font-style: italic; }
+.coffre__grille {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(74px, 1fr)); gap: 10px;
+  max-height: 460px; overflow: auto; padding: 6px;
+  scrollbar-width: thin; scrollbar-color: #6b4528 transparent;
+}
+.proposer__tuile { position: relative; }
+.proposer__carte {
+  display: block; width: 100%;
+  padding: 0; border: 0; background: none;
+  cursor: pointer;
+  transition: transform .15s ease, filter .15s ease, opacity .15s ease;
+}
+.coffre .proposer__carte:hover { transform: translateY(-4px); }
+/* déjà posée sur la table : reste dans le coffre, en retrait */
+.coffre .proposer__tuile.est-choisie .proposer__carte { opacity: .35; transform: scale(.94); }
+.coffre .proposer__tuile.est-choisie::after {
+  content: "sur la table"; position: absolute; left: 50%; top: 50%; translate: -50% -50%; z-index: 2;
+  padding: 2px 6px;
+  background: rgba(0,0,0,.75); color: var(--or);
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: .55rem; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap;
+}
+.proposer__tuile.est-bloquee .proposer__carte { filter: grayscale(.9) brightness(.5); cursor: not-allowed; transform: none; }
+
+/* La table d'échange, au milieu : un parchemin (comme les lettres), écrit à l'encre brune */
+.plateau-echange {
+  display: grid; grid-template-rows: auto auto auto auto; align-content: center; gap: 6px;
+  padding: 22px 18px;
+  color: var(--lettre-encre);
+  background:
+    radial-gradient(ellipse 110% 85% at 50% 45%, transparent 55%, rgba(120,80,30,.32) 100%),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='p'><feTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3'/><feColorMatrix values='0 0 0 0 .45  0 0 0 0 .32  0 0 0 0 .15  0 0 0 .2 0'/></filter><rect width='100%25' height='100%25' filter='url(%23p)'/></svg>"),
+    linear-gradient(170deg, #f1e6c9, var(--lettre-papier) 50%, #d8c398);
+  border-radius: 4px;
+  box-shadow:
+    inset 0 0 0 1px rgba(120,80,30,.35),
+    inset 0 0 0 6px rgba(241,230,201,.5),
+    inset 0 0 0 7px rgba(140,100,40,.45),
+    0 18px 32px rgba(0,0,0,.5);
+}
+.plateau-echange__cote h3 {
+  margin: 0; text-align: center;
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: .8rem; letter-spacing: .16em; text-transform: uppercase;
+  color: #4a2f14;
+}
+.plateau-echange__cote h3 span { margin-left: 6px; color: var(--lettre-encre-douce); }
+.plateau-echange__cote .eventail { --w: 82px; color: var(--lettre-encre-douce); }
+/* emplacement vide : un cadre tracé à l'encre */
+.plateau-echange .eventail--vide {
+  border: 1px dashed rgba(90,58,25,.55);
+  background: rgba(120,80,30,.06);
+  opacity: 1;
+  font-family: "IM Fell English", "EB Garamond", serif;
+}
+.eventail--table .eventail__carte { width: var(--w); cursor: pointer; }   /* (plus fort que .proposer__carte, pleine largeur dans les coffres) */
+.eventail--table .eventail__carte:hover { filter: brightness(1.1); }
+.plateau-echange__balance {
+  justify-self: center;
+  display: grid; place-items: center;
+  width: 46px; height: 46px; border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, #f6d995, #b8862e 70%);
+  box-shadow: 0 3px 8px rgba(70,40,10,.45), 0 0 0 3px rgba(120,80,30,.25);
+  color: #2a1a08; font-size: 1.4rem;
+}
+.plateau-echange__envoi { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+/* le petit mot : une ligne à écrire à la plume */
+.plateau-echange__envoi input {
+  border: 0; border-bottom: 1px solid rgba(90,58,25,.55);
+  background: rgba(255,250,235,.35);
+  color: #2a1a0c;
+  font-family: "IM Fell English", "EB Garamond", serif; font-style: italic; font-size: 1.02rem;
+}
+.plateau-echange__envoi input::placeholder { color: rgba(90,58,25,.6); }
+.plateau-echange__envoi input:focus { border-bottom-color: #8a6424; background: rgba(255,250,235,.55); }
+.plateau-echange__envoi .btn-dc-or { align-self: center; }
+
+
+/* ---------- Le signet « Échanges », sur le bord droit du livre ---------- */
+.grimoire__marque {
+  position: absolute; top: 96px; right: -40px; z-index: 5;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  width: 40px; padding: 14px 0 18px;
+  border: 0;
+  background: linear-gradient(90deg, var(--blood-dim, #6e1c22), var(--blood, #a3242d) 55%, var(--blood-dim, #6e1c22));
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 92%, 0 100%);
+  box-shadow: 4px 4px 10px rgba(0,0,0,.5);
+  color: #f6e3c0;
+  font-family: "Cinzel","Cinzel Repli", serif; font-weight: 700; font-size: .72rem; letter-spacing: .16em; text-transform: uppercase;
+  cursor: pointer;
+  transition: right .25s ease, filter .2s ease;
+}
+.grimoire__marque > span:first-child { writing-mode: vertical-rl; }
+.grimoire__marque:hover, .grimoire__marque:focus-visible, .grimoire__marque.est-ouvert { right: -46px; filter: brightness(1.12); }
+.grimoire__marque:focus-visible { outline: 2px solid var(--or); outline-offset: 2px; }
+.grimoire__marque-nb, .choix__echanges-nb {
+  display: inline-grid; place-items: center;
+  min-width: 20px; height: 20px; padding: 0 5px;
+  border-radius: 10px;
+  background: #f6d995; color: #3b0d10;
+  font-size: .7rem; letter-spacing: 0;
+}
+.grimoire__marque-nb[hidden], .choix__echanges-nb[hidden] { display: none; }
+/* écran moyen : le livre prend presque toute la largeur, le signet dépasse moins (pas de défilement de côté) */
+@media (max-width: 1320px) and (min-width: 801px) {
+  .grimoire__marque { right: -16px; }
+  .grimoire__marque:hover, .grimoire__marque:focus-visible, .grimoire__marque.est-ouvert { right: -20px; }
+}
+@media (max-width: 800px) {
+  /* téléphone : le signet pend du haut du livre, à gauche */
+  .grimoire__marque { top: -12px; right: auto; left: 8%; width: auto; flex-direction: row; padding: 10px 12px 16px; clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 86%, 0 100%); }
+  .grimoire__marque > span:first-child { writing-mode: horizontal-tb; }
+  .grimoire__marque:hover, .grimoire__marque:focus-visible, .grimoire__marque.est-ouvert { right: auto; top: -8px; }
+}
+
+/* ---------- Dans les pages : cartes à échanger ---------- */
+.page--echange .pochette--pleine .carte-jeu { cursor: pointer; }
+.pochette--echange .carte-jeu { filter: drop-shadow(0 0 3px #f6d995) drop-shadow(0 0 8px rgba(217,180,106,.7)); }
+.pochette__ruban {
+  position: absolute; left: -6%; right: -6%; top: 44%; z-index: 3;
+  padding: 4px 0;
+  background: linear-gradient(180deg, #f6d995, #c8902f);
+  box-shadow: 0 3px 6px rgba(0,0,0,.45);
+  clip-path: polygon(0 0, 100% 0, 96% 50%, 100% 100%, 0 100%, 4% 50%);
+  color: #3a2208; text-align: center;
+  font-family: "Cinzel","Cinzel Repli", serif; font-weight: 800; font-size: clamp(.45rem, .9vw, .62rem); letter-spacing: .08em; text-transform: uppercase;
+  rotate: -8deg;
+  pointer-events: none;
+}
+.pochette--bloquee .carte-jeu { filter: grayscale(.9) brightness(.5); }
+.page--echange .pochette--bloquee .carte-jeu { cursor: not-allowed; }
+
+/* ---------- Le marché ---------- */
+.marche {
+  margin-top: 26px;
+  padding: 20px clamp(14px, 3vw, 28px) 24px;
+  background:
+    radial-gradient(ellipse 120% 80% at 50% 0%, rgba(255,220,170,.06), transparent 70%),
+    linear-gradient(180deg, var(--cuir, #3a1d14), var(--cuir-sombre, #1c0d08));
+  box-shadow: 0 20px 40px rgba(0,0,0,.6), inset 0 0 0 1px #0b0503, inset 0 0 0 6px rgba(0,0,0,.3), inset 0 0 0 7px var(--dorure, rgba(214,172,108,.55));
+  animation: marche-ouverture .35s ease-out both;
+}
+@keyframes marche-ouverture { from { opacity: 0; translate: 0 -12px; } }
+.marche__tete { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+.marche__titre {
+  margin: 0;
+  font-family: "Cinzel Decorative","Cinzel Decorative Repli", serif; font-size: clamp(1.3rem, 3vw, 1.7rem);
+  color: #f0d9a0;
+}
+.marche__titre span { color: var(--or); font-size: .7em; }
+.marche__onglets { display: flex; gap: 4px; }
+.marche__onglet {
+  padding: 7px 14px;
+  border: 1px solid rgba(214,172,108,.35);
+  background: rgba(0,0,0,.25);
+  color: rgba(240,217,160,.7);
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: .74rem; letter-spacing: .1em; text-transform: uppercase;
+  cursor: pointer;
+}
+.marche__onglet:hover { color: #f0d9a0; }
+.marche__onglet[aria-selected="true"] { background: linear-gradient(180deg, #f6d995, #c8902f); border-color: transparent; color: #2a1a08; }
+.marche__onglet span { opacity: .8; }
+.marche__aide { margin: 0 0 14px; color: rgba(240,217,160,.75); font-style: italic; }
+.marche__rubrique {
+  display: flex; align-items: center; gap: 12px;
+  margin: 6px 0 12px;
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: .85rem; letter-spacing: .16em; text-transform: uppercase;
+  color: #f0d9a0;
+}
+.marche__rubrique::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, rgba(214,172,108,.5), transparent); }
+.marche__rubrique + .echanges__lettres { margin-bottom: 22px; }
+.marche .table-echange__ami label { color: #f0d9a0; }
+.marche .proposer__recherche input { background: rgba(0,0,0,.35); border-color: rgba(214,172,108,.35); color: #f3ead7; }
+.marche .proposer__choisi { color: #f3ead7; }
+.marche .echanges__vide { color: rgba(240,217,160,.7); border-color: rgba(214,172,108,.35); }
+.marche__plan { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 18px; align-items: stretch; }
+
+/* Accueil de la collection : le lien est un bouton, avec le nombre de lettres reçues */
+.choix__echanges { display: flex; align-items: center; gap: 8px; background: none; font: inherit; cursor: pointer; }
+
+@media (max-width: 900px) {
+  .marche__plan { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 640px) {
+  .lettre { padding: 18px 16px 14px; }
+  .lettre__marche { grid-template-columns: minmax(0, 1fr); }
+  .lettre__balance { justify-self: center; rotate: 90deg; }
+  .eventail { --w: 64px; }
+  .coffre__grille { max-height: 320px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .eventail__carte, .proposer__carte, .echange__loupe, .btn-dc-or, .grimoire__marque { transition: none; }
+  .marche { animation: none; }
+}

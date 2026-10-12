@@ -15,6 +15,7 @@
   <link rel="stylesheet" href="CSS/carte-infos.css">
   <link rel="stylesheet" href="CSS/collection.css">
   <link rel="stylesheet" href="CSS/collection-roue.css">
+  <link rel="stylesheet" href="CSS/collection-echanges.css">
 <!-- Thème clair / sombre (bouton dans la barre latérale) : appliqué avant l'affichage -->
 <script>try{if(localStorage.getItem('nocthemar-theme')==='jour')document.documentElement.dataset.theme='jour'}catch(e){}</script>
 <link rel="stylesheet" href="CSS/theme-jour.css">
@@ -86,6 +87,7 @@
         </button>
 
       </div>
+      <button type="button" class="choix__echanges" id="btn-hub-echanges">⇄ Échanger des cartes avec un ami <span class="choix__echanges-nb" id="badge-hub" hidden></span></button>
     </section>
 
     <!-- La roue ouverte, en grand au centre de la page (JS/collection-roue.js) -->
@@ -119,6 +121,10 @@
           <span class="grimoire__coin grimoire__coin--bg" aria-hidden="true"></span>
           <span class="grimoire__coin grimoire__coin--bd" aria-hidden="true"></span>
           <span class="grimoire__signet" aria-hidden="true"></span>
+          <!-- Signet « Échanges » : ouvre le marché sous le livre (JS/collection-echanges.js) -->
+          <button type="button" class="grimoire__marque" id="btn-marche" aria-expanded="false" aria-controls="marche">
+            <span>Échanges</span><span class="grimoire__marque-nb" id="badge-echanges" hidden></span>
+          </button>
 
           <h1 class="grimoire__titre" id="grimoire-titre">Grimoire des cartes</h1>
 
@@ -144,6 +150,69 @@
       <section class="carte deck">
         <div id="deck"></div>
         <p class="deck-aide">Glisse une carte du grimoire sur un emplacement, ou touche l'étoile ★ d'une carte. 5 cartes au maximum.</p>
+      </section>
+
+      <!-- Le marché : échanger des cartes avec un ami, depuis le grimoire (JS/collection-echanges.js, SQL/echanges.sql) -->
+      <section id="marche" class="marche" aria-labelledby="marche-titre" hidden>
+        <header class="marche__tete">
+          <h2 id="marche-titre" class="marche__titre"><span aria-hidden="true">❦</span> Le marché <span aria-hidden="true">❦</span></h2>
+          <div class="marche__onglets" role="tablist" aria-label="Le marché">
+            <button type="button" role="tab" class="marche__onglet" data-onglet="proposer" aria-selected="true">Proposer</button>
+            <button type="button" role="tab" class="marche__onglet" data-onglet="courrier" aria-selected="false">Courrier <span id="compte-recus"></span></button>
+            <button type="button" role="tab" class="marche__onglet" data-onglet="registre" aria-selected="false">Registre</button>
+          </div>
+        </header>
+
+        <!-- Proposer -->
+        <div class="marche__panneau" data-panneau="proposer">
+          <div class="table-echange__ami">
+            <label for="recherche-ami">Avec qui ?</label>
+            <div class="proposer__recherche">
+              <input type="search" id="recherche-ami" placeholder="Pseudo de ton ami…" autocomplete="off">
+              <ul id="resultats-ami" class="proposer__resultats" hidden></ul>
+            </div>
+            <div id="ami-choisi" class="proposer__choisi" hidden></div>
+          </div>
+          <p class="marche__aide" id="marche-aide">Choisis un ami, puis touche dans ton grimoire les cartes que tu lui donnes.</p>
+
+          <div id="proposer-cartes" class="marche__plan" hidden>
+            <!-- La table : ce qui part, ce qui arrive -->
+            <div class="plateau-echange">
+              <div class="plateau-echange__cote">
+                <h3>Tu donnes <span id="compte-donnees">0 / 5</span></h3>
+                <div id="table-donnees" class="plateau-echange__eventail"></div>
+              </div>
+              <div class="plateau-echange__balance" aria-hidden="true">⚖</div>
+              <div class="plateau-echange__cote">
+                <h3>Tu reçois <span id="compte-demandees">0 / 5</span></h3>
+                <div id="table-demandees" class="plateau-echange__eventail"></div>
+              </div>
+              <div class="plateau-echange__envoi">
+                <input type="text" id="message-echange" maxlength="200" placeholder="Un petit mot pour sceller l'accord (facultatif)">
+                <button type="button" class="btn-dc-or" id="btn-proposer" disabled>Proposer l'échange</button>
+              </div>
+            </div>
+            <!-- Le grimoire de l'ami -->
+            <div class="coffre">
+              <h3 class="coffre__titre" id="titre-ses-cartes">Son grimoire</h3>
+              <p class="coffre__aide">Touche une carte pour la demander. Grisées : tu les as déjà.</p>
+              <div id="ses-cartes" class="coffre__grille"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Courrier : reçu (accepter / refuser) et envoyé (annuler) -->
+        <div class="marche__panneau" data-panneau="courrier" hidden>
+          <h3 class="marche__rubrique">Reçu</h3>
+          <div id="recus" class="echanges__lettres"></div>
+          <h3 class="marche__rubrique">Envoyé <span id="compte-envoyes"></span></h3>
+          <div id="envoyes" class="echanges__lettres"></div>
+        </div>
+
+        <!-- Registre : les derniers échanges -->
+        <div class="marche__panneau" data-panneau="registre" hidden>
+          <div id="historique-echanges" class="echanges__lettres"></div>
+        </div>
       </section>
 
     </div>

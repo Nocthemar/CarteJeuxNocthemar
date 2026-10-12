@@ -58,24 +58,9 @@
           <div>
             <h1 id="pseudo"></h1>
             <p id="titre" class="entete__titre"></p>
+            <a id="lien-echange" class="btn-echange" href="collection.html#grimoire" hidden>⇄ Proposer un échange</a>
           </div>
         </div>
-      </section>
-
-      <!-- Duel des Couronnes : le deck de duel en éventail sur le tapis. Visible uniquement sur son propre profil -->
-      <section id="duel" class="carte duel" hidden>
-        <div class="duel__texte">
-          <span class="duel__sur">Jeu de cartes de Nocthémar</span>
-          <h2 class="duel__titre">Duel des Couronnes</h2>
-          <p class="duel__accroche" id="duel-accroche"></p>
-          <dl class="duel__stats" id="duel-stats"></dl>
-          <div class="duel__boutons">
-            <a class="duel__btn duel__btn--plein" href="jeu-cartes.html">
-              <span class="duel__btn-titre">Aller au plateau</span>
-            </a>
-          </div>
-        </div>
-        <a class="duel__eventail" href="jeu-cartes.html" aria-label="Jouer au Duel des Couronnes" id="duel-eventail"></a>
       </section>
 
       <!-- Vitrine des cartes favorites (le deck du profil) : visible par tous, modifiable seulement sur son propre profil -->
@@ -101,6 +86,22 @@
             </div>
           </div>
         </div>
+      </section>
+
+      <!-- Duel des Couronnes (tout en bas) : le deck de duel en éventail sur le tapis. Visible uniquement sur son propre profil -->
+      <section id="duel" class="carte duel" hidden>
+        <div class="duel__texte">
+          <span class="duel__sur">Jeu de cartes de Nocthémar</span>
+          <h2 class="duel__titre">Duel des Couronnes</h2>
+          <p class="duel__accroche" id="duel-accroche"></p>
+          <dl class="duel__stats" id="duel-stats"></dl>
+          <div class="duel__boutons">
+            <a class="duel__btn duel__btn--plein" href="jeu-cartes.html">
+              <span class="duel__btn-titre">Aller au plateau</span>
+            </a>
+          </div>
+        </div>
+        <a class="duel__eventail" href="jeu-cartes.html" aria-label="Jouer au Duel des Couronnes" id="duel-eventail"></a>
       </section>
     </div>
   </main>

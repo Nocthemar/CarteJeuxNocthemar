@@ -4,11 +4,12 @@
 --  - plateaux         : les plateaux vendus (nom, prix en or du jeu, images)
 --  - joueur_plateaux  : les plateaux achetés par chaque joueur, et celui qu'il a choisi (equipe)
 --
---  Sans plateau choisi, le duel se joue sur le plateau de la saison réelle (gratuit, pour tout le monde).
---  Un plateau acheté remplace celui de la saison, toute l'année, jusqu'à ce que le joueur le retire.
+--  Sans plateau choisi, le duel se joue sur le plateau par défaut : l'arène de pierre (gratuite, pour tout le monde,
+--  img/Plateaux de carte/plateau-defaut.webp ; elle n'est pas dans cette table).
+--  Un plateau acheté la remplace, jusqu'à ce que le joueur le retire.
 --  Fonctions des joueurs :
 --    acheter_plateau(plateau)  -> paie en or, ajoute le plateau aux siens (une seule fois)
---    equiper_plateau(plateau)  -> choisit ce plateau pour ses duels ; null = retour au plateau de la saison
+--    equiper_plateau(plateau)  -> choisit ce plateau pour ses duels ; null = retour au plateau par défaut
 --  Le plateau choisi se lit dans joueur_plateaux (equipe = true) : JS/jeu-cartes.js, JS/profil.js.
 --
 --  À exécuter dans Supabase > SQL Editor (après boosters.sql : même fonction my_discord_id()). Relançable.
@@ -95,7 +96,7 @@ begin
 end;
 $$;
 
--- Choisir le plateau de ses duels (un plateau possédé), ou null pour le plateau de la saison
+-- Choisir le plateau de ses duels (un plateau possédé), ou null pour le plateau par défaut
 create or replace function public.equiper_plateau(p_plateau_id text)
 returns void
 language plpgsql
