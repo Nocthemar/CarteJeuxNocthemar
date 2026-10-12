@@ -139,6 +139,15 @@
           <span class="grimoire__folio" id="folio" aria-live="polite"></span>
           <button type="button" class="btn-page" id="page-suiv">Page suivante ›</button>
         </nav>
+        <!-- Doublons : tout recycler d'un coup (JS/collection.js, SQL/doublons.sql) -->
+        <div class="grimoire__doublons" id="doublons-tout" hidden>
+          <span class="doublons__medaillon" aria-hidden="true">♻</span>
+          <span class="doublons__texte">
+            <strong id="doublons-nombre">Doublons</strong>
+            <small id="doublons-gain"></small>
+          </span>
+          <button type="button" class="btn-recycler btn-recycler--plein" id="btn-recycler-tout">Tout recycler</button>
+        </div>
 
         <p class="grimoire__aide">
           Glisse une carte vers n'importe quelle pochette pour la ranger (sur téléphone : appui long).
@@ -195,7 +204,7 @@
             <!-- Le grimoire de l'ami -->
             <div class="coffre">
               <h3 class="coffre__titre" id="titre-ses-cartes">Son grimoire</h3>
-              <p class="coffre__aide">Touche une carte pour la demander. Grisées : tu les as déjà.</p>
+              <p class="coffre__aide">Touche une carte pour la demander. Une carte que tu as déjà te donnera un exemplaire de plus.</p>
               <div id="ses-cartes" class="coffre__grille"></div>
             </div>
           </div>
@@ -217,6 +226,28 @@
 
     </div>
   </main>
+
+  <!-- Recycler les exemplaires en trop d'une carte -->
+  <dialog class="recyclage" id="recyclage" aria-labelledby="recyclage-titre">
+    <div class="recyclage__carte" id="recyclage-carte"></div>
+    <div class="recyclage__corps">
+      <h2 id="recyclage-titre" class="recyclage__titre">Recycler</h2>
+      <p class="recyclage__texte" id="recyclage-texte"></p>
+      <label class="recyclage__nombre">
+        Exemplaires à recycler
+        <span class="recyclage__choix">
+          <button type="button" class="recyclage__pas" data-pas="-1" aria-label="Un de moins">−</button>
+          <output id="recyclage-nombre">1</output>
+          <button type="button" class="recyclage__pas" data-pas="1" aria-label="Un de plus">+</button>
+        </span>
+      </label>
+      <p class="recyclage__gain" id="recyclage-gain"></p>
+      <div class="recyclage__boutons">
+        <button type="button" class="btn-recycler btn-recycler--plein" id="recyclage-ok">♻ Recycler</button>
+        <button type="button" class="recyclage__annuler" id="recyclage-annuler">Annuler</button>
+      </div>
+    </div>
+  </dialog>
 
   <div id="notif" class="notif" role="status" aria-live="polite"></div>
 

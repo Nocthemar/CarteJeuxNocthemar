@@ -34,12 +34,10 @@ const etat = {
 export const modeEchange = () => etat.ouvert && !!etat.ami && !$('proposer-cartes').hidden
   && !document.querySelector('[data-panneau="proposer"]').hidden;
 export const estSurLaTable = (id) => etat.donnees.has(id);
-export const amiLaPossede = (id) => modeEchange() && etat.sesCartes.some((c) => c.id === id);
 
 // Une carte du grimoire touchée en mode échange : posée sur la table, ou reprise
 export function basculerDonnee(id) {
   if (!etat.ami) { notifier('Choisis d’abord avec qui échanger.', 'erreur'); return; }
-  if (amiLaPossede(id)) { notifier(`${etat.ami.username ?? 'Ton ami'} a déjà cette carte.`, 'erreur'); return; }
   if (etat.donnees.has(id)) etat.donnees.delete(id);
   else if (etat.donnees.size >= MAX) { notifier(`${MAX} cartes au plus de chaque côté.`, 'erreur'); return; }
   else etat.donnees.add(id);
@@ -240,9 +238,9 @@ async function choisirAmi(j) {
   if (error) { notifier(error.message || 'Impossible de voir ses cartes.', 'erreur'); return; }
   etat.sesCartes = data ?? [];
   etat.sesCartes.forEach((c) => etat.cartes.set(c.id, c));
-  // On garde ce qui est encore possible (une carte qu'il a déjà ne peut plus lui être donnée)
+  // On garde ce qui est encore possible (une carte déjà possédée ajoute simplement un exemplaire)
   const siennes = new Set(etat.sesCartes.map((c) => c.id));
-  etat.donnees = new Set([...etat.donnees].filter((id) => !siennes.has(id) && etat.mesCartes().some((c) => c.id === id)));
+  etat.donnees = new Set([...etat.donnees].filter((id) => etat.mesCartes().some((c) => c.id === id)));
   etat.demandees = new Set([...etat.demandees].filter((id) => siennes.has(id)));
   $('proposer-cartes').hidden = false;
   $('marche-aide').textContent = 'Touche dans ton grimoire les cartes que tu donnes (elles se posent sur la table), et dans le sien celles que tu demandes.';
@@ -272,10 +270,11 @@ function afficherSesCartes() {
   $('ses-cartes').innerHTML = etat.sesCartes.length
     ? etat.sesCartes.map((c) => {
       const choisie = etat.demandees.has(c.id);
-      const bloquee = miennes.has(c.id);
-      return `<span class="proposer__tuile${choisie ? ' est-choisie' : ''}${bloquee ? ' est-bloquee' : ''}">
+      const dejaAMoi = miennes.has(c.id);   // permis : ce sera un exemplaire de plus
+      return `<span class="proposer__tuile${choisie ? ' est-choisie' : ''}">
         <button type="button" class="proposer__carte" data-cote="demande" data-id="${c.id}" aria-pressed="${choisie}"
-          ${bloquee ? 'disabled title="Tu as déjà cette carte"' : ''}>${htmlCarte(c)}</button>
+          ${dejaAMoi ? 'title="Tu l’as déjà : ce sera un exemplaire de plus"' : ''}>${htmlCarte(c)}</button>
+        ${dejaAMoi ? '<span class="proposer__deja">déjà à toi</span>' : ''}
         ${loupe(c.id)}
       </span>`;
     }).join('')

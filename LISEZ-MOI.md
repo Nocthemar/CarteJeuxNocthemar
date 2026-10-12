@@ -58,6 +58,8 @@ mêmes cartes, mêmes pièces, même progression.
    Pour les plateaux en boutique : lancer `plateaux.sql` (après `boosters.sql`).
    Pour les thèmes Bleu, Violet et Orange en boutique : lancer `themes_couleurs.sql`.
    Pour les échanges de cartes entre joueurs (le marché du grimoire, signet « Échanges ») : lancer `echanges.sql`.
+   Pour les doublons (plusieurs exemplaires d'une carte, recyclage contre de l'or) : lancer `doublons.sql`,
+   puis relancer `boosters.sql` et `echanges.sql`.
 
 ## Bon à savoir
 

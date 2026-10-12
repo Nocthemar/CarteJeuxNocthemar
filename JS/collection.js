@@ -10,6 +10,9 @@
 //  - Le signet « Échanges » ouvre le marché sous le livre (JS/collection-echanges.js) : en mode échange,
 //    toucher une carte du grimoire la pose sur la table d'échange (ruban doré) au lieu de la ranger ;
 //    collection.html?avec=<discord_id> ouvre le marché avec cet ami (lien « Proposer un échange » du profil)
+//  - Doublons (SQL/doublons.sql) : une carte peut avoir plusieurs exemplaires (« ×N » sur sa pochette) ;
+//    ♻ recycle les exemplaires en trop d'une carte, « Recycler tous les doublons » les recycle tous,
+//    contre de l'or et de l'XP de pass (le dernier exemplaire est toujours gardé)
 //  La position des cartes est enregistrée via move_card (SQL/cartes_collection.sql) ;
 //  les nouvelles cartes se placent seules dans la première pochette libre (côté serveur).
 // =====================================================================
@@ -17,7 +20,7 @@ import { supabase, connexionDiscord, getMonJoueur } from './supabase.js';
 import { $, notifier } from './commun.js';
 import { htmlCarte, chargerDeck, Deck, activerGlisser, boutonLoupe, ouvrirApercu } from './cartes.js';
 import { initRoue } from './collection-roue.js';
-import { initEchanges, ouvrirMarche, modeEchange, estSurLaTable, amiLaPossede, basculerDonnee } from './collection-echanges.js';
+import { initEchanges, ouvrirMarche, modeEchange, estSurLaTable, basculerDonnee } from './collection-echanges.js';
 
 const PAR_PAGE = 9;
 const PAGES_MAX = 100;
@@ -27,13 +30,24 @@ const modeSimple = matchMedia('(max-width: 800px)');     // une seule page visib
 const sansAnimation = matchMedia('(prefers-reduced-motion: reduce)');
 
 const etat = {
-  cartes: new Map(),   // id -> { carte, page, slot }
+  cartes: new Map(),   // id -> { carte, page, slot, quantite }
   courante: 1,         // page affichée (page de gauche en double page)
   selection: null,     // id de la carte touchée, en attente d'une pochette
   animation: false,
 };
 let deck;
 
+
+// Les cartes du joueur, avec leur nombre d'exemplaires (1 si SQL/doublons.sql n'est pas encore lancé)
+async function lireCartes(discordId) {
+  const avec = await supabase.from('player_cards').select('page, slot, quantite, card:cards(*)').eq('discord_id', discordId);
+  if (!avec.error) return avec;
+  return supabase.from('player_cards').select('page, slot, card:cards(*)').eq('discord_id', discordId);
+}
+const remplir = (lignes) => {
+  etat.cartes.clear();
+  for (const { page, slot, quantite, card } of lignes ?? []) etat.cartes.set(card.id, { carte: card, page, slot, quantite: quantite ?? 1 });
+};
 
 async function init() {
   const moi = await getMonJoueur();
@@ -46,7 +60,7 @@ async function init() {
   }
 
   const [{ data, error }, deckJoueur] = await Promise.all([
-    supabase.from('player_cards').select('page, slot, card:cards(*)').eq('discord_id', moi.discord_id),
+    lireCartes(moi.discord_id),
     chargerDeck(moi.discord_id),
   ]);
 
@@ -55,9 +69,7 @@ async function init() {
     return;
   }
 
-  for (const { page, slot, card } of data) {
-    etat.cartes.set(card.id, { carte: card, page, slot });
-  }
+  remplir(data);
 
   deck = new Deck($('deck'), { ...deckJoueur, editable: true, surChangement: afficher });
 
@@ -92,11 +104,10 @@ async function recharger() {
   const moi = await getMonJoueur();
   if (!moi) return;
   const [{ data }, deckJoueur] = await Promise.all([
-    supabase.from('player_cards').select('page, slot, card:cards(*)').eq('discord_id', moi.discord_id),
+    lireCartes(moi.discord_id),
     chargerDeck(moi.discord_id),
   ]);
-  etat.cartes.clear();
-  for (const { page, slot, card } of data ?? []) etat.cartes.set(card.id, { carte: card, page, slot });
+  remplir(data);
   etat.selection = null;
   deck = new Deck($('deck'), { ...deckJoueur, editable: true, surChangement: afficher });
   const n = etat.cartes.size;
@@ -182,11 +193,13 @@ function htmlPage(num, cote) {
     }
     const auDeck = deck.contient(id);
     const selection = etat.selection === id ? ' pochette--selection' : '';
-    const echange = estSurLaTable(id) ? ' pochette--echange' : amiLaPossede(id) ? ' pochette--bloquee' : '';
+    const echange = estSurLaTable(id) ? ' pochette--echange' : '';
     pochettes += `
       <div class="pochette pochette--pleine${selection}${echange}" data-page="${num}" data-slot="${slot}">
         ${htmlCarte(etat.cartes.get(id).carte)}
         ${estSurLaTable(id) ? '<span class="pochette__ruban" aria-hidden="true">À échanger</span>' : ''}
+        ${etat.cartes.get(id).quantite > 1 ? `<span class="pochette__nb" title="${etat.cartes.get(id).quantite} exemplaires">×${etat.cartes.get(id).quantite}</span>
+        <button type="button" class="carte-recycler" data-recycler="${id}" title="Recycler les doublons" aria-label="Recycler les doublons">♻</button>` : ''}
         <button type="button" class="carte-etoile${auDeck ? ' carte-etoile--active' : ''}" data-etoile="${id}"
           aria-pressed="${auDeck}" title="${auDeck ? 'Retirer du deck' : 'Ajouter au deck'}">★</button>
         ${boutonLoupe(id)}
@@ -213,6 +226,7 @@ function afficher() {
   $('folio').textContent = modeSimple.matches
     ? `Folio ${romain(etat.courante)} sur ${romain(total)}`
     : `Folios ${romain(etat.courante)}–${romain(etat.courante + 1)} sur ${romain(total)}`;
+  majDoublons();
   $('page-prec').disabled = etat.courante <= 1;
   $('page-suiv').disabled = etat.courante + pas() > total;
 }
@@ -358,6 +372,9 @@ $('collection').addEventListener('click', (e) => {
     return;
   }
 
+  const recycler = e.target.closest('[data-recycler]');
+  if (recycler) { ouvrirRecyclage(Number(recycler.dataset.recycler)); return; }
+
   const etoile = e.target.closest('[data-etoile]');
   if (etoile) {
     const id = Number(etoile.dataset.etoile);
@@ -388,6 +405,69 @@ $('collection').addEventListener('click', (e) => {
     etat.selection = Number(carte.dataset.carte);
     afficher();
   }
+});
+
+// ---------------------------------------------------------------------
+//  Doublons : recycler contre de l'or et de l'XP de pass (SQL/doublons.sql)
+// ---------------------------------------------------------------------
+const VALEUR = { commune: 20, eveillee: 40, mythique: 80, legendaire: 150, transcendante: 300 };
+const valeur = (carte) => VALEUR[carte.rarity] ?? 20;
+const gains = (or, ex) => `+${or.toLocaleString('fr-FR')} or · +${10 * ex} XP de pass`;
+
+function majDoublons() {
+  let ex = 0, or = 0;
+  for (const { carte, quantite } of etat.cartes.values()) if (quantite > 1) { ex += quantite - 1; or += (quantite - 1) * valeur(carte); }
+  $('doublons-tout').hidden = ex === 0;
+  $('doublons-nombre').textContent = `${ex} doublon${ex > 1 ? 's' : ''} à recycler`;
+  $('doublons-gain').textContent = ex ? gains(or, ex) : '';
+}
+
+let recyclage = { id: null, nombre: 1 };
+function ouvrirRecyclage(id) {
+  const c = etat.cartes.get(id);
+  if (!c || c.quantite < 2) return;
+  recyclage = { id, nombre: c.quantite - 1 };
+  $('recyclage-carte').innerHTML = htmlCarte(c.carte);
+  $('recyclage-titre').textContent = `Recycler « ${c.carte.name} »`;
+  $('recyclage-texte').textContent = `Tu en as ${c.quantite} exemplaires. Le dernier est toujours gardé dans ton grimoire.`;
+  majRecyclage();
+  $('recyclage').showModal();
+  $('recyclage-ok').focus();
+}
+function majRecyclage() {
+  const c = etat.cartes.get(recyclage.id);
+  recyclage.nombre = Math.max(1, Math.min(recyclage.nombre, c.quantite - 1));
+  $('recyclage-nombre').textContent = recyclage.nombre;
+  $('recyclage-gain').textContent = gains(valeur(c.carte) * recyclage.nombre, recyclage.nombre);
+  document.querySelectorAll('.recyclage__pas').forEach((b) => {
+    b.disabled = Number(b.dataset.pas) < 0 ? recyclage.nombre <= 1 : recyclage.nombre >= c.quantite - 1;
+  });
+}
+$('recyclage').addEventListener('click', async (e) => {
+  if (e.target === $('recyclage') || e.target.closest('#recyclage-annuler')) { $('recyclage').close(); return; }
+  const pas = e.target.closest('[data-pas]');
+  if (pas) { recyclage.nombre += Number(pas.dataset.pas); majRecyclage(); return; }
+  if (!e.target.closest('#recyclage-ok') || $('recyclage-ok').disabled) return;
+  $('recyclage-ok').disabled = true;
+  const { data, error } = await supabase.rpc('recycler_carte', { p_card_id: recyclage.id, p_nombre: recyclage.nombre });
+  $('recyclage-ok').disabled = false;
+  if (error) { notifier(error.message || 'Recyclage impossible.', 'erreur'); return; }
+  etat.cartes.get(recyclage.id).quantite = data.restants;
+  $('recyclage').close();
+  notifier(`♻ ${data.exemplaires} exemplaire${data.exemplaires > 1 ? 's' : ''} recyclé${data.exemplaires > 1 ? 's' : ''} : ${gains(data.or, data.exemplaires)}`);
+  afficher();
+});
+
+$('btn-recycler-tout').addEventListener('click', async () => {
+  const bouton = $('btn-recycler-tout');
+  if (!confirm(`Recycler tous tes doublons ? Tu gardes un exemplaire de chaque carte. (${$('doublons-gain').textContent})`)) return;
+  bouton.disabled = true;
+  const { data, error } = await supabase.rpc('recycler_doublons');
+  bouton.disabled = false;
+  if (error) { notifier(error.message || 'Recyclage impossible.', 'erreur'); return; }
+  for (const c of etat.cartes.values()) c.quantite = 1;
+  notifier(`♻ ${data.exemplaires} doublon${data.exemplaires > 1 ? 's' : ''} recyclé${data.exemplaires > 1 ? 's' : ''} : ${gains(data.or, data.exemplaires)}`);
+  afficher();
 });
 
 init();

@@ -7,10 +7,10 @@
 --
 --  Tout est vérifié CÔTÉ SERVEUR, au moment de proposer puis encore au moment d'accepter :
 --    - chacun possède toujours les cartes qu'il donne ;
---    - personne ne reçoit une carte qu'il a déjà (une carte au plus par joueur) ;
 --    - l'échange se fait d'un seul bloc, ou pas du tout (grimoire plein, carte partie entre-temps…).
---  Une carte qui part quitte aussi le deck du profil (player_deck_cards, on delete cascade) ;
---  une carte reçue se range seule dans la première pochette libre (trigger place_new_card).
+--  Une carte peut avoir plusieurs exemplaires (player_cards.quantite, SQL/doublons.sql) : on en donne un ;
+--  la carte ne quitte la collection (et le deck du profil) que si c'était le dernier exemplaire.
+--  Une carte qu'on a déjà ajoute un exemplaire ; une nouvelle se range seule dans la première pochette libre.
 --
 --  Fonctions des joueurs :
 --    cartes_du_joueur(joueur)                            -> les cartes d'un joueur (pour choisir quoi demander)
@@ -24,6 +24,9 @@
 -- ---------------------------------------------------------------------
 --  1. Table des propositions
 -- ---------------------------------------------------------------------
+-- Exemplaires d'une carte (voir SQL/doublons.sql)
+alter table public.player_cards add column if not exists quantite int not null default 1 check (quantite >= 1);
+
 create table if not exists public.echanges (
   id               bigint generated always as identity primary key,
   de               text not null references public.players(discord_id) on delete cascade,
@@ -105,13 +108,6 @@ begin
   select c.name into v_carte from unnest(v_demandes) x join cards c on c.id = x
   where not exists (select 1 from player_cards where discord_id = p_pour and card_id = x) limit 1;
   if v_carte is not null then raise exception 'Ce joueur ne possède pas « % ».', v_carte; end if;
-  -- Personne ne reçoit une carte qu'il a déjà
-  select c.name into v_carte from unnest(v_donnees) x join cards c on c.id = x
-  where exists (select 1 from player_cards where discord_id = p_pour and card_id = x) limit 1;
-  if v_carte is not null then raise exception 'Ce joueur a déjà « % ».', v_carte; end if;
-  select c.name into v_carte from unnest(v_demandes) x join cards c on c.id = x
-  where exists (select 1 from player_cards where discord_id = v_moi and card_id = x) limit 1;
-  if v_carte is not null then raise exception 'Tu as déjà « % ».', v_carte; end if;
 
   insert into echanges (de, pour, cartes_donnees, cartes_demandees, message)
   values (v_moi, p_pour, v_donnees, v_demandes, nullif(btrim(left(p_message, 200)), ''))
@@ -151,27 +147,23 @@ begin
     where not exists (select 1 from player_cards where discord_id = v_e.pour and card_id = x) limit 1;
     if v_carte is not null then v_raison := format('Tu n''as plus « %s ».', v_carte); end if;
   end if;
-  if v_raison is null then
-    select c.name into v_carte from unnest(v_e.cartes_donnees) x join cards c on c.id = x
-    where exists (select 1 from player_cards where discord_id = v_e.pour and card_id = x) limit 1;
-    if v_carte is not null then v_raison := format('Tu as déjà « %s ».', v_carte); end if;
-  end if;
-  if v_raison is null then
-    select c.name into v_carte from unnest(v_e.cartes_demandees) x join cards c on c.id = x
-    where exists (select 1 from player_cards where discord_id = v_e.de and card_id = x) limit 1;
-    if v_carte is not null then v_raison := format('L''autre joueur a déjà « %s ».', v_carte); end if;
-  end if;
   if v_raison is not null then
     update echanges set statut = 'impossible', raison = v_raison, traite_le = now() where id = p_id;
     return json_build_object('ok', false, 'raison', v_raison);
   end if;
 
-  -- Les cartes partent (et quittent le deck du profil)…
-  delete from player_cards where discord_id = v_e.de and card_id = any(v_e.cartes_donnees);
-  delete from player_cards where discord_id = v_e.pour and card_id = any(v_e.cartes_demandees);
-  -- …et arrivent dans la première pochette libre de leur nouveau propriétaire
-  insert into player_cards (discord_id, card_id, source) select v_e.pour, x, 'echange' from unnest(v_e.cartes_donnees) x;
-  insert into player_cards (discord_id, card_id, source) select v_e.de, x, 'echange' from unnest(v_e.cartes_demandees) x;
+  -- Un exemplaire de chaque carte part (la carte quitte la collection, et le deck, si c'était le dernier)…
+  -- (d'abord les derniers exemplaires, qui partent ; ensuite les autres, qui perdent un exemplaire)
+  delete from player_cards where discord_id = v_e.de and card_id = any(v_e.cartes_donnees) and quantite = 1;
+  update player_cards set quantite = quantite - 1 where discord_id = v_e.de and card_id = any(v_e.cartes_donnees);
+  delete from player_cards where discord_id = v_e.pour and card_id = any(v_e.cartes_demandees) and quantite = 1;
+  update player_cards set quantite = quantite - 1 where discord_id = v_e.pour and card_id = any(v_e.cartes_demandees);
+  -- …et arrive chez son nouveau propriétaire : un exemplaire de plus, ou une nouvelle carte rangée
+  -- dans la première pochette libre
+  insert into player_cards (discord_id, card_id, source) select v_e.pour, x, 'echange' from unnest(v_e.cartes_donnees) x
+  on conflict (discord_id, card_id) do update set quantite = player_cards.quantite + 1;
+  insert into player_cards (discord_id, card_id, source) select v_e.de, x, 'echange' from unnest(v_e.cartes_demandees) x
+  on conflict (discord_id, card_id) do update set quantite = player_cards.quantite + 1;
 
   update echanges set statut = 'accepte', traite_le = now() where id = p_id;
   -- Les autres propositions qui touchaient ces cartes ne tiennent plus forcément : elles seront revérifiées

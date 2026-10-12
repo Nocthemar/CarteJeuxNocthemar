@@ -18,10 +18,11 @@
 
 -- Changement de nom : « Fée des Neiges » devient « Elfe des Neiges » (les cartes gardent leur id :
 -- collections, decks, boosters et échanges ne bougent pas)
-update public.cards set name = 'Elfe des Neiges' where name = 'Fée des Neiges';
+-- (quelle que soit l'écriture : Fée / Fee, majuscules ou non)
 update public.cards set name = 'Elfe des Neiges dorée',
   description = 'Une nuit par siècle, l''Elfe des Neiges s''éveille sous l''aurore d''Erynedhal. Ses larmes deviennent cristal, et l''hiver entier lui obéit.'
-  where name = 'Fée des Neiges dorée';
+  where name ilike 'f_e des neiges dor_e';
+update public.cards set name = 'Elfe des Neiges' where name ilike 'f_e des neiges';
 
 insert into public.cards (name, image, rarity, description, source, is_available, rank, attack_1, attack_2)
 select 'Elfe des Neiges', 'img/Cartes/féedesneiges-bleux.png', 'mythique',

@@ -10,8 +10,9 @@
 --  avec le résultat. Fonctions des joueurs :
 --    acheter_booster(booster, quantite) -> paie en or, ajoute le booster aux boosters du joueur
 --    ouvrir_booster(booster)            -> retire un booster, tire les cartes, les ajoute à la collection
---  Un doublon (carte déjà possédée, ou déjà tirée dans ce booster) est converti en or selon sa rareté,
---  et donne 10 XP de Pass de saison (si SQL/pass_saison.sql est installé).
+--  Un doublon (carte déjà possédée, ou déjà tirée dans ce booster) s'ajoute comme exemplaire de plus
+--  (player_cards.quantite) ; on le recycle ensuite dans le grimoire contre de l'or et de l'XP de pass
+--  (SQL/doublons.sql : recycler_carte, recycler_doublons).
 --  Les boosters gagnés dans le Pass de saison arrivent dans player_boosters (pass_reclamer).
 --
 --  À exécuter dans Supabase > SQL Editor, APRÈS cartes_collection.sql, et AVANT de (re)lancer
@@ -22,6 +23,9 @@
 -- ---------------------------------------------------------------------
 --  1. Tables
 -- ---------------------------------------------------------------------
+-- Exemplaires d'une carte (voir SQL/doublons.sql) : nécessaire à ouvrir_booster
+alter table public.player_cards add column if not exists quantite int not null default 1 check (quantite >= 1);
+
 create table if not exists public.boosters (
   id        text primary key,
   nom       text not null,
@@ -135,19 +139,15 @@ declare
   v_moi      text := my_discord_id();
   v_booster  boosters%rowtype;
   v_raretes  text[] := array['commune', 'eveillee', 'mythique', 'legendaire', 'transcendante'];
-  v_or_doublon jsonb := '{"commune": 20, "eveillee": 40, "mythique": 80, "legendaire": 150, "transcendante": 300}';
   v_dispo    text[];        -- raretés qui ont au moins une carte dans ce booster
   v_total    numeric;
   v_tirage   numeric;
   v_rarete   text;
   v_idx      int;
   v_carte    cards%rowtype;
-  v_tirees   bigint[] := '{}';
   v_resultat jsonb := '[]'::jsonb;
   v_nouvelle boolean;
-  v_or       int;
-  v_or_total int := 0;
-  v_xp_total int := 0;
+  v_exemplaires int;
   v_meilleur int := 0;
   v_restants int;
   i          int;
@@ -198,45 +198,25 @@ begin
     where bc.booster_id = p_booster_id and c.rarity = v_rarete
     order by random() limit 1;
 
-    -- 4. Nouvelle carte, ou doublon converti en or (+ 10 XP de pass)
-    v_nouvelle := not (v_carte.id = any(v_tirees))
-      and not exists (select 1 from player_cards where discord_id = v_moi and card_id = v_carte.id);
-    v_or := 0;
-    if v_nouvelle then
-      insert into player_cards (discord_id, card_id, source) values (v_moi, v_carte.id, 'recompense');
-    else
-      v_or := coalesce((v_or_doublon ->> v_rarete)::int, 20);
-      v_or_total := v_or_total + v_or;
-      v_xp_total := v_xp_total + 10;
-    end if;
-    v_tirees := v_tirees || v_carte.id;
+    -- 4. Nouvelle carte, ou un exemplaire de plus (doublon : à recycler dans le grimoire)
+    v_nouvelle := not exists (select 1 from player_cards where discord_id = v_moi and card_id = v_carte.id);
+    insert into player_cards (discord_id, card_id, source) values (v_moi, v_carte.id, 'recompense')
+    on conflict (discord_id, card_id) do update set quantite = player_cards.quantite + 1
+    returning quantite into v_exemplaires;
     v_meilleur := greatest(v_meilleur, array_position(v_raretes, v_rarete));
 
     v_resultat := v_resultat || jsonb_build_object(
       'nom', v_carte.name, 'image', v_carte.image, 'rarete', v_rarete,
-      'nouvelle', v_nouvelle, 'or', v_or);
+      'nouvelle', v_nouvelle, 'exemplaires', v_exemplaires, 'or', 0);
   end loop;
-
-  -- Or des doublons
-  if v_or_total > 0 then
-    update wallets set balance = balance + v_or_total where discord_id = v_moi;
-    if not found then insert into wallets (discord_id, balance) values (v_moi, v_or_total); end if;
-    insert into transactions (discord_id, amount, source, reason)
-    values (v_moi, v_or_total, 'boutique_fun', v_booster.nom || ' : doublons convertis');
-  end if;
-
-  -- XP de pass des doublons (si le Pass de saison est installé)
-  if v_xp_total > 0 and to_regprocedure('public.pass_ajouter_xp(text,integer)') is not null then
-    execute 'select public.pass_ajouter_xp($1, $2)' using v_moi, v_xp_total;
-  end if;
 
   insert into booster_ouvertures (discord_id, booster_id, cartes) values (v_moi, p_booster_id, v_resultat);
 
   return json_build_object(
     'booster', v_booster.nom,
     'cartes', v_resultat,
-    'or', v_or_total,
-    'xp', v_xp_total,
+    'or', 0,
+    'xp', 0,
     'meilleure_rarete', v_raretes[v_meilleur],
     'restants', v_restants
   );

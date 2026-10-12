@@ -117,7 +117,7 @@ function htmlCarte(c, i, details) {
         <span class="ob-carte__rarete">${esc(NOMS_RARETE[c.rarete] ?? c.rarete)}</span>
         <strong class="ob-carte__nom">${esc(c.nom)}</strong>
         <span class="ob-carte__etat ${c.nouvelle ? 'ob-carte__etat--nouvelle' : ''}">${
-          c.nouvelle ? 'Nouvelle carte !' : `Doublon : +${c.or} or · +10 XP de pass`}</span>
+          c.nouvelle ? 'Nouvelle carte !' : `Doublon${c.exemplaires ? ` : ×${c.exemplaires}` : ''} · à recycler dans ton grimoire`}</span>
       </div>
     </div>`;
 }
@@ -530,6 +530,8 @@ export function ouvrirBoosterAnime(resultat, imageBooster, { restants = 0, surRo
       phase = 'fin';
       const nouvelles = cartes.filter((x) => x.nouvelle).length;
       const bilan = [`${nouvelles} nouvelle${nouvelles > 1 ? 's' : ''} carte${nouvelles > 1 ? 's' : ''}`];
+      const doublons = cartes.length - nouvelles;
+      if (doublons) bilan.push(`${doublons} doublon${doublons > 1 ? 's' : ''} à recycler`);
       if (resultat.or) bilan.push(`+${resultat.or} or`);
       if (resultat.xp) bilan.push(`+${resultat.xp} XP de pass`);
       $('.ob__bilan').textContent = bilan.join(' · ');

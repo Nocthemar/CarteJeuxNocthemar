@@ -71,7 +71,7 @@ function htmlBooster(b) {
         <h3 class="article__nom">${esc(b.nom)}</h3>
         <ul class="booster__chances" aria-label="Chances par carte">${chances}</ul>
         ${cartes ? `<div class="booster__cartes" aria-label="Cartes possibles">${cartes}</div>` : ''}
-        <p class="article__desc">Doublon : converti en or, et +10 XP de pass.</p>
+        <p class="article__desc">Doublon : un exemplaire de plus, à recycler dans ton grimoire contre de l'or.</p>
         <div class="article__prix">${b.prix} ${piece()}</div>
         ${achat}
         ${n ? `<button type="button" class="btn-ouvrir" data-ouvrir-booster="${esc(b.id)}">Ouvrir (${n})</button>` : ''}
