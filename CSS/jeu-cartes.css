@@ -2336,3 +2336,82 @@ body.en-duel { overflow: hidden; padding: 0 !important; }
 .dc-unite .dc-face--codex .dc-face__nom { font-size: 9cqw; }
 /* reflet : sur la fenêtre et le panneau, sans déborder du cadre */
 .dc-reflet--codex { clip-path: inset(6% 7% 8% 7%); }
+
+
+/* =====================================================================
+   Loupe : une carte en grand et sa fiche (clic droit / appui long sur une carte, JS/jeu-cartes.js)
+   ===================================================================== */
+.fenetre-jeu.loupe {
+  max-width: 880px;
+  display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 22px 28px; align-items: start;
+  text-align: left;
+}
+.fenetre-jeu.loupe:not([open]) { display: none; }
+.loupe__carte { --carte-l: min(290px, 42vh); position: sticky; top: 0; }
+.loupe__carte .dc-carte { --carte-l: min(290px, 42vh); pointer-events: none; transform: none; translate: none; scale: none; }
+.loupe__carte .dc-cout { display: none; }   /* le coût est déjà dans la fiche */
+#main-joueur .dc-cout { display: none; }   /* main : pas de pastille de coût (la loupe le donne ; les cartes jouables restent mises en avant, lueur dorée) */
+.loupe__fiche { min-width: 0; overflow: auto; max-height: calc(100vh - 140px); padding-right: 4px; }
+.loupe__fermer { grid-column: 1 / -1; justify-self: center; }
+/* en-tête de la fiche fixe pendant le défilement (même fond que la fenêtre) */
+.loupe__entete { position: sticky; top: 0; z-index: 1; padding-bottom: 4px; background: #12151c; box-shadow: 0 8px 10px -8px rgba(0,0,0,.7); }
+.loupe__nom { margin: 0; font-family: "Cinzel","Cinzel Repli", serif; font-size: 1.5rem; letter-spacing: .04em; }
+.loupe__type { margin: 4px 0 14px; color: var(--gris); font-size: .9rem; }
+.loupe__camp { color: var(--ambre); }
+.loupe__stats { display: flex; flex-wrap: wrap; gap: 8px 22px; margin: 0 0 10px; }
+.loupe__ligne { display: flex; align-items: baseline; gap: 8px; }
+.loupe__ligne dt { color: var(--gris); font-size: .78rem; letter-spacing: .1em; text-transform: uppercase; }
+.loupe__ligne dd { margin: 0; }
+.loupe__ligne small { color: var(--gris); }
+.loupe__energie, .loupe__stat {
+  display: inline-grid; place-items: center;
+  min-width: 30px; height: 28px; padding: 0 6px;
+  clip-path: polygon(5px 0, calc(100% - 5px) 0, 100% 50%, calc(100% - 5px) 100%, 5px 100%, 0 50%);
+  font-family: "Cinzel","Cinzel Repli", serif; font-weight: 800; font-size: 1rem; color: #fff;
+}
+.loupe__energie { background: linear-gradient(160deg, #8fb4ff 0 45%, #3f63b8 45.1%); }
+.loupe__stat--a { background: linear-gradient(160deg, #6a7385 0 45%, #474e5c 45.1%); }
+.loupe__stat--h { background: linear-gradient(160deg, #c45b61 0 45%, #8e3238 45.1%); }
+.loupe__etat {
+  margin: 0 0 6px; padding: 6px 10px;
+  background: rgba(217,164,65,.1); box-shadow: inset 2px 0 0 var(--ambre);
+  font-size: .9rem;
+}
+.loupe__titre {
+  margin: 16px 0 6px;
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: .8rem; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--ambre);
+}
+.loupe__texte { margin: 0 0 6px; line-height: 1.45; }
+.loupe__note, .loupe__description { margin: 8px 0 0; color: var(--gris); font-size: .88rem; font-style: italic; }
+/* dégâts selon le d20 : une case par résultat */
+.loupe__jets { list-style: none; margin: 0 0 8px; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+.loupe__jets li {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 6px 4px;
+  background: rgba(255,255,255,.04); box-shadow: inset 0 0 0 1px var(--ligne);
+  text-align: center;
+}
+.loupe__jets span { font-size: .72rem; color: var(--gris); }
+.loupe__jets b { font-family: "Cinzel","Cinzel Repli", serif; font-size: 1.25rem; }
+.loupe__jets small { font-size: .66rem; color: var(--gris); line-height: 1.2; }
+/* (les classes jet--… servent aussi à l'historique : on retire son fond coloré, seul le chiffre est teinté) */
+.loupe__jets li b { background: none; box-shadow: none; padding: 0; clip-path: none; }
+.loupe__jets .jet--echec b { color: #f07a80; }
+.loupe__jets .jet--critique b { color: #f6d27a; }
+.loupe__jets .jet--solide b { color: #9fe0a8; }
+/* attaques de la carte */
+.loupe__attaques { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.loupe__attaques li { display: flex; gap: 10px; align-items: flex-start; }
+.loupe__attaques li > span:last-child { display: flex; flex-direction: column; gap: 2px; }
+.loupe__attaques em { font-style: normal; color: var(--ambre); font-weight: 700; margin-left: 4px; }
+.loupe__attaques small { color: var(--gris); font-size: .86rem; line-height: 1.35; }
+.loupe__veine { font-size: 1.2rem; line-height: 1.3; }
+.loupe__veine-nom { font-size: .72rem !important; letter-spacing: .06em; }
+@media (max-width: 700px) {
+  .fenetre-jeu.loupe { grid-template-columns: minmax(0, 1fr); justify-items: center; }
+  .loupe__carte { position: static; --carte-l: min(200px, 30vh); }
+  .loupe__carte .dc-carte { --carte-l: min(200px, 30vh); }
+  .loupe__fiche { max-height: none; justify-self: stretch; }
+  .loupe__jets { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}

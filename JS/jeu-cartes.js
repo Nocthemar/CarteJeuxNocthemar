@@ -20,13 +20,13 @@
 // =====================================================================
 import { supabase, getMonJoueur, connexionDiscord } from './supabase.js';
 import { $, esc, notifier } from './commun.js';
-import { chargerDeck } from './cartes.js';
+import { chargerDeck, VEINES, RARETES } from './cartes.js';
 import {
   PV_HEROS, TAILLE_DECK, JETS, DESTIN,
   uniteDepuisCarte, grimoire, construireDeck, melanger, OBJETS, OBJETS_MAX, COPIES_MAX, estObjet, objetDepuisNom, creerPartie, debutTour, finTour,
   renvoyerMain, renvoiFini, choixRenvoiIA, peutDefausser, defausser, peutMediter, mediter, placerSous, COUT_DEFAUSSE, COUT_MEDITER,
   peutJouer, jouer, ciblesSort, peutAttaquer, ciblesAttaque, attaquer, peutDestin, destin,
-  trouver, ai, TROUPES,
+  trouver, ai, TROUPES, coutDe,
 } from './jeu-cartes-moteur.js';
 import { trouverNiveau } from './histoire-data.js';
 import { rendre, animer, banniere, pause, htmlCarte, activerProfondeur, secouer, reduit } from './jeu-cartes-arene.js';
@@ -667,7 +667,7 @@ function majConsigne() {
   else if (sel.attaquant) t = 'Choisis la cible de ton attaque (Échap pour annuler).';
   else if (sel.sortIndex != null) t = 'Choisis la cible du sort (Échap pour annuler).';
   else if (sel.defausse) t = 'Choisis la carte à défausser (Échap pour annuler).';
-  else t = 'Joue une carte, attaque avec une unité prête, ou finis ton tour.';
+  else t = 'Joue une carte, attaque avec une unité prête, ou finis ton tour. Clic droit : voir une carte.';
   $('consigne').textContent = t;
 }
 
@@ -778,8 +778,9 @@ for (const qui of ['joueur', 'adverse']) {
     if (!p) return;
     const camp = p.camps[qui];
     $('tombeau-titre').textContent = qui === 'joueur' ? 'Ton Tombeau' : `Tombeau de ${camp.nom}`;
+    tombeauOuvert = qui;
     $('tombeau-cartes').innerHTML = camp.tombeau.length
-      ? [...camp.tombeau].reverse().map((c) => htmlCarte(c)).join('')
+      ? [...camp.tombeau].reverse().map((c, i) => htmlCarte(c, { index: i })).join('')
       : '<p class="vide">Aucune carte au Tombeau pour l\'instant.</p>';
     $('tombeau').showModal();
   });
@@ -821,7 +822,7 @@ $('btn-abandon').addEventListener('click', () => {
 
 // Raccourcis : Espace pour finir le tour, D pour le Destin, Échap pour annuler
 document.addEventListener('keydown', (e) => {
-  if ($('ecran-duel').hidden || !$('fin').hidden || $('regles').open || $('renvoi').open || $('meditation').open) return;
+  if ($('ecran-duel').hidden || !$('fin').hidden || $('regles').open || $('renvoi').open || $('meditation').open || $('loupe').open) return;
   if (e.target.closest?.('input, textarea')) return;
   if (e.key === ' ' || e.code === 'Space') { e.preventDefault(); finirTour(); }
   else if (e.key === 'd' || e.key === 'D') lancerDestin();
@@ -1257,6 +1258,153 @@ setInterval(() => {
   if (invite.choixEnvoye) salon.envoyer('choix', invite.choixEnvoye);
   salon.envoyer('renvoi', { depuis: invite.dernier + 1, pid: invite.pid });
 }, 1000);
+
+
+// ---------------------------------------------------------------------
+//  Loupe : une carte en grand, et tout ce qu'elle fait
+//  Clic droit (ou appui long sur un écran tactile) sur une carte : troupes du plateau (les tiennes
+//  et celles de l'adversaire), cartes de ta main, du Tombeau, du renvoi de main, de Méditer.
+//  La fiche : type, rareté, coût, attaque et vie (actuelles et de base), capacité, dégâts selon le d20,
+//  riposte, attaques de la carte (Veine, puissance, effet), état sur le plateau.
+// ---------------------------------------------------------------------
+let tombeauOuvert = null;   // 'joueur' | 'adverse' : le Tombeau affiché (pour retrouver ses cartes)
+const CAPACITES = {
+  guard: ['Garde', "Les unités adverses doivent l'attaquer avant de pouvoir viser autre chose."],
+  charge: ['Charge', 'Peut attaquer dès le tour où elle est posée.'],
+};
+const CHIFFRES_RANG = ['', 'I', 'II', 'III', 'IV', 'V'];
+
+// La carte (et, sur le plateau, l'unité) derrière un élément touché
+function carteDe(el) {
+  if (!p) return null;
+  const unite = el.closest('.dc-unite[data-uid]');
+  if (unite) {
+    const camp = unite.dataset.camp;
+    const u = trouver(p.camps[camp], Number(unite.dataset.uid));
+    return u ? { def: u.def, u, camp } : null;
+  }
+  const carte = el.closest('.dc-carte[data-index]');
+  if (!carte) return null;
+  const i = Number(carte.dataset.index);
+  const j = p.camps.joueur;
+  const listes = {
+    'main-joueur': j.main,
+    'renvoi-main': j.main,
+    'meditation-cartes': j.meditation ?? [],
+    'tombeau-cartes': tombeauOuvert ? [...p.camps[tombeauOuvert].tombeau].reverse() : [],
+  };
+  const zone = Object.keys(listes).find((id) => carte.closest(`#${id}`));
+  const def = zone ? listes[zone][i] : null;
+  return def ? { def, main: zone === 'main-joueur' } : null;
+}
+
+function ficheLoupe({ def, u, camp, main }) {
+  const carte = def.carte;   // vraie carte du catalogue (sinon : troupe, sort ou objet du Codex)
+  const unite = def.t === 'u';
+  const type = def.fx && def.image ? 'Objet de pouvoir' : def.t === 's' ? 'Sort du Codex' : carte ? 'Unité' : 'Troupe du Codex';
+  const details = [type];
+  if (carte?.rarity) details.push(RARETES[carte.rarity] ?? carte.rarity);
+  if (carte?.rank) details.push(`Rang ${CHIFFRES_RANG[carte.rank] ?? carte.rank}`);
+  const cout = main ? coutDe(p.camps.joueur, def) : def.c;
+  const lignes = [
+    `<div class="loupe__ligne"><dt>Coût</dt><dd><b class="loupe__energie">${cout}</b> énergie${cout !== def.c ? ` <small>(au lieu de ${def.c})</small>` : ''}</dd></div>`,
+  ];
+  if (unite) {
+    const a = u ? u.a : def.a;
+    const h = u ? u.h : def.h;
+    const hMax = u ? u.hMax : def.h;
+    lignes.push(`<div class="loupe__ligne"><dt>Attaque</dt><dd><b class="loupe__stat loupe__stat--a">${a}</b>${u && a !== def.a ? ` <small>(de base : ${def.a})</small>` : ''}</dd></div>`);
+    lignes.push(`<div class="loupe__ligne"><dt>Vie</dt><dd><b class="loupe__stat loupe__stat--h">${h}</b>${u ? ` / ${hMax}` : ''}${u && hMax !== def.h ? ` <small>(de base : ${def.h})</small>` : ''}</dd></div>`);
+  }
+  const proprietaire = camp ? ` · <span class="loupe__camp">${camp === 'joueur' ? 'À toi' : esc(nomAdverse())}</span>` : '';
+  // en-tête fixe : nom, type, coût, attaque et vie restent en place quand la fiche défile
+  let html = `
+    <div class="loupe__entete">
+      <h2 id="loupe-titre" class="loupe__nom">${esc(def.n)}</h2>
+      <p class="loupe__type">${details.map(esc).join(' · ')}${proprietaire}</p>
+      <dl class="loupe__stats">${lignes.join('')}</dl>
+    </div>`;
+
+  // État sur le plateau
+  if (u) {
+    const etats = [];
+    if (u.aAttaque) etats.push('A déjà attaqué ce tour');
+    else if (peutAttaquer(u)) etats.push('Prête à attaquer');
+    else if (!u.prete) etats.push("Vient d'arriver : attaquera au prochain tour");
+    if (u.h < u.hMax) etats.push(`Blessée (${u.hMax - u.h} PV perdus)`);
+    if (u.brisee) etats.push('Arme brisée : attaque divisée par 2 pour de bon');
+    if (etats.length) html += `<p class="loupe__etat">${etats.map(esc).join(' · ')}</p>`;
+  }
+  // Capacité
+  if (unite && CAPACITES[def.k]) {
+    const [nom, texte] = CAPACITES[def.k];
+    html += `<h3 class="loupe__titre">Capacité</h3><p class="loupe__texte"><b>${nom}</b> : ${esc(texte)}</p>`;
+  }
+  // Effet d'un sort ou d'un objet
+  if (def.t === 's' && def.d) html += `<h3 class="loupe__titre">Effet</h3><p class="loupe__texte">${esc(def.d)}</p>`;
+  // Dégâts selon le jet de d20, et riposte
+  if (unite) {
+    const a = u ? u.a : def.a;
+    const jets = JETS.map((j) => `
+      <li class="jet--${j.q}"><span>${j.min === j.max ? j.min : `${j.min}–${j.max}`}</span><b>${j.degats(a)}</b><small>${esc(j.label)}${j.q === 'echec' ? " · l'arme se brise" : ''}</small></li>`).join('');
+    html += `<h3 class="loupe__titre">Dégâts en attaquant (jet de d20)</h3>
+      <ul class="loupe__jets">${jets}</ul>
+      <p class="loupe__texte">Attaquée, elle riposte avec <b>${a}</b> dégât${a > 1 ? 's' : ''} (sans jet).</p>`;
+  }
+  // Attaques de la vraie carte
+  const attaques = carte ? [carte.attack_1, carte.attack_2].filter((x) => x?.nom) : [];
+  if (attaques.length) {
+    const items = attaques.map((x) => {
+      const [veine, icone] = VEINES[x.veine] ?? ['Veine inconnue', '✦'];
+      return `<li><span class="loupe__veine" title="${esc(veine)}">${icone}</span>
+        <span><b>${esc(x.nom)}</b>${x.puissance != null ? ` <em>${esc(x.puissance)}</em>` : ''}${x.effet ? `<small>${esc(x.effet)}</small>` : ''}<small class="loupe__veine-nom">${esc(veine)}</small></span></li>`;
+    }).join('');
+    html += `<h3 class="loupe__titre">Attaques</h3><ul class="loupe__attaques">${items}</ul>`;
+    if (attaques.length > 1) html += "<p class=\"loupe__note\">Sur un jet de 15 ou plus, c'est la plus puissante des deux qui est lancée.</p>";
+  }
+  if (carte?.description) html += `<p class="loupe__description">${esc(carte.description)}</p>`;
+  return html;
+}
+
+function ouvrirLoupe(info) {
+  const { def, u } = info;
+  const visible = u ? { ...def, a: u.a, h: u.h } : def;   // sur le plateau : attaque et vie actuelles
+  $('loupe-carte').innerHTML = htmlCarte(visible, { cout: info.main ? coutDe(p.camps.joueur, def) : def.c });
+  $('loupe-fiche').innerHTML = ficheLoupe(info);
+  jouerSon('clic');
+  if (!$('loupe').open) $('loupe').showModal();
+  $('loupe-fermer').focus();
+}
+$('loupe-fermer').addEventListener('click', () => $('loupe').close());
+$('loupe').addEventListener('click', (e) => { if (e.target === $('loupe')) $('loupe').close(); });
+
+// Clic droit sur une carte
+document.addEventListener('contextmenu', (e) => {
+  if (e.target.closest('#loupe')) return;
+  const info = carteDe(e.target);
+  if (!info) return;
+  e.preventDefault();
+  ouvrirLoupe(info);
+});
+// Appui long (écran tactile) ; le clic qui suit est ignoré, pour ne pas jouer la carte
+let appui = null;
+let ignorerClic = false;
+document.addEventListener('pointerdown', (e) => {
+  if (e.pointerType !== 'touch' || e.target.closest('#loupe')) return;
+  const info = carteDe(e.target);
+  if (!info) return;
+  appui = { x: e.clientX, y: e.clientY, minuteur: setTimeout(() => { appui = null; ignorerClic = true; ouvrirLoupe(info); }, 450) };
+});
+const annulerAppui = () => { if (appui) { clearTimeout(appui.minuteur); appui = null; } };
+document.addEventListener('pointermove', (e) => { if (appui && Math.hypot(e.clientX - appui.x, e.clientY - appui.y) > 10) annulerAppui(); });
+document.addEventListener('pointerup', annulerAppui);
+document.addEventListener('pointercancel', annulerAppui);
+document.addEventListener('click', (e) => {
+  if (!ignorerClic) return;
+  ignorerClic = false;
+  e.stopPropagation();
+  e.preventDefault();
+}, true);
 
 
 // ---------------------------------------------------------------------
