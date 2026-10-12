@@ -539,3 +539,13 @@ body.ob-plein > :not(.ob) { visibility: hidden; }
 @media (prefers-reduced-motion: reduce) {
   .ob__cartes--pile .ob-carte { transition: none; }
 }
+
+/* Carte du dessus face cachée, en attente du joueur (JS/booster-ouverture.js : suivante / retourner) :
+   elle flotte doucement pour inviter à la toucher (sans halo coloré : la rareté reste une surprise) */
+.ob-carte--attend .ob-carte__corps { animation: ob-attend 1.8s ease-in-out infinite; }
+@keyframes ob-attend { 50% { translate: 0 -10px; } }
+.ob-carte--attend .ob-carte__dos img { transition: filter .25s ease; }
+.ob:hover .ob-carte--attend .ob-carte__dos img { filter: brightness(1.12); }
+@media (prefers-reduced-motion: reduce) {
+  .ob-carte--attend .ob-carte__corps { animation: none; }
+}

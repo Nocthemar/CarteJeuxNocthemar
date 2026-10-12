@@ -6,7 +6,8 @@
 //   - taps 1 à 3 : la porte tremble, se fissure, le cristal s'allume de plus en plus (blanc)
 //   - tap 3     : le cristal éclate dans la couleur de la MEILLEURE rareté du booster
 //   - tap 4     : les battants s'ouvrent, les cartes sortent face cachée
-//   - puis      : chaque tap retourne une carte (la plus rare en dernier)
+//   - puis      : chaque carte arrive face cachée ; un tap la retourne, un tap la fait partir
+//                 (la plus rare en dernier)
 //  Usage : await ouvrirBoosterAnime(resultat, imageBooster, { restants, surRouvrir })
 // =====================================================================
 import { jouerSon } from './jeu-cartes-son.js';
@@ -340,6 +341,7 @@ export function ouvrirBoosterAnime(resultat, imageBooster, { restants = 0, surRo
   let phase = 'fissure';   // 'fissure' -> 'couleur' -> 'cartes' -> 'fin'
   let revelees = 0;
   let occupe = false;
+  let enAttente = false;   // la carte du dessus est face cachée et attend d'être retournée
 
   return new Promise((resolve) => {
     const fermer = (rouvrir = false) => {
@@ -393,6 +395,8 @@ export function ouvrirBoosterAnime(resultat, imageBooster, { restants = 0, surRo
         return;
       }
       if (phase === 'cartes') {
+        // La carte du dessus attend face cachée : c'est le joueur qui la retourne
+        if (enAttente) { retourner(); return; }
         // La carte révélée s'envole : on passe à la suivante (ou, à la fin, au récapitulatif en ligne)
         const actuelle = ov.querySelector(`.ob-carte[data-i="${revelees - 1}"]`);
         occupe = true;
@@ -412,15 +416,27 @@ export function ouvrirBoosterAnime(resultat, imageBooster, { restants = 0, surRo
       });
     }
 
-    // Révèle la carte du dessus de la pile, avec l'animation de sa rareté
+    // La carte suivante arrive sur le dessus de la pile, face cachée : elle attend le clic du joueur
     function suivante() {
       const carte = ov.querySelector(`.ob-carte[data-i="${revelees}"]`);
       if (!carte) { occupe = false; return; }
-      const c = cartes[revelees];
       majPile();
-      carte.classList.add('ob-carte--actuelle');
+      carte.classList.add('ob-carte--actuelle', 'ob-carte--attend');
+      enAttente = true;
+      occupe = false;
+      aide(`Tape sur la carte pour la retourner (${revelees + 1} / ${cartes.length})`);
+    }
+
+    // Le joueur retourne la carte du dessus : l'animation de sa rareté
+    function retourner() {
+      const carte = ov.querySelector(`.ob-carte[data-i="${revelees}"]`);
+      if (!carte) return;
+      const c = cartes[revelees];
+      carte.classList.remove('ob-carte--attend');
+      enAttente = false;
       revelees += 1;
       occupe = true;
+      aide('');
       revelerCarte(ov, $('.ob__particules'), carte, c).then(() => {
         occupe = false;
         aide(revelees >= cartes.length ? 'Tape pour voir tout ton butin' : `Tape pour la suivante (${revelees} / ${cartes.length})`);
