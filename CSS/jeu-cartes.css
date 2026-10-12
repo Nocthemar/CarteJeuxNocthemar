@@ -2369,7 +2369,7 @@ body.en-duel { overflow: hidden; padding: 0 !important; }
   clip-path: polygon(5px 0, calc(100% - 5px) 0, 100% 50%, calc(100% - 5px) 100%, 5px 100%, 0 50%);
   font-family: "Cinzel","Cinzel Repli", serif; font-weight: 800; font-size: 1rem; color: #fff;
 }
-.loupe__energie { background: linear-gradient(160deg, #8fb4ff 0 45%, #3f63b8 45.1%); }
+.loupe__energie { background: linear-gradient(160deg, #b48cff 0 45%, #6a3fd0 45.1%); }   /* violet, comme la bulle d'énergie */
 .loupe__stat--a { background: linear-gradient(160deg, #6a7385 0 45%, #474e5c 45.1%); }
 .loupe__stat--h { background: linear-gradient(160deg, #c45b61 0 45%, #8e3238 45.1%); }
 .loupe__etat {
