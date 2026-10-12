@@ -2428,3 +2428,9 @@ body.en-duel { overflow: hidden; padding: 0 !important; }
   .loupe__fiche { max-height: none; justify-self: stretch; }
   .loupe__jets { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
+
+/* Consigne du tour (« Joue une carte… ») : plus affichée sur le plateau, gardée pour les lecteurs d'écran */
+.page-jeu .tg-tapis > .centre__consigne {
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+  overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; border: 0;
+}
