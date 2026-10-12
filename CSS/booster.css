@@ -449,7 +449,7 @@ body.ob-plein > :not(.ob) { visibility: hidden; }
 }
 
 /* Transcendante : l'écran s'assombrit, la carte s'élève au centre dans un halo d'or */
-.ob--nuit .ob__lumiere, .ob--nuit .ob__brume, .ob--nuit .ob__vitrail { opacity: .15; transition: opacity .6s ease; }
+.ob--nuit .ob__lumiere, .ob--nuit .ob__brume { opacity: .15; transition: opacity .6s ease; }   /* (le vitrail reste : il va se briser) */
 .ob--nuit .ob-carte:not(.ob-carte--elevee) { opacity: .25 !important; transition: opacity .6s ease; }
 .ob-carte--elevee { position: relative; z-index: 4; }
 .ob-carte--elevee .ob-carte__corps { animation: ob-elevee 1.4s cubic-bezier(.3,0,.2,1) both; }
@@ -548,4 +548,45 @@ body.ob-plein > :not(.ob) { visibility: hidden; }
 .ob:hover .ob-carte--attend .ob-carte__dos img { filter: brightness(1.12); }
 @media (prefers-reduced-motion: reduce) {
   .ob-carte--attend .ob-carte__corps { animation: none; }
+}
+
+/* =====================================================================
+   Transcendante : effet cinéma et vitrail brisé (JS/booster-ouverture.js : revelerCarte, briserVitrail)
+   ===================================================================== */
+/* Bandes noires de cinéma, en haut et en bas */
+.ob__cinema::before, .ob__cinema::after {
+  content: ""; position: fixed; left: 0; right: 0; z-index: 9; height: 13vh;
+  background: #000;
+  box-shadow: 0 0 30px 10px rgba(0,0,0,.6);
+  transform: scaleY(0);
+  transition: transform .7s cubic-bezier(.6,0,.2,1);
+  pointer-events: none;
+}
+.ob__cinema::before { top: 0; transform-origin: 50% 0; }
+.ob__cinema::after { bottom: 0; transform-origin: 50% 100%; }
+.ob--cinema .ob__cinema::before, .ob--cinema .ob__cinema::after { transform: scaleY(1); }
+
+/* Le vitrail se fissure (il tremble), puis il est remplacé par ses éclats */
+.ob__vitrail--tremble { animation: vitrail-tremble .7s linear both; }
+@keyframes vitrail-tremble {
+  0%, 100% { transform: none; }
+  10% { transform: translateX(-3px) rotate(-.3deg); }
+  25% { transform: translateX(4px) rotate(.3deg); }
+  40% { transform: translateX(-5px) rotate(-.4deg); }
+  55% { transform: translateX(5px) rotate(.4deg); }
+  70% { transform: translateX(-6px); }
+  85% { transform: translateX(6px); }
+}
+.ob__vitrail--brise { opacity: 0 !important; transition: none !important; }
+.ob__eclats-vitrail { position: fixed; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; }
+.ob__eclat-vitrail {
+  position: absolute;
+  opacity: .9;
+  filter: brightness(1.15);
+  box-shadow: inset 0 0 6px rgba(20,16,24,.8);
+  will-change: transform, opacity;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ob__cinema::before, .ob__cinema::after { transition: none; }
+  .ob__vitrail--tremble { animation: none; }
 }

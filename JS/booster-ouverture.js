@@ -147,7 +147,8 @@ function eclats(zone, x, y, couleur, n = 26, force = 260) {
 //   éveillée      : lueur verte, feuilles et étincelles qui montent
 //   mythique      : la carte se gonfle d'énergie (sans tourner) avant de se retourner, double onde bleue
 //   légendaire    : la carte tremble et rougeoie, flash, secousse, pluie de braises, grand titre
-//   transcendante : l'écran s'assombrit, la carte s'élève au centre dans un halo d'or,
+//   transcendante : bandes noires de cinéma, l'écran s'assombrit, la carte s'élève dans un halo d'or,
+//                   le vitrail s'allume en or, se fissure puis vole en éclats,
 //                   explosion de lumière, pluie d'étoiles, grand titre « TRANSCENDANTE »
 // ---------------------------------------------------------------------
 const attendre = (ms) => new Promise((r) => setTimeout(r, reduit ? 0 : ms));
@@ -232,6 +233,60 @@ function eclaterCristal(ov, zone, x, y, rarete) {
   if (rang >= 3) setTimeout(() => jouerSon('fanfare'), 300);
 }
 
+// ---------------------------------------------------------------------
+//  Transcendante : le vitrail se brise. Chaque verre du vitrail (polygone du SVG) devient un éclat,
+//  découpé à sa place exacte à l'écran et de sa couleur : il saute vers l'extérieur en tournant,
+//  puis retombe et s'efface (transform + opacité seulement : léger à animer).
+// ---------------------------------------------------------------------
+function briserVitrail(ov) {
+  const vit = ov.querySelector('.ob__vitrail');
+  const svg = vit?.querySelector('svg');
+  if (!vit || !svg) return;
+  const m = svg.getScreenCTM();
+  const polys = [...svg.querySelectorAll('.verres polygon')].map((poly) => ({ poly, fill: getComputedStyle(poly).fill }));
+  vit.classList.add('ob__vitrail--brise');
+  if (reduit || !m) return;
+  const couche = document.createElement('div');
+  couche.className = 'ob__eclats-vitrail';
+  ov.appendChild(couche);
+  const cx = innerWidth / 2;
+  const cy = innerHeight * 0.45;
+  for (const { poly, fill } of polys) {
+    const pts = [...poly.points].map((p) => [m.a * p.x + m.c * p.y + m.e, m.b * p.x + m.d * p.y + m.f]);
+    const xs = pts.map((p) => p[0]);
+    const ys = pts.map((p) => p[1]);
+    const x0 = Math.min(...xs);
+    const y0 = Math.min(...ys);
+    const w = Math.max(...xs) - x0;
+    const h = Math.max(...ys) - y0;
+    if (w < 2 || h < 2 || x0 > innerWidth || y0 > innerHeight || x0 + w < 0 || y0 + h < 0) continue;
+    const e = document.createElement('span');
+    e.className = 'ob__eclat-vitrail';
+    const forme = pts.map(([x, y]) => (x - x0).toFixed(1) + 'px ' + (y - y0).toFixed(1) + 'px').join(', ');
+    Object.assign(e.style, {
+      left: x0 + 'px', top: y0 + 'px', width: w + 'px', height: h + 'px',
+      background: fill,
+      clipPath: 'polygon(' + forme + ')',
+    });
+    couche.appendChild(e);
+    // part du centre de l'explosion, saute vers l'extérieur, puis tombe
+    const ex = x0 + w / 2 - cx;
+    const ey = y0 + h / 2 - cy;
+    const d = Math.hypot(ex, ey) || 1;
+    const force = 60 + Math.random() * 140;
+    const dx = (ex / d) * force;
+    const dy = (ey / d) * force;
+    const tombe = innerHeight * (0.6 + Math.random() * 0.6);
+    const rot = (Math.random() - 0.5) * 540;
+    e.animate([
+      { transform: 'translate(0, 0) rotate(0deg)', opacity: 1 },
+      { transform: 'translate(' + dx.toFixed(0) + 'px, ' + (dy - 40).toFixed(0) + 'px) rotate(' + (rot * 0.3).toFixed(0) + 'deg)', opacity: 1, offset: 0.22 },
+      { transform: 'translate(' + (dx * 1.6).toFixed(0) + 'px, ' + (dy + tombe).toFixed(0) + 'px) rotate(' + rot.toFixed(0) + 'deg) scale(.7)', opacity: 0 },
+    ], { duration: 1400 + Math.random() * 900, delay: Math.random() * 90, easing: 'cubic-bezier(.25,.6,.6,1)', fill: 'forwards' });
+  }
+  setTimeout(() => couche.remove(), 2600);
+}
+
 // Une carte se retourne, avec l'anticipation et l'éclat de sa rareté (se résout à la fin de l'effet)
 async function revelerCarte(ov, zone, carte, c) {
   const rang = RARETES.indexOf(c.rarete);
@@ -249,11 +304,18 @@ async function revelerCarte(ov, zone, carte, c) {
     await attendre(900);
     carte.classList.remove('ob-carte--tremble');
   } else if (rang === 4) {
-    ov.classList.add('ob--nuit');
+    // bandes noires de cinéma, la pièce s'assombrit, le vitrail s'allume en or et se fissure, puis éclate
+    ov.classList.add('ob--cinema', 'ob--nuit');
+    ov.style.setProperty('--rarete', coul);
     carte.classList.add('ob-carte--elevee');
     jouerSon('sombre');
     jouerSon('magie', 0.5);
-    await attendre(1400);
+    await attendre(700);
+    ov.querySelector('.ob__vitrail')?.classList.add('ob__vitrail--tremble');
+    jouerSon('choc');
+    await attendre(700);
+    briserVitrail(ov);
+    jouerSon('acier');
   }
 
   carte.classList.add('ob-carte--revelee');
@@ -280,6 +342,7 @@ async function revelerCarte(ov, zone, carte, c) {
     await attendre(1000);
     carte.classList.remove('ob-carte--elevee');
     ov.classList.remove('ob--nuit');
+    setTimeout(() => ov.classList.remove('ob--cinema'), 900);
   }
   await attendre(rang >= 3 ? 700 : rang === 2 ? 350 : 150);
 }
@@ -320,7 +383,8 @@ export function ouvrirBoosterAnime(resultat, imageBooster, { restants = 0, surRo
         <button type="button" class="ob__btn" data-action="fermer">Fermer</button>
       </div>
     </div>
-    <div class="ob__particules" aria-hidden="true"></div>`;
+    <div class="ob__particules" aria-hidden="true"></div>
+    <div class="ob__cinema" aria-hidden="true"></div>`;
   document.body.appendChild(ov);
   document.body.classList.add('ob-ouvert');
   // Les images des cartes sont décodées pendant que le joueur tape sur la porte :
