@@ -2054,7 +2054,7 @@ body.en-duel { overflow: hidden; padding: 0 !important; }
 
 /* =====================================================================
    Le plateau de Nocthémar : une île flottante (fond transparent), qui change avec la SAISON RÉELLE
-   (img/Plateaux de carte/plateau-automne|hiver|printemps|ete.webp, 1448 × 910, disposition voisine).
+   (img/Plateaux de carte/plateau-defaut|automne|hiver|printemps|ete.webp, 1672 × 941, même disposition).
    Le plateau est posé sur <body> par JS/jeu-cartes.js (classe plateau-…) : celui choisi par le joueur
    (acheté en boutique, SQL/plateaux.sql), sinon celui de la saison réelle ; ?saison=hiver le force.
    Tout y est placé en % de l'image (cqw = % de la largeur du plateau), mesuré au pixel :
@@ -2066,7 +2066,7 @@ body.en-duel { overflow: hidden; padding: 0 !important; }
    ===================================================================== */
 .page-jeu .tg-bord {
   container-type: inline-size;
-  aspect-ratio: var(--plateau-ratio, 1448 / 910);
+  aspect-ratio: var(--plateau-ratio, 1672 / 941);
   padding: 0;
   border-radius: 0;
   background: url("../img/Plateaux%20de%20carte/plateau-automne.webp") center / 100% 100% no-repeat;
@@ -2091,9 +2091,8 @@ body.en-duel { overflow: hidden; padding: 0 !important; }
 .page-jeu.plateau-printemps .tg-bord { background-image: url("../img/Plateaux%20de%20carte/plateau-printemps.webp"); }
 .page-jeu.plateau-ete       .tg-bord { background-image: url("../img/Plateaux%20de%20carte/plateau-ete.webp"); }
 .page-jeu.plateau-automne   .tg-bord { background-image: url("../img/Plateaux%20de%20carte/plateau-automne.webp"); }
-/* Plateau par défaut (sans plateau choisi) : l'arène de pierre, 1672 × 941 (les saisons : 1448 × 910) */
+/* Plateau par défaut (sans plateau choisi) : l'arène de pierre ; les saisons sont la même arène, décorée */
 .page-jeu.plateau-defaut    .tg-bord { background-image: url("../img/Plateaux%20de%20carte/plateau-defaut.webp"); }
-.page-jeu.plateau-defaut { --plateau-ratio: 1672 / 941; --plateau-r: 1.7768; }
 
 /* Les troupes, sur les emplacements peints */
 .page-jeu .tg-bord .terrain {
@@ -2200,7 +2199,7 @@ body.en-duel { overflow: hidden; padding: 0 !important; }
 /* =====================================================================
    Disposition du duel sur ordinateur : un grand plateau au milieu
    - le plateau prend toute la place libre (largeur moins les boutons à droite,
-     hauteur moins la barre de l'adversaire et la main), en gardant sa forme 1448 / 910
+     hauteur moins la barre de l'adversaire et la main), en gardant sa forme 1672 / 941
    - ton énergie et ton héros : une plaque en bas à gauche de l'écran
    - la main : des cartes plus petites, qui grossissent au survol
    (vient en dernier : ces règles l'emportent)
@@ -2215,7 +2214,7 @@ body.en-duel { overflow: hidden; padding: 0 !important; }
     /* Grand plateau : ses bords transparents (ciel, rochers du dessous) passent sous la barre
        de l'adversaire et sous la main, d'où les marges négatives */
     /* .78 : le plateau un peu plus petit, il laisse de l'air autour */
-    width: min((100vw - 2 * clamp(130px, 9vw, 170px)) * .78, (100vh - 2vh) * var(--plateau-r, 1.5912) * .78);
+    width: min((100vw - 2 * clamp(130px, 9vw, 170px)) * .78, (100vh - 2vh) * var(--plateau-r, 1.7768) * .78);
     margin: calc(-8vh + 8px) auto calc(-6vh - 8px);   /* remonté de 8vh, puis redescendu de 8 px (~2 mm) ; même hauteur totale */
   }
   .en-duel .table__plateau { --carte-l-main: min(6.2vw, 11.5vh); }
@@ -2246,38 +2245,17 @@ body.en-duel { overflow: hidden; padding: 0 !important; }
 
 
 /* =====================================================================
-   Troupes posées sur le plateau : la carte d'origine, posée SUR la trace que les cartes ont laissée
-   dans le sol (à force d'y être posées), centrée dessus. Avec --zoom-cartes = 1, le cadre de la carte
-   (81,9 % de la hauteur de son image) a la hauteur de la trace ; plus grand, la carte déborde de sa trace.
-   Plateaux 1448 × 910 (img/Plateaux de carte/, recadrés des originaux 1448 × 1086 : y de 70 à 980),
-   traces mesurées au pixel sur chacun :
+   Troupes posées sur le plateau : la carte d'origine, centrée sur la grande dalle de son camp.
+   Les cinq plateaux (l'arène par défaut et ses quatre versions de saison, 1672 × 941,
+   img/Plateaux de carte/) ont exactement la même disposition : un seul réglage, mesuré au pixel.
+   Avec --zoom-cartes = 1, le cadre de la carte (81,9 % de la hauteur de son image) a la hauteur h.
    --h-… rangée du haut (l'adversaire), --b-… rangée du bas (toi)
-     x / l : gauche et largeur de la rangée (5 colonnes égales, centrées sur les traces)
-     y / h : haut et hauteur des traces
+     x / l : gauche et largeur de la rangée (5 colonnes égales)
+     y / h : haut et hauteur de la zone de chaque rangée
      u     : largeur de l'image d'une carte
    --n-x / --n-y : centre du cercle « N » (le dé)
    ===================================================================== */
 .page-jeu .tg-bord {
-  --h-x: 24.59%; --h-l: 49.72%; --h-y: 36.48%; --h-h: 11.32%; --h-u: 5.79cqw;
-  --b-x: 24.96%; --b-l: 50.31%; --b-y: 63.74%; --b-h: 12.09%; --b-u: 6.18cqw;
-  --n-x: 50.07%; --n-y: 55.16%;
-}
-.page-jeu.plateau-ete .tg-bord {
-  --h-x: 24.21%; --h-l: 51.21%; --h-y: 34.62%; --h-h: 12.31%; --h-u: 6.30cqw;
-  --b-x: 24.27%; --b-l: 51.10%; --b-y: 63.52%; --b-h: 12.86%; --b-u: 6.58cqw;
-  --n-x: 50.07%; --n-y: 54.40%;
-}
-.page-jeu.plateau-hiver .tg-bord {
-  --h-x: 25.87%; --h-l: 47.89%; --h-y: 37.58%; --h-h: 11.10%; --h-u: 5.68cqw;
-  --b-x: 25.81%; --b-l: 48.41%; --b-y: 66.04%; --b-h: 11.21%; --b-u: 5.73cqw;
-  --n-x: 50.07%; --n-y: 56.04%;
-}
-.page-jeu.plateau-printemps .tg-bord {
-  --h-x: 25.31%; --h-l: 49.27%; --h-y: 35.38%; --h-h: 11.32%; --h-u: 5.79cqw;
-  --b-x: 25.55%; --b-l: 48.95%; --b-y: 63.96%; --b-h: 12.75%; --b-u: 6.52cqw;
-  --n-x: 50.07%; --n-y: 54.40%;
-}
-.page-jeu.plateau-defaut .tg-bord {
   --h-x: 27.57%; --h-l: 44.86%; --h-y: 31.35%; --h-h: 15.41%; --h-u: 7.06cqw;
   --b-x: 26.08%; --b-l: 47.85%; --b-y: 61.32%; --b-h: 17.00%; --b-u: 7.79cqw;
   --n-x: 50.12%; --n-y: 50.90%;

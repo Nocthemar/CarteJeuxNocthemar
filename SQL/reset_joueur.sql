@@ -9,9 +9,9 @@
 --  Effacé : cartes et grimoire, deck du profil, boosters (non ouverts et historique), Pass de saison
 --  (XP, paliers réclamés, premium, parties, cosmétiques du pass), mode Histoire (niveaux terminés, XP),
 --  plateaux achetés, échanges (proposés et reçus).
---  Gardé : le compte (players), et ce qui est partagé avec le bot Discord : la bourse (wallets),
---  l'inventaire de cosmétiques (inventory) et les transactions. Pour les effacer aussi, retire les
---  deux tirets devant les lignes « (facultatif) » plus bas.
+--  Effacé aussi (partagé avec le bot Discord) : la bourse remise à 0 (wallets), les cosmétiques possédés
+--  (inventory : thèmes, titres, bannières de la roue des apparences) et les transactions.
+--  Gardé : seulement le compte (players).
 --  Les tables absentes (SQL pas encore lancé) sont simplement ignorées.
 -- =====================================================================
 do $$
@@ -45,10 +45,11 @@ begin
   update public.players set banner_item_id = null, title_item_id = null, theme_item_id = null
   where discord_id = v_joueur;
 
-  -- (facultatif) partagé avec le bot Discord : retire les deux tirets pour effacer aussi
-  -- update public.wallets set balance = 0 where discord_id = v_joueur;     -- bourse à 0
-  -- delete from public.inventory where discord_id = v_joueur;             -- cosmétiques et objets possédés
-  -- delete from public.transactions where discord_id = v_joueur;          -- historique des pièces
+  -- Partagé avec le bot Discord : bourse, cosmétiques (thèmes, titres, bannières) et transactions.
+  -- Pour les garder, remets deux tirets « -- » devant ces trois lignes.
+  update public.wallets set balance = 0 where discord_id = v_joueur;     -- bourse à 0
+  delete from public.inventory where discord_id = v_joueur;             -- cosmétiques et objets possédés
+  delete from public.transactions where discord_id = v_joueur;          -- historique des pièces
 
   raise notice 'Joueur % remis à zéro.', v_joueur;
 end $$;

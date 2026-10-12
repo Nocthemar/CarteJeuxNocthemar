@@ -127,13 +127,13 @@ grant execute on function public.acheter_plateau(text), public.equiper_plateau(t
 --  4. Les plateaux en vente : les quatre saisons
 -- ---------------------------------------------------------------------
 insert into public.plateaux (id, nom, description, prix, image, miniature, ordre) values
-  ('printemps', 'Clairière du Printemps', 'Cerisiers en fleurs et lanternes au bord des ruines.',
+  ('printemps', 'Arène du Printemps',     'L''arène de pierre couverte de lierre et de fleurs de cerisier.',
     500, 'img/Plateaux de carte/plateau-printemps.webp', 'img/Plateaux de carte/plateau-printemps-mini.webp', 1),
-  ('ete',       'Prairie de l''Été',       'Herbes hautes, fleurs sauvages et vieux chêne.',
+  ('ete',       'Arène de l''Été',         'L''arène de pierre envahie de verdure, de mousse et de jeunes sapins.',
     500, 'img/Plateaux de carte/plateau-ete.webp',       'img/Plateaux de carte/plateau-ete-mini.webp',       2),
-  ('automne',   'Sous-bois d''Automne',    'Feuilles rousses, champignons et arche de pierre.',
+  ('automne',   'Arène d''Automne',        'L''arène de pierre sous les érables rouges et les feuilles mortes.',
     500, 'img/Plateaux de carte/plateau-automne.webp',   'img/Plateaux de carte/plateau-automne-mini.webp',   3),
-  ('hiver',     'Givre de l''Hiver',       'Neige, cristaux de glace et sapins sous le givre.',
+  ('hiver',     'Arène de l''Hiver',       'L''arène de pierre prise dans la neige et les cristaux de glace.',
     500, 'img/Plateaux de carte/plateau-hiver.webp',     'img/Plateaux de carte/plateau-hiver-mini.webp',     4)
 on conflict (id) do update set nom = excluded.nom, description = excluded.description, prix = excluded.prix,
   image = excluded.image, miniature = excluded.miniature, ordre = excluded.ordre;
