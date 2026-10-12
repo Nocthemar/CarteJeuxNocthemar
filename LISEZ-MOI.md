@@ -24,6 +24,7 @@ mêmes cartes, mêmes pièces, même progression.
 - `JS/jeu-cartes-effets.js`, `JS/jeu-cartes-son.js` : effets visuels et sons
 - `JS/jeu-cartes-attaques.js` : l'animation de chaque attaque (par Veine, et les attaques
   signatures des personnages : pour une nouvelle carte, ajouter son attaque dans `ATTAQUES`)
+- `JS/jeu-cartes-ombre.js` : le niveau caché de l’Ombre (son Grimoire en miroir du tien, et l’élan selon tes victoires et défaites)
 - `JS/jeu-cartes-ligne.js` : le mode en ligne (salons Supabase Realtime)
 - `JS/jeu-cartes.js` : le pilote de la page du jeu
 - `JS/boutique-boosters.js`, `JS/booster-ouverture.js`, `CSS/booster.css` : les boosters de cartes (achat dans la Boutique, animation d'ouverture)

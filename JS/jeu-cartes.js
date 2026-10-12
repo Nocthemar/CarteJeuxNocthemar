@@ -32,6 +32,7 @@ import { trouverNiveau } from './histoire-data.js';
 import { rendre, animer, banniere, pause, htmlCarte, activerProfondeur, secouer, reduit } from './jeu-cartes-arene.js';
 import { jouerSon, basculerMuet, estMuet, lireVolume, reglerVolume } from './jeu-cartes-son.js';
 import { ouvrirSalon, nouveauCode, codeValide, TAILLE_SALON } from './jeu-cartes-ligne.js';
+import { grimoireOmbre, lireElan, pvElan, noterResultat } from './jeu-cartes-ombre.js';
 
 const NOM_ADVERSAIRE = "L'Ombre du Codex";
 
@@ -39,9 +40,9 @@ const NOM_ADVERSAIRE = "L'Ombre du Codex";
 // ia : le comportement de l'IA (ai(), JS/jeu-cartes-moteur.js) ; pv : les PV de l'Ombre.
 // Le mode Histoire garde la difficulté de chaque niveau (JS/histoire-data.js).
 const DIFFICULTES = {
-  facile:    { pv: 16, texte: 'L’Ombre oublie parfois ses cartes et frappe au hasard. 16 PV.' },
-  normal:    { pv: 20, texte: 'L’Ombre joue ses meilleures cartes et choisit ses cibles. 20 PV.' },
-  difficile: { pv: 24, texte: 'L’Ombre tente plus souvent le Destin et a plus de vie. 24 PV.' },
+  facile:    { pv: 16, texte: 'L’Ombre oublie parfois ses cartes, frappe au hasard et a moins de vie.' },
+  normal:    { pv: 20, texte: 'L’Ombre joue ses meilleures cartes et choisit ses cibles.' },
+  difficile: { pv: 24, texte: 'L’Ombre tente plus souvent le Destin et a plus de vie.' },
 };
 const CLE_DIFFICULTE = 'duel-couronnes-difficulte';
 let difficulte = 'normal';
@@ -424,14 +425,16 @@ function montrerPlateau() {
 function nouvellePartieSolo() {
   role = null;
   const niv = histoire?.niveau;
-  // L'Ombre : des cartes du catalogue en 2 exemplaires et 2 objets au hasard
+  // L'Ombre : un Grimoire en miroir du tien, ajusté par ton élan (niveau caché, JS/jeu-cartes-ombre.js)
+  const monGrimoire = grimoire(grimoireJoueur);
+  const elan = lireElan(moi?.discord_id);
   const deckAdverse = niv
     ? deckHistoire(niv.deck)
-    : construireDeck([...melanger(unitesCatalogue).flatMap((u) => [u, u]), ...melanger(OBJETS).slice(0, 2).flatMap((o) => [o, o])]);
+    : grimoireOmbre(monGrimoire, unitesCatalogue, elan);
   const premier = Math.random() < 0.5 ? 'joueur' : 'adverse';
-  p = creerPartie(construireDeck(grimoireJoueur), deckAdverse, moi?.username ?? 'Toi',
+  p = creerPartie(melanger(monGrimoire), deckAdverse, moi?.username ?? 'Toi',
     niv ? niv.adversaire : NOM_ADVERSAIRE, premier,
-    niv ? { pvAdverse: niv.pv, energieBonusAdverse: niv.energieBonus } : { pvAdverse: DIFFICULTES[difficulte].pv });
+    niv ? { pvAdverse: niv.pv, energieBonusAdverse: niv.energieBonus } : { pvAdverse: DIFFICULTES[difficulte].pv + pvElan(elan) });
   renvoyerMain(p, 'adverse', choixRenvoiIA(p.camps.adverse));   // l'IA renvoie ses cartes trop chères
   montrerPlateau();
   ouvrirRenvoi();
@@ -593,6 +596,7 @@ async function terminer(raison = '') {
   await pause(600);
   const gagne = p.fini === 'joueur';
   const resultat = histoire ? await finHistoire(gagne) : null;
+  if (!role && !histoire) noterResultat(moi?.discord_id, gagne);   // l'élan de l'Ombre (niveau caché)
   jouerSon(gagne ? 'fanfare' : 'tonnerre');
   const s = p.camps.joueur.stats;
   $('fin-sur').textContent = gagne ? 'La couronne est à toi' : `${nomAdverse()} l'emporte`;
@@ -632,7 +636,6 @@ function demanderTicketPass() {
 
 const RAISONS_PASS = {
   plafond: 'Plafond d\'XP de pass du jour atteint',
-  courte: 'Partie trop courte pour l\'XP de pass (2 minutes minimum)',
 };
 
 // Petit message « +X XP de pass » sur l'écran de fin (lien vers la page du pass)

@@ -23,7 +23,7 @@
 --  Anti-triche des duels (le serveur ne voit pas la partie, qui se joue dans le navigateur) :
 --    - un ticket par partie, demandé au début, utilisable une seule fois ;
 --      en demander un nouveau annule le précédent ;
---    - au moins 2 minutes de jeu entre le ticket et la fin (et au plus 3 heures) ;
+--    - au plus 3 heures entre le ticket et la fin (pas de durée minimale : le plafond du jour suffit) ;
 --    - contre l'IA : 100 (victoire) / 30 (défaite), 1000 XP par jour au plus ;
 --    - contre un ami : 150 / 50, 1500 XP par jour au plus ; l'adversaire doit être un autre
 --      compte, avec son propre ticket dans le même salon ; une seule victoire par partie ;
@@ -300,11 +300,7 @@ begin
     return json_build_object('xp', 0, 'raison', 'saison');
   end if;
 
-  -- Durée : au moins 2 minutes, au plus 3 heures
-  if now() - v_partie.commence_le < interval '2 minutes' then
-    update pass_parties set termine_le = now(), victoire = v_vict where id = p_ticket;
-    return json_build_object('xp', 0, 'raison', 'courte');
-  end if;
+  -- Durée : pas de minimum (une partie peut être courte), au plus 3 heures
   if now() - v_partie.commence_le > interval '3 hours' then
     update pass_parties set termine_le = now(), victoire = v_vict where id = p_ticket;
     return json_build_object('xp', 0, 'raison', 'ticket');
