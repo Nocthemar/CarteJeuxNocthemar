@@ -7,7 +7,7 @@
 // =====================================================================
 import { supabase, getMonJoueur, connexionDiscord, SITE_ROOT } from './supabase.js';
 import { $, esc, notifier } from './commun.js';
-import { ouvrirApercu, htmlCarte } from './cartes.js';
+import { ouvrirApercu, htmlCarte, versoDe, RARETES } from './cartes.js';
 import { jouerSon } from './jeu-cartes-son.js';   // fanfare du déblocage premium (respecte le volume et le mode muet du jeu)
 
 const etat = {
@@ -23,6 +23,7 @@ const etat = {
 const TYPES = {
   or: 'Or',
   carte: 'Carte',
+  carte_rarete: 'Carte au hasard',
   booster: 'Booster',
   dos_carte: 'Dos de cartes',
   cadre_portrait: 'Cadre de portrait',
@@ -137,6 +138,12 @@ function contenuRecompense(p) {
     return `<span class="recompense__visuel recompense__visuel--carte">${c?.image ? `<button type="button" class="recompense__loupe" data-apercu-carte="${esc(v.nom)}" title="Voir la carte en grand" aria-label="Voir la carte ${esc(v.nom)}">${htmlCarte(c)}</button>` : svg('dos_carte')}</span>
       <span class="recompense__nom">${esc(v.nom ?? 'Carte')}</span>`;
   }
+  if (p.type_recompense === 'carte_rarete') {
+    // Une carte au hasard de cette rareté : son dos, de la couleur de la rareté
+    const r = RARETES[v.rarete] ? v.rarete : 'mythique';
+    return `<span class="recompense__visuel recompense__visuel--carte recompense__visuel--${r}"><img src="${urlImage(versoDe(r))}" alt="" loading="lazy"></span>
+      <span class="recompense__nom">Carte ${esc(RARETES[r].toLowerCase())}</span>`;
+  }
   if (p.type_recompense === 'booster') {
     const b = etat.boosters.get(v.booster ?? 'cendres');
     const n = v.quantite ?? 1;
@@ -240,6 +247,13 @@ $('piste').addEventListener('click', async (e) => {
     notifier(data.deja_possedee
       ? `Tu avais déjà « ${data.nom} » : +${nombre(data.or)} or à la place.`
       : `« ${data.nom} » rejoint ta collection !`);
+  } else if (data.type === 'carte_rarete') {
+    const rarete = (RARETES[data.rarete] ?? 'rare').toLowerCase();
+    notifier(!data.deja_possedee
+      ? `Carte ${rarete} : « ${data.nom} » rejoint ta collection !`
+      : data.or > 0
+        ? `Plus aucune carte ${rarete} à découvrir : +${nombre(data.or)} or à la place.`
+        : `Tu as déjà toutes les cartes ${rarete}s : un exemplaire de plus de « ${data.nom} » (à recycler dans ton grimoire).`);
   } else {
     notifier(`${TYPES[data.type]} « ${data.nom} » obtenu.`);
   }

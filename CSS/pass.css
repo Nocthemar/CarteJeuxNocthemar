@@ -224,6 +224,12 @@
 .recompense__visuel img { max-height: 100%; max-width: 100%; object-fit: contain; }
 .recompense__visuel--or img { width: 58px; height: 58px; filter: drop-shadow(0 3px 8px rgba(216,185,120,.4)); }
 .recompense__visuel--carte img { height: 92px; filter: drop-shadow(0 4px 8px rgba(0,0,0,.6)); }
+/* Carte au hasard : le dos de la rareté, avec un halo de sa couleur (mêmes couleurs que les boosters) */
+.recompense__visuel--commune img       { filter: drop-shadow(0 0 8px rgba(197,202,211,.55)) drop-shadow(0 4px 8px rgba(0,0,0,.6)); }
+.recompense__visuel--eveillee img      { filter: drop-shadow(0 0 8px rgba(79,217,135,.6))   drop-shadow(0 4px 8px rgba(0,0,0,.6)); }
+.recompense__visuel--mythique img      { filter: drop-shadow(0 0 9px rgba(91,155,255,.75))  drop-shadow(0 4px 8px rgba(0,0,0,.6)); }
+.recompense__visuel--legendaire img    { filter: drop-shadow(0 0 10px rgba(255,75,92,.75))  drop-shadow(0 4px 8px rgba(0,0,0,.6)); }
+.recompense__visuel--transcendante img { filter: drop-shadow(0 0 12px rgba(246,210,122,.9)) drop-shadow(0 4px 8px rgba(0,0,0,.6)); }
 .recompense__visuel svg { width: 52px; height: 52px; color: var(--or); }
 .recompense--premium .recompense__visuel--cosmetique svg { color: var(--premium); }
 .recompense__nom {

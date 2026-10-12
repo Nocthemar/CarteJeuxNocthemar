@@ -6,7 +6,8 @@
 --  - pass_progression  : XP du joueur dans la saison, premium débloqué, paliers réclamés,
 --                        compteurs du jour (plafonds des duels contre l'IA et contre un ami)
 --  - pass_parties      : les « tickets » de partie (anti-triche des duels, voir plus bas)
---  - récompenses : or, cartes, boosters (SQL/boosters.sql) et cosmétiques
+--  - récompenses : or, cartes (une carte précise, ou une carte au hasard d'une rareté),
+--                   boosters (SQL/boosters.sql) et cosmétiques
 --  - pass_cosmetiques  : les cosmétiques gagnés (dos de cartes, cadres, titres, fonds de plateau),
 --                        enregistrés seulement : leur affichage n'existe pas encore
 --
@@ -55,19 +56,22 @@ create table if not exists public.pass_paliers (
   numero          int    not null check (numero >= 1),
   piste           text   not null check (piste in ('gratuite', 'premium')),
   type_recompense text   not null check (type_recompense in
-                    ('or', 'carte', 'booster', 'dos_carte', 'cadre_portrait', 'titre', 'fond_plateau')),
+                    ('or', 'carte', 'carte_rarete', 'booster', 'dos_carte', 'cadre_portrait', 'titre', 'fond_plateau')),
   -- or : {"montant": 150}
   -- carte : {"nom": "Dalek", "or_si_deja": 300}   (nom exact dans la table cards ; or donné si déjà possédée)
+  -- carte_rarete : {"rarete": "mythique", "or_si_deja": 200}
+  --   une carte au hasard de cette rareté, de préférence une que le joueur n'a pas ; s'il les a toutes :
+  --   un exemplaire de plus (doublon, SQL/doublons.sql), ou l'or si les doublons ne sont pas installés
   -- booster : {"booster": "cendres", "quantite": 1}  (SQL/boosters.sql ; il s'ouvre dans la Boutique)
   -- cosmétiques : {"nom": "Dos de l'Éveil"}
   valeur          jsonb  not null default '{}'::jsonb,
   primary key (saison_id, numero, piste)
 );
 
--- Table déjà créée avant l'arrivée des boosters : on ajoute le type « booster »
+-- Table déjà créée avant : on ajoute les types « booster » et « carte_rarete »
 alter table public.pass_paliers drop constraint if exists pass_paliers_type_recompense_check;
 alter table public.pass_paliers add constraint pass_paliers_type_recompense_check check (type_recompense in
-  ('or', 'carte', 'booster', 'dos_carte', 'cadre_portrait', 'titre', 'fond_plateau'));
+  ('or', 'carte', 'carte_rarete', 'booster', 'dos_carte', 'cadre_portrait', 'titre', 'fond_plateau'));
 
 create table if not exists public.pass_progression (
   discord_id        text   not null,
@@ -362,7 +366,7 @@ begin
 end;
 $$;
 
--- Réclamer la récompense d'un palier atteint. Renvoie { type, nom, or, carte, carte_image, deja_possedee }
+-- Réclamer la récompense d'un palier atteint. Renvoie { type, nom, or, carte_image, rarete, deja_possedee, quantite }
 create or replace function public.pass_reclamer(p_numero int, p_piste text)
 returns json
 language plpgsql
@@ -378,6 +382,7 @@ declare
   v_or     int := 0;
   v_deja   boolean := false;
   v_nom    text;
+  v_rarete text;
 begin
   if v_moi is null then raise exception 'Connecte-toi d''abord.'; end if;
   select * into v_saison from saisons where id = pass_saison_en_cours();
@@ -416,6 +421,37 @@ begin
       insert into player_cards (discord_id, card_id, source) values (v_moi, v_carte.id, 'recompense');
     end if;
 
+  elsif v_palier.type_recompense = 'carte_rarete' then
+    -- Une carte au hasard de cette rareté (les vraies cartes du catalogue, comme les boosters),
+    -- d'abord parmi celles que le joueur n'a pas encore
+    v_rarete := coalesce(v_palier.valeur ->> 'rarete', 'mythique');
+    select c.* into v_carte from cards c
+    where c.rarity = v_rarete and c.is_available and c.image is not null
+      and c.description is distinct from 'Carte d''exemple'
+      and not exists (select 1 from player_cards pc where pc.discord_id = v_moi and pc.card_id = c.id)
+    order by random() limit 1;
+    if found then
+      insert into player_cards (discord_id, card_id, source) values (v_moi, v_carte.id, 'recompense');
+    else
+      -- Il les a toutes : un exemplaire de plus d'une d'elles (à recycler dans le grimoire)
+      select c.* into v_carte from cards c
+      where c.rarity = v_rarete and c.is_available and c.image is not null
+        and c.description is distinct from 'Carte d''exemple'
+      order by random() limit 1;
+      v_deja := true;
+      if not found then
+        -- aucune carte de cette rareté dans le catalogue : de l'or, pour ne pas bloquer le palier
+        v_nom := 'Carte ' || v_rarete;
+        v_or := coalesce((v_palier.valeur ->> 'or_si_deja')::int, 200);
+      elsif exists (select 1 from information_schema.columns
+                    where table_schema = 'public' and table_name = 'player_cards' and column_name = 'quantite') then
+        execute 'update public.player_cards set quantite = quantite + 1 where discord_id = $1 and card_id = $2'
+          using v_moi, v_carte.id;
+      else
+        v_or := coalesce((v_palier.valeur ->> 'or_si_deja')::int, 200);
+      end if;
+    end if;
+
   elsif v_palier.type_recompense = 'booster' then
     -- Booster : ajouté aux boosters du joueur (SQL/boosters.sql), à ouvrir dans la Boutique
     select nom into v_nom from boosters where id = coalesce(v_palier.valeur ->> 'booster', 'cendres');
@@ -447,6 +483,7 @@ begin
     'nom', coalesce(v_carte.name, v_nom),
     'or', v_or,
     'carte_image', v_carte.image,
+    'rarete', coalesce(v_carte.rarity, v_rarete),
     'deja_possedee', v_deja,
     'quantite', case when v_palier.type_recompense = 'booster' then coalesce((v_palier.valeur ->> 'quantite')::int, 1) end
   );
@@ -514,68 +551,73 @@ where not exists (select 1 from public.saisons where nom = 'Les Cendres de Pravo
 
 with s as (select id from public.saisons where nom = 'Les Cendres de Pravorn'),
 paliers (numero, piste, type_recompense, valeur) as (values
-  -- Piste gratuite : de l'or, des cartes dédiées, des boosters, un titre au bout
-  ( 1, 'gratuite', 'or',             '{"montant": 50}'),
-  ( 2, 'gratuite', 'or',             '{"montant": 50}'),
+  -- Équilibre (1 000 XP par palier ; une victoire contre l'IA = 100 XP, 1 000 XP par jour au plus) :
+  --   gratuite : 2 425 or, 5 Boosters des Cendres + 1 Grand Booster, 5 cartes au hasard
+  --              (1 éveillée, 3 mythiques, 1 légendaire), 2 titres
+  --   premium (1 500 or) : 1 550 or (son prix revient en allant au bout), 3 Boosters + 3 Grands Boosters,
+  --              1 transcendante, 2 légendaires, 2 mythiques, et tous les cosmétiques
+  -- Piste gratuite : de l'or qui monte doucement, un booster tous les 5 paliers, une carte aux paliers ronds
+  ( 1, 'gratuite', 'carte_rarete',   '{"rarete": "mythique", "or_si_deja": 200}'),
+  ( 2, 'gratuite', 'or',             '{"montant": 75}'),
   ( 3, 'gratuite', 'booster',        '{"booster": "cendres", "quantite": 1}'),
   ( 4, 'gratuite', 'or',             '{"montant": 75}'),
-  ( 5, 'gratuite', 'carte',          '{"nom": "Slime", "or_si_deja": 150}'),
-  ( 6, 'gratuite', 'or',             '{"montant": 75}'),
+  ( 5, 'gratuite', 'carte_rarete',   '{"rarete": "eveillee", "or_si_deja": 100}'),
+  ( 6, 'gratuite', 'or',             '{"montant": 100}'),
   ( 7, 'gratuite', 'or',             '{"montant": 100}'),
   ( 8, 'gratuite', 'booster',        '{"booster": "cendres", "quantite": 1}'),
   ( 9, 'gratuite', 'or',             '{"montant": 100}'),
-  (10, 'gratuite', 'carte',          '{"nom": "Mange-cœur", "or_si_deja": 200}'),
-  (11, 'gratuite', 'or',             '{"montant": 100}'),
+  (10, 'gratuite', 'carte_rarete',   '{"rarete": "mythique", "or_si_deja": 200}'),
+  (11, 'gratuite', 'or',             '{"montant": 125}'),
   (12, 'gratuite', 'or',             '{"montant": 125}'),
   (13, 'gratuite', 'booster',        '{"booster": "cendres", "quantite": 1}'),
   (14, 'gratuite', 'or',             '{"montant": 125}'),
   (15, 'gratuite', 'titre',          '{"nom": "Pèlerin des Cendres"}'),
-  (16, 'gratuite', 'or',             '{"montant": 125}'),
+  (16, 'gratuite', 'or',             '{"montant": 150}'),
   (17, 'gratuite', 'or',             '{"montant": 150}'),
   (18, 'gratuite', 'booster',        '{"booster": "cendres", "quantite": 1}'),
   (19, 'gratuite', 'or',             '{"montant": 150}'),
-  (20, 'gratuite', 'carte',          '{"nom": "Kaéliss", "or_si_deja": 300}'),
+  (20, 'gratuite', 'carte_rarete',   '{"rarete": "mythique", "or_si_deja": 200}'),
   (21, 'gratuite', 'or',             '{"montant": 150}'),
   (22, 'gratuite', 'or',             '{"montant": 175}'),
   (23, 'gratuite', 'booster',        '{"booster": "cendres", "quantite": 1}'),
   (24, 'gratuite', 'or',             '{"montant": 175}'),
-  (25, 'gratuite', 'or',             '{"montant": 200}'),
+  (25, 'gratuite', 'booster',        '{"booster": "grand", "quantite": 1}'),
   (26, 'gratuite', 'or',             '{"montant": 200}'),
   (27, 'gratuite', 'or',             '{"montant": 200}'),
-  (28, 'gratuite', 'or',             '{"montant": 225}'),
+  (28, 'gratuite', 'carte_rarete',   '{"rarete": "legendaire", "or_si_deja": 400}'),
   (29, 'gratuite', 'or',             '{"montant": 250}'),
   (30, 'gratuite', 'titre',          '{"nom": "Vétéran de Pravorn"}'),
-  -- Piste premium : plus d'or, des boosters, les cartes légendaires, tous les cosmétiques
+  -- Piste premium : une transcendante dès le palier 1, des Grands Boosters, les légendaires, tous les cosmétiques
   -- (le Maître du Jeu n'est plus dans le pass : il sort des boosters, SQL/boosters.sql)
-  ( 1, 'premium',  'or',             '{"montant": 150}'),
+  ( 1, 'premium',  'carte_rarete',   '{"rarete": "transcendante", "or_si_deja": 800}'),
   ( 2, 'premium',  'dos_carte',      '{"nom": "Dos des Cendres"}'),
-  ( 3, 'premium',  'or',             '{"montant": 150}'),
+  ( 3, 'premium',  'or',             '{"montant": 125}'),
   ( 4, 'premium',  'booster',        '{"booster": "cendres", "quantite": 1}'),
-  ( 5, 'premium',  'carte',          '{"nom": "Dalek", "or_si_deja": 300}'),
-  ( 6, 'premium',  'or',             '{"montant": 175}'),
+  ( 5, 'premium',  'carte_rarete',   '{"rarete": "mythique", "or_si_deja": 200}'),
+  ( 6, 'premium',  'or',             '{"montant": 125}'),
   ( 7, 'premium',  'cadre_portrait', '{"nom": "Cadre de braise"}'),
-  ( 8, 'premium',  'or',             '{"montant": 200}'),
+  ( 8, 'premium',  'or',             '{"montant": 150}'),
   ( 9, 'premium',  'booster',        '{"booster": "cendres", "quantite": 1}'),
   (10, 'premium',  'fond_plateau',   '{"nom": "Plateau du crépuscule"}'),
-  (11, 'premium',  'or',             '{"montant": 200}'),
+  (11, 'premium',  'or',             '{"montant": 150}'),
   (12, 'premium',  'titre',          '{"nom": "Porteur de Couronne"}'),
-  (13, 'premium',  'or',             '{"montant": 225}'),
-  (14, 'premium',  'booster',        '{"booster": "cendres", "quantite": 1}'),
-  (15, 'premium',  'carte',          '{"nom": "Kaéliss", "or_si_deja": 300}'),
-  (16, 'premium',  'or',             '{"montant": 225}'),
+  (13, 'premium',  'or',             '{"montant": 150}'),
+  (14, 'premium',  'booster',        '{"booster": "grand", "quantite": 1}'),
+  (15, 'premium',  'carte_rarete',   '{"rarete": "legendaire", "or_si_deja": 400}'),
+  (16, 'premium',  'or',             '{"montant": 150}'),
   (17, 'premium',  'dos_carte',      '{"nom": "Dos du Codex doré"}'),
-  (18, 'premium',  'or',             '{"montant": 250}'),
+  (18, 'premium',  'or',             '{"montant": 175}'),
   (19, 'premium',  'booster',        '{"booster": "cendres", "quantite": 1}'),
   (20, 'premium',  'cadre_portrait', '{"nom": "Cadre royal"}'),
-  (21, 'premium',  'or',             '{"montant": 250}'),
-  (22, 'premium',  'or',             '{"montant": 275}'),
+  (21, 'premium',  'or',             '{"montant": 175}'),
+  (22, 'premium',  'carte_rarete',   '{"rarete": "mythique", "or_si_deja": 200}'),
   (23, 'premium',  'fond_plateau',   '{"nom": "Plateau des Couronnes"}'),
-  (24, 'premium',  'booster',        '{"booster": "cendres", "quantite": 1}'),
-  (25, 'premium',  'or',             '{"montant": 300}'),
-  (26, 'premium',  'or',             '{"montant": 300}'),
-  (27, 'premium',  'or',             '{"montant": 300}'),
+  (24, 'premium',  'booster',        '{"booster": "grand", "quantite": 1}'),
+  (25, 'premium',  'carte_rarete',   '{"rarete": "legendaire", "or_si_deja": 400}'),
+  (26, 'premium',  'or',             '{"montant": 175}'),
+  (27, 'premium',  'or',             '{"montant": 175}'),
   (28, 'premium',  'titre',          '{"nom": "Main du Destin"}'),
-  (29, 'premium',  'booster',        '{"booster": "cendres", "quantite": 1}'),
+  (29, 'premium',  'booster',        '{"booster": "grand", "quantite": 1}'),
   (30, 'premium',  'titre',          '{"nom": "Souverain des Cendres"}')
 )
 insert into public.pass_paliers (saison_id, numero, piste, type_recompense, valeur)
@@ -595,3 +637,10 @@ select p.numero, p.piste, p.valeur ->> 'nom' as carte,
        case when c.id is null then 'carte introuvable' else 'ok' end as etat
 from public.pass_paliers p left join public.cards c on c.name = p.valeur ->> 'nom'
 where p.type_recompense = 'carte' order by p.piste, p.numero;
+
+-- Cartes au hasard : combien de cartes de chaque rareté peuvent sortir (0 = de l'or à la place)
+select p.numero, p.piste, p.valeur ->> 'rarete' as rarete,
+       (select count(*) from public.cards c where c.rarity = p.valeur ->> 'rarete' and c.is_available
+          and c.image is not null and c.description is distinct from 'Carte d''exemple') as cartes_possibles
+from public.pass_paliers p
+where p.type_recompense = 'carte_rarete' order by p.piste, p.numero;
