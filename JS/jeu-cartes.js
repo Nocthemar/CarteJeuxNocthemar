@@ -656,7 +656,7 @@ async function afficherXpPass(gagne, resultat) {
   }
   if (!r) return;
   if (r.xp > 0) {
-    el.textContent = `+${r.xp} XP de pass${r.raison === 'plafond' ? ' (plafond du jour atteint)' : ''}`;
+    el.textContent = `+${r.xp} XP de pass${r.or > 0 ? ` · +${r.or} or` : ''}${r.raison === 'plafond' ? ' (plafond du jour atteint)' : ''}`;
   } else if (RAISONS_PASS[r.raison]) {
     el.textContent = RAISONS_PASS[r.raison];
   } else return;

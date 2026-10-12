@@ -25,6 +25,7 @@
 --      en demander un nouveau annule le précédent ;
 --    - au plus 3 heures entre le ticket et la fin (pas de durée minimale : le plafond du jour suffit) ;
 --    - contre l'IA : 100 (victoire) / 30 (défaite), 1000 XP par jour au plus ;
+--      une victoire rapporte aussi 5 or (jusqu'au plafond d'XP du jour : 50 or au plus) ;
 --    - contre un ami : 150 / 50, 1500 XP par jour au plus ; l'adversaire doit être un autre
 --      compte, avec son propre ticket dans le même salon ; une seule victoire par partie ;
 --    - un abandon ne rapporte rien (le jeu ne déclare pas la fin de la partie).
@@ -264,7 +265,7 @@ end;
 $$;
 
 -- Fin d'un duel : donne l'XP selon le mode et le résultat, dans la limite du jour.
--- Renvoie { xp, raison, xp_total, palier } ; raison explique un 0 (trop court, plafond…)
+-- Renvoie { xp, or, raison, xp_total, palier } ; raison explique un 0 (plafond, ticket…)
 create or replace function public.pass_fin_partie(p_ticket uuid, p_victoire boolean)
 returns json
 language plpgsql
@@ -284,6 +285,7 @@ declare
   v_plafond int;
   v_total   int;
   v_raison  text := null;
+  v_or      int := 0;
 begin
   if v_moi is null then raise exception 'Connecte-toi d''abord.'; end if;
 
@@ -352,8 +354,15 @@ begin
   update pass_parties set termine_le = now(), victoire = v_vict, xp = v_xp where id = p_ticket;
   v_total := coalesce(pass_ajouter_xp(v_moi, v_xp), v_prog.xp);
 
+  -- Victoire contre l'Ombre : 5 or, tant que le plafond d'XP du jour n'est pas atteint (50 or par jour au plus)
+  if v_partie.mode = 'ia' and v_vict and v_xp > 0 then
+    v_or := 5;
+    perform pass_donner_or(v_moi, v_or, 'Victoire contre l''Ombre');
+  end if;
+
   return json_build_object(
     'xp', v_xp,
+    'or', v_or,
     'raison', v_raison,
     'victoire', v_vict,
     'xp_total', v_total,
