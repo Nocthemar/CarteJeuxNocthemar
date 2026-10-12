@@ -2434,3 +2434,12 @@ body.en-duel { overflow: hidden; padding: 0 !important; }
   position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
   overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; border: 0;
 }
+
+/* Loupe : pas de barres de défilement visibles (on défile toujours à la molette ou au doigt) ;
+   sur ordinateur, seule la fiche défile, la fenêtre reste fixe */
+.fenetre-jeu.loupe, .loupe__fiche { scrollbar-width: none; }
+.fenetre-jeu.loupe::-webkit-scrollbar, .loupe__fiche::-webkit-scrollbar { display: none; }
+@media (min-width: 701px) {
+  .fenetre-jeu.loupe { overflow: hidden; }
+  .loupe__fiche { max-height: calc(100vh - 170px); }
+}
