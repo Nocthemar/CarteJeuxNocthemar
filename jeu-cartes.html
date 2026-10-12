@@ -79,6 +79,17 @@
             </a>
           </div>
 
+          <!-- Contre l'Ombre : la difficulté de l'IA (JS/jeu-cartes.js, retenue dans le navigateur) -->
+          <div class="difficulte" id="choix-difficulte">
+            <span class="difficulte__titre" id="difficulte-titre">Difficulté</span>
+            <div class="difficulte__choix" role="radiogroup" aria-labelledby="difficulte-titre">
+              <button type="button" class="difficulte__btn" role="radio" aria-checked="false" data-difficulte="facile">Facile</button>
+              <button type="button" class="difficulte__btn" role="radio" aria-checked="true" data-difficulte="normal">Normal</button>
+              <button type="button" class="difficulte__btn" role="radio" aria-checked="false" data-difficulte="difficile">Difficile</button>
+            </div>
+            <p class="difficulte__texte" id="difficulte-texte"></p>
+          </div>
+
           <!-- Duel en ligne : connexion, création / entrée dans un salon, salle d'attente -->
           <section class="ligne" id="panneau-ligne" hidden>
             <div class="ligne__bloc ligne__bloc--centre" id="ligne-connexion" hidden>

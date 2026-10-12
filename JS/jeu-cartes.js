@@ -35,6 +35,18 @@ import { ouvrirSalon, nouveauCode, codeValide, TAILLE_SALON } from './jeu-cartes
 
 const NOM_ADVERSAIRE = "L'Ombre du Codex";
 
+// Difficulté du duel contre l'Ombre (choisie dans le menu, retenue dans le navigateur).
+// ia : le comportement de l'IA (ai(), JS/jeu-cartes-moteur.js) ; pv : les PV de l'Ombre.
+// Le mode Histoire garde la difficulté de chaque niveau (JS/histoire-data.js).
+const DIFFICULTES = {
+  facile:    { pv: 16, texte: 'L’Ombre oublie parfois ses cartes et frappe au hasard. 16 PV.' },
+  normal:    { pv: 20, texte: 'L’Ombre joue ses meilleures cartes et choisit ses cibles. 20 PV.' },
+  difficile: { pv: 24, texte: 'L’Ombre tente plus souvent le Destin et a plus de vie. 24 PV.' },
+};
+const CLE_DIFFICULTE = 'duel-couronnes-difficulte';
+let difficulte = 'normal';
+try { const d = localStorage.getItem(CLE_DIFFICULTE); if (DIFFICULTES[d]) difficulte = d; } catch { /* stockage indisponible */ }
+
 // Le plateau (CSS/jeu-cartes.css : classe plateau-… sur <body>) :
 // - celui que le joueur a choisi, s'il en a acheté un en boutique (SQL/plateaux.sql, choisi dans la Collection) ;
 // - sinon le plateau par défaut : l'arène de pierre (plateau-defaut).
@@ -155,6 +167,7 @@ async function changerMode(nouveau) {
   });
   $('panneau-ligne').hidden = mode !== 'ligne';
   $('btn-jouer').hidden = mode !== 'solo';
+  $('choix-difficulte').hidden = mode !== 'solo';
 
   afficherDeck();
   majPanneauLigne();
@@ -418,7 +431,7 @@ function nouvellePartieSolo() {
   const premier = Math.random() < 0.5 ? 'joueur' : 'adverse';
   p = creerPartie(construireDeck(grimoireJoueur), deckAdverse, moi?.username ?? 'Toi',
     niv ? niv.adversaire : NOM_ADVERSAIRE, premier,
-    niv ? { pvAdverse: niv.pv, energieBonusAdverse: niv.energieBonus } : {});
+    niv ? { pvAdverse: niv.pv, energieBonusAdverse: niv.energieBonus } : { pvAdverse: DIFFICULTES[difficulte].pv });
   renvoyerMain(p, 'adverse', choixRenvoiIA(p.camps.adverse));   // l'IA renvoie ses cartes trop chères
   montrerPlateau();
   ouvrirRenvoi();
@@ -537,7 +550,7 @@ $('btn-meditation-garder').addEventListener('click', () => {
 async function tourIA() {
   for (let i = 0; i < 30 && !p.fini; i++) {
     await pause(650);
-    const a = ai(p, 'adverse', histoire?.niveau.difficulte ?? 'normal');
+    const a = ai(p, 'adverse', histoire?.niveau.difficulte ?? difficulte);
     if (!a) break;
     await appliquer('adverse', a);
   }
@@ -791,6 +804,33 @@ for (const qui of ['joueur', 'adverse']) {
 $('tombeau-fermer').addEventListener('click', () => $('tombeau').close());
 $('tombeau').addEventListener('click', (e) => { if (e.target === $('tombeau')) $('tombeau').close(); });
 $('btn-jouer').addEventListener('click', nouvellePartieSolo);
+
+// Choix de la difficulté (contre l'Ombre)
+function choisirDifficulte(d) {
+  difficulte = d;
+  try { localStorage.setItem(CLE_DIFFICULTE, d); } catch { /* stockage indisponible */ }
+  document.querySelectorAll('.difficulte__btn').forEach((b) => {
+    const choisi = b.dataset.difficulte === d;
+    b.setAttribute('aria-checked', String(choisi));
+    b.tabIndex = choisi ? 0 : -1;
+  });
+  $('difficulte-texte').textContent = DIFFICULTES[d].texte;
+}
+choisirDifficulte(difficulte);
+$('choix-difficulte').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-difficulte]');
+  if (b) choisirDifficulte(b.dataset.difficulte);
+});
+// Flèches gauche / droite : comme un groupe de boutons radio
+$('choix-difficulte').addEventListener('keydown', (e) => {
+  const pas = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
+  if (!pas) return;
+  e.preventDefault();
+  const ids = Object.keys(DIFFICULTES);
+  const d = ids[(ids.indexOf(difficulte) + pas + ids.length) % ids.length];
+  choisirDifficulte(d);
+  document.querySelector(`.difficulte__btn[data-difficulte="${d}"]`).focus();
+});
 
 $('btn-rejouer').addEventListener('click', () => {
   if (!role) return nouvellePartieSolo();
