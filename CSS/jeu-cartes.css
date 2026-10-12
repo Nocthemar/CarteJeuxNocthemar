@@ -2443,3 +2443,59 @@ body.en-duel { overflow: hidden; padding: 0 !important; }
   .fenetre-jeu.loupe { overflow: hidden; }
   .loupe__fiche { max-height: calc(100vh - 170px); }
 }
+
+
+/* =====================================================================
+   Fluidité du duel : ce qui faisait ramer, remplacé par l'équivalent léger
+   (vient en dernier : ces règles l'emportent)
+   - un filtre (ombre) sur tout le plateau : il était recalculé à chaque image dès qu'une carte bougeait
+   - des lueurs animées (ombres / filtres qui changent à chaque image) : désormais un calque à part,
+     dont seule l'opacité varie
+   - les cartes : chacune sur son propre calque, leur ombre n'est plus redessinée au survol / à l'inclinaison
+   ===================================================================== */
+.page-jeu .tg-bord { filter: none; }
+.en-duel .scene__fond { filter: none; }
+.main .dc-carte, .page-jeu .dc-unite { will-change: transform; }
+
+/* Cibles possibles : lueur rouge fixe sur un calque, qui pulse en opacité */
+.dc-unite.est-ciblable { animation: none; filter: drop-shadow(0 0 4px #ff9aa0) var(--ombre); }
+.dc-unite.est-ciblable::after {
+  content: ""; position: absolute; inset: 4% 6%; z-index: -1; pointer-events: none;
+  border-radius: 10%;
+  box-shadow: 0 0 14px 5px rgba(240,122,128,.85);
+  animation: lueur-cible 1s ease-in-out infinite alternate;
+  will-change: opacity;
+}
+.dc-heros.est-ciblable, .page-jeu .dc-heros.est-ciblable { animation: none; isolation: isolate; }
+.dc-heros.est-ciblable::after {
+  content: ""; position: absolute; left: 50%; top: 0; width: 100%; aspect-ratio: 1; translate: -50% 0;
+  z-index: -1; pointer-events: none;
+  border-radius: 50%;
+  box-shadow: 0 0 16px 6px rgba(240,122,128,.8);
+  animation: lueur-cible 1s ease-in-out infinite alternate;
+  will-change: opacity;
+}
+@keyframes lueur-cible { from { opacity: .35; } to { opacity: 1; } }
+
+/* Bulle d'énergie : halo fixe, qui respire en opacité */
+.orbe { animation: none; }
+.orbe::after {
+  content: ""; position: absolute; inset: 0; border-radius: 50%; pointer-events: none;
+  box-shadow: 0 0 30px 8px rgba(154,108,240,.6);
+  animation: lueur-orbe 3s ease-in-out infinite alternate;
+  will-change: opacity;
+}
+@keyframes lueur-orbe { from { opacity: .45; } to { opacity: 1; } }
+
+/* PV en danger : même principe */
+.dc-heros.est-en-danger .dc-heros__pv { animation: none; }
+.dc-heros.est-en-danger .dc-heros__pv::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  box-shadow: 0 0 16px 4px rgba(255,80,90,.75);
+  animation: lueur-cible 1.2s ease-in-out infinite alternate;
+  will-change: opacity;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dc-unite.est-ciblable::after, .dc-heros.est-ciblable::after, .orbe::after, .dc-heros.est-en-danger .dc-heros__pv::after { animation: none; }
+}
