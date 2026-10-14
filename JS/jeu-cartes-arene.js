@@ -304,9 +304,9 @@ export function rendre(p, sel, avatars = {}) {
       index: i, jouable: sel.monTour && !sel.defausse && peutJouer(p, 'joueur', i), choisie: sel.sortIndex === i,
     });
     if (!sel.monTour) return html;
-    // Énergie ou actions insuffisantes : un bandeau sur la carte
-    const manque = coutDe(j, c) > j.energie ? `⚡ ${coutDe(j, c)}` : actionsDe(c) > j.actions ? `${actionsDe(c)} actions` : '';
-    return manque ? html.replace('class="dc-carte ', `data-manque="${esc(manque)}" class="dc-carte est-trop-chere `) : html;
+    // Énergie ou actions insuffisantes : la carte est assombrie
+    const manque = coutDe(j, c) > j.energie || actionsDe(c) > j.actions;
+    return manque ? html.replace('class="dc-carte ', 'class="dc-carte est-trop-chere ') : html;
   }).join('');
   const glissable = sel.monTour && peutDefausser(p, 'joueur');
   for (const c of $('main-joueur').children) c.draggable = glissable;

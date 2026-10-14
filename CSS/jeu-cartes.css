@@ -2706,16 +2706,8 @@ body.en-duel { overflow: hidden; padding: 0 !important; }
    ===================================================================== */
 .actions__titre { margin-right: 4px; font-family: "Cinzel","Cinzel Repli", serif; font-size: .62rem; letter-spacing: .12em; text-transform: uppercase; color: var(--gris); }
 .actions--adverse .actions__titre { display: none; }
-/* Main : carte trop chère (énergie) ou qui demande plus d'actions */
+/* Main : carte trop chère (énergie) ou qui demande plus d'actions : simplement assombrie */
 #main-joueur .dc-carte.est-trop-chere .dc-face { filter: grayscale(.55) brightness(.7); }
-#main-joueur .dc-carte.est-trop-chere::after {
-  content: attr(data-manque);
-  position: absolute; left: 50%; bottom: 30%; z-index: 4; translate: -50% 0;
-  padding: 1px 7px; border-radius: 3px;
-  background: rgba(150,40,48,.92); color: #fff;
-  font-family: "Cinzel","Cinzel Repli", serif; font-size: .62rem; font-weight: 700; white-space: nowrap;
-  pointer-events: none;
-}
 /* Pendant une attaque, une capacité ou un sort ciblé : les unités adverses impossibles à viser s'effacent */
 .dc-unite.est-hors-cible { opacity: .45; filter: grayscale(.6); }
 /* États du tour */

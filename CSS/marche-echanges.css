@@ -619,3 +619,12 @@
   .sceau__cire { animation: none; }
 }
 .contrat__cote { display: flex; flex-direction: column; align-items: center; }
+
+/* L'or du contrat : écrit à l'encre sur le parchemin (passe devant le style des champs de CSS/marche.css) */
+.marche .plateau-echange__or input[type="number"] {
+  width: 120px; padding: 5px 8px;
+  border: 1px solid rgba(90,58,25,.45); border-radius: 3px;
+  background: rgba(255,250,235,.7); color: #2a1a0c;
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: 1rem; font-weight: 700; text-align: right; letter-spacing: .04em;
+}
+.marche .plateau-echange__or input[type="number"]:focus { outline: 2px solid #8a6424; outline-offset: 1px; background: #fffaf0; }
