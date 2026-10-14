@@ -16,6 +16,7 @@ const etat = {
   paliers: new Map(),   // "numero-piste" -> palier
   cartes: new Map(),    // nom -> { image, rarity } (récompenses « carte »)
   boosters: new Map(),  // id -> { nom, image } (récompenses « booster », SQL/boosters.sql)
+  plateaux: new Map(),  // id -> { nom, miniature } (récompenses « plateau », SQL/plateaux.sql)
   prog: null,           // { xp, premium, reclames_gratuite, reclames_premium }
   solde: 0,
 };
@@ -28,7 +29,7 @@ const TYPES = {
   dos_carte: 'Dos de cartes',
   cadre_portrait: 'Cadre de portrait',
   titre: 'Titre',
-  fond_plateau: 'Fond de plateau',
+  fond_plateau: 'Plateau',
 };
 const ICONES = {
   dos_carte: '<rect x="6" y="3" width="12" height="18" rx="1.5"/><path d="M12 7l3 5-3 5-3-5z"/>',
@@ -66,6 +67,10 @@ async function chargerSaison() {
   if ((paliers ?? []).some((p) => p.type_recompense === 'booster')) {
     const { data: boosters } = await supabase.from('boosters').select('id, nom, image');
     etat.boosters = new Map((boosters ?? []).map((b) => [b.id, b]));
+  }
+  if ((paliers ?? []).some((p) => p.type_recompense === 'fond_plateau' && p.valeur?.plateau)) {
+    const { data: plateaux } = await supabase.from('plateaux').select('id, nom, miniature');
+    etat.plateaux = new Map((plateaux ?? []).map((x) => [x.id, x]));
   }
 }
 
@@ -118,7 +123,7 @@ function afficherPremium() {
   }
   bouton.hidden = false;
   const manque = prix - etat.solde;
-  $('premium-texte').textContent = 'Plus d\'or, les cartes légendaires et tous les cosmétiques de la saison. Payée avec l\'or du jeu.';
+  $('premium-texte').textContent = 'Une carte transcendante, des cartes légendaires, des Grands Boosters et l\'Arène des Cristaux d\'Or. Payée avec l\'or du jeu.';
   bouton.innerHTML = `Débloquer la piste premium <span class="btn-premium__prix"><img src="img/Equipement/Or-icone.webp" alt=""> ${nombre(prix)}</span>`;
   bouton.disabled = manque > 0;
   $('premium-solde').textContent = manque > 0
@@ -150,6 +155,12 @@ function contenuRecompense(p) {
     return `<span class="recompense__visuel recompense__visuel--carte">${b?.image ? `<img src="${urlImage(b.image)}" alt="" loading="lazy">` : svg('dos_carte')}</span>
       <span class="recompense__nom">${esc(b?.nom ?? 'Booster')}${n > 1 ? ` ×${n}` : ''}</span>`;
   }
+  if (p.type_recompense === 'fond_plateau' && v.plateau) {
+    // Un vrai plateau de la Boutique (sa miniature), à choisir ensuite dans la Collection
+    const pl = etat.plateaux.get(v.plateau);
+    return `<span class="recompense__visuel recompense__visuel--plateau">${pl?.miniature ? `<img src="${urlImage(pl.miniature)}" alt="" loading="lazy">` : svg('fond_plateau')}</span>
+      <span class="recompense__nom">${esc(pl?.nom ?? v.nom ?? 'Plateau')}</span>`;
+  }
   return `<span class="recompense__visuel recompense__visuel--cosmetique">${svg(p.type_recompense)}</span>
     <span class="recompense__nom">${esc(v.nom ?? TYPES[p.type_recompense])}</span>`;
 }
@@ -174,7 +185,7 @@ function htmlRecompense(numero, piste) {
       : `<span class="recompense__etat">${svg('cadenas')} ${piste === 'premium' && etat.moi && !etat.prog?.premium ? 'Premium' : 'Verrouillée'}</span>`;
   return `
     <div class="recompense recompense--${e} recompense--${piste} recompense--${p.type_recompense}"
-         title="${esc(TYPES[p.type_recompense])}${['dos_carte', 'cadre_portrait', 'fond_plateau'].includes(p.type_recompense) ? ' (bientôt visible en jeu)' : ''}">
+         title="${esc(TYPES[p.type_recompense])}${['dos_carte', 'cadre_portrait', 'fond_plateau'].includes(p.type_recompense) && !p.valeur?.plateau ? ' (bientôt visible en jeu)' : p.valeur?.plateau ? ' : à choisir ensuite dans ta Collection' : ''}">
       <span class="recompense__type">${esc(TYPES[p.type_recompense])}</span>
       ${contenuRecompense(p)}
       ${action}

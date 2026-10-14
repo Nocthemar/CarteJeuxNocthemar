@@ -482,6 +482,18 @@ begin
     values (v_moi, coalesce(v_palier.valeur ->> 'booster', 'cendres'), coalesce((v_palier.valeur ->> 'quantite')::int, 1))
     on conflict (discord_id, booster_id) do update set quantite = player_boosters.quantite + excluded.quantite;
 
+  elsif v_palier.type_recompense = 'fond_plateau' and v_palier.valeur ? 'plateau' then
+    -- Un vrai plateau de la Boutique (SQL/plateaux.sql) : il rejoint les plateaux du joueur (à choisir dans
+    -- la Collection) ; s'il l'a déjà, de l'or à la place
+    select nom into v_nom from plateaux where id = v_palier.valeur ->> 'plateau';
+    if not found then raise exception 'Plateau introuvable.'; end if;
+    if exists (select 1 from joueur_plateaux where discord_id = v_moi and plateau_id = v_palier.valeur ->> 'plateau') then
+      v_deja := true;
+      v_or := coalesce((v_palier.valeur ->> 'or_si_deja')::int, 500);
+    else
+      insert into joueur_plateaux (discord_id, plateau_id) values (v_moi, v_palier.valeur ->> 'plateau');
+    end if;
+
   else
     -- Cosmétique : enregistré (son affichage viendra plus tard)
     insert into pass_cosmetiques (discord_id, type, nom, saison_id)
@@ -573,74 +585,74 @@ where not exists (select 1 from public.saisons where nom = 'Les Cendres de Pravo
 
 with s as (select id from public.saisons where nom = 'Les Cendres de Pravorn'),
 paliers (numero, piste, type_recompense, valeur) as (values
-  -- Équilibre (1 000 XP par palier ; une victoire contre l'IA = 100 XP, 1 000 XP par jour au plus) :
-  --   gratuite : 2 425 or, 5 Boosters des Cendres + 1 Grand Booster, 5 cartes au hasard
-  --              (1 éveillée, 3 mythiques, 1 légendaire), 2 titres
-  --   premium (1 500 or) : 1 550 or (son prix revient en allant au bout), 3 Boosters + 3 Grands Boosters,
-  --              1 transcendante, 2 légendaires, 2 mythiques, et tous les cosmétiques
-  -- Piste gratuite : de l'or qui monte doucement, un booster tous les 5 paliers, une carte aux paliers ronds
+  -- Les deux pistes suivent le même rythme (1 000 XP par palier ; une victoire contre l'IA = 100 XP, 1 000 XP par jour au plus) :
+  --   palier 1 : une carte (mythique / transcendante) ;
+  --   puis 3 paliers d'or, 1 palier objet (booster ou carte au hasard), 3 paliers d'or, 1 palier objet… jusqu'au palier 29 ;
+  --   palier 30 : un plateau de la Boutique (SQL/plateaux.sql), de l'or s'il est déjà possédé.
+  --   gratuite : 2 400 or, 3 Boosters des Cendres + 1 Grand Booster, cartes : 2 mythiques, 1 éveillée, 1 légendaire,
+  --              et l'Arène d'Automne
+  --   premium (1 500 or) : 2 250 or (son prix revient en allant au bout), 1 Booster des Cendres + 2 Grands Boosters,
+  --              1 transcendante, 2 mythiques, 2 légendaires, et l'Arène des Cristaux d'Or
   ( 1, 'gratuite', 'carte_rarete',   '{"rarete": "mythique", "or_si_deja": 200}'),
   ( 2, 'gratuite', 'or',             '{"montant": 75}'),
-  ( 3, 'gratuite', 'booster',        '{"booster": "cendres", "quantite": 1}'),
+  ( 3, 'gratuite', 'or',             '{"montant": 75}'),
   ( 4, 'gratuite', 'or',             '{"montant": 75}'),
-  ( 5, 'gratuite', 'carte_rarete',   '{"rarete": "eveillee", "or_si_deja": 100}'),
-  ( 6, 'gratuite', 'or',             '{"montant": 100}'),
-  ( 7, 'gratuite', 'or',             '{"montant": 100}'),
-  ( 8, 'gratuite', 'booster',        '{"booster": "cendres", "quantite": 1}'),
-  ( 9, 'gratuite', 'or',             '{"montant": 100}'),
-  (10, 'gratuite', 'carte_rarete',   '{"rarete": "mythique", "or_si_deja": 200}'),
-  (11, 'gratuite', 'or',             '{"montant": 125}'),
-  (12, 'gratuite', 'or',             '{"montant": 125}'),
+  ( 5, 'gratuite', 'booster',        '{"booster": "cendres", "quantite": 1}'),
+  ( 6, 'gratuite', 'or',             '{"montant": 75}'),
+  ( 7, 'gratuite', 'or',             '{"montant": 75}'),
+  ( 8, 'gratuite', 'or',             '{"montant": 75}'),
+  ( 9, 'gratuite', 'carte_rarete',   '{"rarete": "eveillee", "or_si_deja": 100}'),
+  (10, 'gratuite', 'or',             '{"montant": 100}'),
+  (11, 'gratuite', 'or',             '{"montant": 100}'),
+  (12, 'gratuite', 'or',             '{"montant": 100}'),
   (13, 'gratuite', 'booster',        '{"booster": "cendres", "quantite": 1}'),
-  (14, 'gratuite', 'or',             '{"montant": 125}'),
-  (15, 'gratuite', 'titre',          '{"nom": "Pèlerin des Cendres"}'),
-  (16, 'gratuite', 'or',             '{"montant": 150}'),
-  (17, 'gratuite', 'or',             '{"montant": 150}'),
-  (18, 'gratuite', 'booster',        '{"booster": "cendres", "quantite": 1}'),
-  (19, 'gratuite', 'or',             '{"montant": 150}'),
-  (20, 'gratuite', 'carte_rarete',   '{"rarete": "mythique", "or_si_deja": 200}'),
-  (21, 'gratuite', 'or',             '{"montant": 150}'),
-  (22, 'gratuite', 'or',             '{"montant": 175}'),
-  (23, 'gratuite', 'booster',        '{"booster": "cendres", "quantite": 1}'),
-  (24, 'gratuite', 'or',             '{"montant": 175}'),
+  (14, 'gratuite', 'or',             '{"montant": 100}'),
+  (15, 'gratuite', 'or',             '{"montant": 100}'),
+  (16, 'gratuite', 'or',             '{"montant": 100}'),
+  (17, 'gratuite', 'carte_rarete',   '{"rarete": "mythique", "or_si_deja": 200}'),
+  (18, 'gratuite', 'or',             '{"montant": 125}'),
+  (19, 'gratuite', 'or',             '{"montant": 125}'),
+  (20, 'gratuite', 'or',             '{"montant": 125}'),
+  (21, 'gratuite', 'booster',        '{"booster": "cendres", "quantite": 1}'),
+  (22, 'gratuite', 'or',             '{"montant": 150}'),
+  (23, 'gratuite', 'or',             '{"montant": 150}'),
+  (24, 'gratuite', 'or',             '{"montant": 150}'),
   (25, 'gratuite', 'booster',        '{"booster": "grand", "quantite": 1}'),
-  (26, 'gratuite', 'or',             '{"montant": 200}'),
-  (27, 'gratuite', 'or',             '{"montant": 200}'),
-  (28, 'gratuite', 'carte_rarete',   '{"rarete": "legendaire", "or_si_deja": 400}'),
-  (29, 'gratuite', 'or',             '{"montant": 250}'),
-  (30, 'gratuite', 'titre',          '{"nom": "Vétéran de Pravorn"}'),
-  -- Piste premium : une transcendante dès le palier 1, des Grands Boosters, les légendaires, tous les cosmétiques
-  -- (le Maître du Jeu n'est plus dans le pass : il sort des boosters, SQL/boosters.sql)
+  (26, 'gratuite', 'or',             '{"montant": 175}'),
+  (27, 'gratuite', 'or',             '{"montant": 175}'),
+  (28, 'gratuite', 'or',             '{"montant": 175}'),
+  (29, 'gratuite', 'carte_rarete',   '{"rarete": "legendaire", "or_si_deja": 400}'),
+  (30, 'gratuite', 'fond_plateau',   '{"plateau": "automne", "nom": "Arène d''Automne", "or_si_deja": 500}'),
   ( 1, 'premium',  'carte_rarete',   '{"rarete": "transcendante", "or_si_deja": 800}'),
-  ( 2, 'premium',  'dos_carte',      '{"nom": "Dos des Cendres"}'),
-  ( 3, 'premium',  'or',             '{"montant": 125}'),
-  ( 4, 'premium',  'booster',        '{"booster": "cendres", "quantite": 1}'),
-  ( 5, 'premium',  'carte_rarete',   '{"rarete": "mythique", "or_si_deja": 200}'),
-  ( 6, 'premium',  'or',             '{"montant": 125}'),
-  ( 7, 'premium',  'cadre_portrait', '{"nom": "Cadre de braise"}'),
-  ( 8, 'premium',  'or',             '{"montant": 150}'),
-  ( 9, 'premium',  'booster',        '{"booster": "cendres", "quantite": 1}'),
-  (10, 'premium',  'fond_plateau',   '{"nom": "Plateau du crépuscule"}'),
-  (11, 'premium',  'or',             '{"montant": 150}'),
-  (12, 'premium',  'titre',          '{"nom": "Porteur de Couronne"}'),
-  (13, 'premium',  'or',             '{"montant": 150}'),
-  (14, 'premium',  'booster',        '{"booster": "grand", "quantite": 1}'),
-  (15, 'premium',  'carte_rarete',   '{"rarete": "legendaire", "or_si_deja": 400}'),
-  (16, 'premium',  'or',             '{"montant": 150}'),
-  (17, 'premium',  'dos_carte',      '{"nom": "Dos du Codex doré"}'),
-  (18, 'premium',  'or',             '{"montant": 175}'),
-  (19, 'premium',  'booster',        '{"booster": "cendres", "quantite": 1}'),
-  (20, 'premium',  'cadre_portrait', '{"nom": "Cadre royal"}'),
-  (21, 'premium',  'or',             '{"montant": 175}'),
-  (22, 'premium',  'carte_rarete',   '{"rarete": "mythique", "or_si_deja": 200}'),
-  (23, 'premium',  'fond_plateau',   '{"nom": "Plateau des Couronnes"}'),
-  (24, 'premium',  'booster',        '{"booster": "grand", "quantite": 1}'),
-  (25, 'premium',  'carte_rarete',   '{"rarete": "legendaire", "or_si_deja": 400}'),
-  (26, 'premium',  'or',             '{"montant": 175}'),
-  (27, 'premium',  'or',             '{"montant": 175}'),
-  (28, 'premium',  'titre',          '{"nom": "Main du Destin"}'),
-  (29, 'premium',  'booster',        '{"booster": "grand", "quantite": 1}'),
-  (30, 'premium',  'titre',          '{"nom": "Souverain des Cendres"}')
+  ( 2, 'premium',  'or',             '{"montant": 75}'),
+  ( 3, 'premium',  'or',             '{"montant": 75}'),
+  ( 4, 'premium',  'or',             '{"montant": 75}'),
+  ( 5, 'premium',  'booster',        '{"booster": "cendres", "quantite": 1}'),
+  ( 6, 'premium',  'or',             '{"montant": 75}'),
+  ( 7, 'premium',  'or',             '{"montant": 75}'),
+  ( 8, 'premium',  'or',             '{"montant": 75}'),
+  ( 9, 'premium',  'carte_rarete',   '{"rarete": "mythique", "or_si_deja": 200}'),
+  (10, 'premium',  'or',             '{"montant": 100}'),
+  (11, 'premium',  'or',             '{"montant": 100}'),
+  (12, 'premium',  'or',             '{"montant": 100}'),
+  (13, 'premium',  'booster',        '{"booster": "grand", "quantite": 1}'),
+  (14, 'premium',  'or',             '{"montant": 100}'),
+  (15, 'premium',  'or',             '{"montant": 100}'),
+  (16, 'premium',  'or',             '{"montant": 100}'),
+  (17, 'premium',  'carte_rarete',   '{"rarete": "legendaire", "or_si_deja": 400}'),
+  (18, 'premium',  'or',             '{"montant": 125}'),
+  (19, 'premium',  'or',             '{"montant": 125}'),
+  (20, 'premium',  'or',             '{"montant": 125}'),
+  (21, 'premium',  'booster',        '{"booster": "grand", "quantite": 1}'),
+  (22, 'premium',  'or',             '{"montant": 125}'),
+  (23, 'premium',  'or',             '{"montant": 125}'),
+  (24, 'premium',  'or',             '{"montant": 125}'),
+  (25, 'premium',  'carte_rarete',   '{"rarete": "mythique", "or_si_deja": 200}'),
+  (26, 'premium',  'or',             '{"montant": 150}'),
+  (27, 'premium',  'or',             '{"montant": 150}'),
+  (28, 'premium',  'or',             '{"montant": 150}'),
+  (29, 'premium',  'carte_rarete',   '{"rarete": "legendaire", "or_si_deja": 400}'),
+  (30, 'premium',  'fond_plateau',   '{"plateau": "cristaux", "nom": "Arène des Cristaux d''Or", "or_si_deja": 750}')
 )
 insert into public.pass_paliers (saison_id, numero, piste, type_recompense, valeur)
 select s.id, p.numero, p.piste, p.type_recompense, p.valeur::jsonb from s, paliers p

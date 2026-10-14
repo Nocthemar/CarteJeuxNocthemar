@@ -53,7 +53,10 @@ async function init() {
   }
 
   afficherEntete(joueur);
-  const deckProfil = await afficherDeck(discordId, estMoi);
+  const [deckProfil] = await Promise.all([
+    afficherDeck(discordId, estMoi),
+    afficherRang(discordId, estMoi).catch(console.error),
+  ]);
 
   // Partie privée : seulement sur mon propre profil
   if (estMoi) {
@@ -62,7 +65,6 @@ async function init() {
     const objets = await chargerObjetsPossedes(discordId);
     await Promise.all([
       afficherDuel(deckProfil, objets, discordId),
-      afficherDuelliste(objets),
       afficherSolde(discordId),
     ]);
   }
@@ -103,39 +105,6 @@ function afficherEntete(j) {
 
 // Le duelliste : cartes possédées et objets de pouvoir du Duel des Couronnes.
 // Les 7 objets sont toujours affichés : ceux qu'on possède en couleur, les autres grisés.
-function afficherDuelliste(objets) {
-  const possedes = new Set(objets.map((o) => o.id));
-
-  const zone = $('objets-pouvoir');
-  let choisi = null;   // objet dont l'effet est affiché (un clic l'ouvre, un 2e le ferme)
-  const rendre = () => {
-    const o = OBJETS.find((x) => x.id === choisi);
-    zone.innerHTML = `
-      <dt>Objets de pouvoir <span class="duelliste__compte">${possedes.size} / ${OBJETS.length}</span></dt>
-      <dd><ul class="stat__liste stat__liste--images">${OBJETS.map((x) => `
-        <li>
-          <button type="button" class="objet-image${x.id === choisi ? ' objet-image--choisi' : ''}${possedes.has(x.id) ? '' : ' objet-image--manque'}"
-                  data-objet="${x.id}" title="${esc(x.n)}${possedes.has(x.id) ? '' : ' (pas encore possédé)'}" aria-pressed="${x.id === choisi}">
-            <img src="${esc(new URL(x.image, SITE_ROOT))}" alt="${esc(x.n)}" loading="lazy">
-          </button>
-        </li>`).join('')}</ul></dd>
-      ${o ? `
-        <div class="objet-fiche">
-          <strong class="objet-fiche__nom">${esc(o.n)}</strong>
-          <dl class="objet-fiche__carac"><div><dt>Coût</dt><dd>${o.c} énergie</dd></div><div><dt>Statut</dt><dd>${possedes.has(o.id) ? 'Dans ta besace' : 'Pas encore possédé'}</dd></div></dl>
-          <p class="objet-fiche__desc">${esc(o.d)}</p>
-        </div>` : ''}`;
-  };
-  zone.onclick = (e) => {
-    const b = e.target.closest('[data-objet]');
-    if (!b) return;
-    choisi = b.dataset.objet === choisi ? null : b.dataset.objet;
-    rendre();
-  };
-  rendre();
-}
-
-
 // Deck de cartes : lecture seule pour les visiteurs ; sur mon profil,
 // je peux le renommer, retirer des cartes et les réorganiser en les glissant.
 async function afficherDeck(discordId, estMoi) {
@@ -197,6 +166,87 @@ async function afficherDuel(deckProfil, objets, discordId) {
 }
 
 
+// ---------------------------------------------------------------------
+//  Rang et statistiques (visibles par tous)
+//  - le rang : le palier de la cote classée (table rangs, SQL/classe.sql : 1 000 points au départ,
+//    Elo K = 32) et la progression vers le palier suivant
+//  - les statistiques : stats_joueur (SQL/stats_profil.sql), des totaux calculés à partir des duels
+//    enregistrés (contre l'Ombre et contre des joueurs) et des cartes possédées
+// ---------------------------------------------------------------------
+// Paliers du classé : [cote minimum, nom] (les mêmes que JS/jeu-cartes.js et SQL/classe.sql)
+const PALIERS_CLASSE = [[0, 'Bronze'], [1100, 'Argent'], [1250, 'Or'], [1400, 'Platine'], [1550, 'Diamant'], [1700, 'Couronne']];
+const COTE_DEPART = 1000;
+const LARGEUR_PALIER = 150;   // un palier fait 150 points (Bronze, sans plancher, est mesuré pareil)
+const nombreFr = (n) => Number(n ?? 0).toLocaleString('fr-FR');
+const pluriel = (n, mot) => `${nombreFr(n)} ${mot}${n > 1 ? 's' : ''}`;
+const taux = (v, d) => (v + d ? `${Math.round((v / (v + d)) * 100)} %` : '—');
+
+async function afficherRang(discordId, estMoi) {
+  const [{ data: rang, error: errRang }, { data: stats, error: errStats }] = await Promise.all([
+    supabase.from('rangs').select('cote, victoires, defaites').eq('discord_id', discordId).maybeSingle(),
+    supabase.rpc('stats_joueur', { p_discord_id: discordId }),
+  ]);
+
+  // Le rang classé (sans partie classée : 1 000 points, Bronze, comme au départ du classé)
+  $('rang-plaque').hidden = !!errRang;
+  if (!errRang) {
+    const r = rang ?? { cote: COTE_DEPART, victoires: 0, defaites: 0 };
+    const i = PALIERS_CLASSE.findLastIndex(([min]) => r.cote >= min);
+    const [min, nom] = PALIERS_CLASSE[i];
+    const suivant = PALIERS_CLASSE[i + 1];
+    const bas = suivant ? suivant[0] - LARGEUR_PALIER : min;
+    const pct = suivant ? Math.max(0, Math.min(100, Math.round(((r.cote - bas) / (suivant[0] - bas)) * 100))) : 100;
+    $('rang-plaque').className = `rang-plaque rang-plaque--${nom.toLowerCase()}`;
+    $('rang-medaillon').textContent = nom[0];
+    $('rang-nom').textContent = nom;
+    $('rang-cote').innerHTML = `${nombreFr(r.cote)}<small>points</small>`;
+    $('rang-jauge').setAttribute('aria-valuenow', String(pct));
+    $('rang-jauge').setAttribute('aria-label', suivant ? `Progression vers ${suivant[1]} : ${pct} %` : 'Palier le plus haut');
+    $('rang-jauge-remplie').style.width = `${pct}%`;
+    $('rang-borne-bas').textContent = nom;
+    $('rang-borne-haut').textContent = suivant ? `${suivant[1]} · ${nombreFr(suivant[0])}` : 'Sommet';
+    const parties = r.victoires + r.defaites;
+    $('rang-pied').innerHTML = `
+      <span>${suivant ? `Encore <b>${nombreFr(suivant[0] - r.cote)}</b> points pour ${suivant[1]}` : 'Palier le plus haut atteint'}</span>
+      <span>${parties ? `${nombreFr(r.victoires)} V · ${nombreFr(r.defaites)} D · ${taux(r.victoires, r.defaites)}` : 'Aucune partie classée'}</span>`;
+  }
+
+  // Les statistiques des duels (SQL/stats_profil.sql)
+  const sansStats = !!errStats || !stats;
+  $('rang-stats').hidden = sansStats && !estMoi;
+  if (sansStats) {
+    $('stats-duels').innerHTML = '';
+    $('stats-ratio').innerHTML = '';
+    $('stats-detail').innerHTML = '<li class="rang-detail__vide">Les statistiques des duels s’afficheront une fois SQL/stats_profil.sql installé.</li>';
+  } else {
+    const v = stats.victoires ?? 0;
+    const d = stats.defaites ?? 0;
+    $('stats-duels').innerHTML = [
+      ['Victoires', nombreFr(v)],
+      ['Défaites', nombreFr(d)],
+      ['Taux', taux(v, d)],
+      ['Cartes', nombreFr(stats.cartes), stats.exemplaires > stats.cartes ? `${pluriel(stats.exemplaires, 'exemplaire')}, doublons compris` : ''],
+    ].map(([k, val, titre]) => `<div${titre ? ` title="${esc(titre)}"` : ''}><dt>${k}</dt><dd>${val}</dd></div>`).join('');
+    const pctV = v + d ? Math.round((v / (v + d)) * 100) : 0;
+    $('stats-ratio').innerHTML = `
+      <div class="rang-ratio__barre${v + d ? '' : ' rang-ratio__barre--vide'}" role="img" aria-label="${pctV} % de victoires">
+        <span style="width:${pctV}%"></span>
+      </div>
+      <span class="rang-ratio__legende">${v + d ? pluriel(v + d, 'duel') + ' terminé' + (v + d > 1 ? 's' : '') : 'Aucun duel terminé'}</span>`;
+    const ligne = (titre, lv, ld) => `
+      <li><span class="rang-detail__titre">${titre}</span><span class="rang-detail__points" aria-hidden="true"></span>
+        <span class="rang-detail__valeur">${nombreFr(lv)} V · ${nombreFr(ld)} D</span><span class="rang-detail__taux">${taux(lv, ld)}</span></li>`;
+    $('stats-detail').innerHTML = ligne('Contre l’Ombre', stats.ia_victoires ?? 0, stats.ia_defaites ?? 0)
+      + ligne('Contre des joueurs', stats.joueurs_victoires ?? 0, stats.joueurs_defaites ?? 0);
+  }
+  $('rang-note').textContent = [
+    errRang ? '' : 'Le rang monte ou descend en partie classée (environ 16 points par partie).',
+    sansStats ? '' : 'Les statistiques comptent les duels terminés depuis le Pass de saison, hors mode Histoire et abandons.',
+  ].filter(Boolean).join(' ');
+  $('rang-profil').hidden = !!errRang && sansStats && !estMoi;
+}
+
+
 // Objets de pouvoir possédés (table inventory), un exemplaire de chacun
 async function chargerObjetsPossedes(discordId) {
   const { data } = await supabase.from('inventory').select('item:items(name)').eq('discord_id', discordId);
@@ -215,6 +265,14 @@ async function afficherSolde(discordId) {
   const solde = data?.balance ?? 0;
   $('solde').textContent = solde.toLocaleString('fr-FR');
   afficherOrBourse(solde);
+  afficherTresor(solde);
+}
+
+// Le nom du tas d'or atteint (les paliers de l'image, PALIERS_OR)
+const NOMS_TAS = ['Quelques pièces', 'Un petit tas', 'Un tas d’or', 'Un grand trésor', 'Un trésor de seigneur'];
+function afficherTresor(solde) {
+  const i = solde <= 0 ? -1 : PALIERS_OR.findLastIndex(([min]) => solde >= min);
+  $('tresor-palier').textContent = i < 0 ? 'Bourse vide' : NOMS_TAS[i];
 }
 
 

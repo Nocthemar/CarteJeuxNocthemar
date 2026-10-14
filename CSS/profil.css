@@ -791,3 +791,248 @@
 }
 .btn-echange:hover, .btn-echange:focus-visible { background: rgba(240,207,138,.18); }
 .btn-echange[hidden] { display: none; }
+
+/* =====================================================================
+   Rang et statistiques (profil.html #rang-profil, JS/profil.js afficherRang)
+   Sur l'affiche : à gauche une plaque de bois sombre au filet doré (le rang classé), à droite les
+   chiffres des duels à l'encre, sur le papier, une barre victoires / défaites et le détail.
+   ===================================================================== */
+.rang-profil__corps {
+  display: grid; grid-template-columns: minmax(300px, 380px) minmax(0, 1fr);
+  gap: 34px; align-items: stretch;
+  margin-top: 20px;
+}
+.rang-profil__corps:has(> .rang-plaque[hidden]) { grid-template-columns: minmax(0, 1fr); }
+.rang-profil__stats[hidden], .rang-plaque[hidden] { display: none; }
+
+/* ---------- La plaque du rang ---------- */
+.rang-plaque {
+  --palier: #c08d5c;
+  display: flex; flex-direction: column; justify-content: center; gap: 10px;
+  padding: 20px 22px 16px;
+  border-radius: 4px;
+  background: linear-gradient(180deg, #2b1c12, #150d07);
+  box-shadow:
+    inset 0 0 0 1px #0b0503,
+    inset 0 0 0 4px rgba(0,0,0,.35),
+    inset 0 0 0 5px rgba(214,172,108,.45),
+    0 8px 16px rgba(0,0,0,.28);
+  color: #f3ead7;
+}
+.rang-plaque--argent { --palier: #c9cfd8; }
+.rang-plaque--or { --palier: #e7c46a; }
+.rang-plaque--platine { --palier: #9fd9d0; }
+.rang-plaque--diamant { --palier: #8fb6ff; }
+.rang-plaque--couronne { --palier: #f3cf7c; }
+.rang-plaque__haut { display: flex; align-items: center; gap: 14px; }
+.rang-plaque__medaillon {
+  display: grid; place-items: center; flex: none;
+  width: 52px; height: 58px;
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+  background:
+    radial-gradient(circle at 40% 30%, rgba(255,255,255,.4), transparent 55%),
+    linear-gradient(160deg, var(--palier), color-mix(in srgb, var(--palier) 40%, #120a05));
+  color: #1b1209;
+  font-family: "Cinzel Decorative","Cinzel Decorative Repli", serif; font-size: 1.35rem; font-weight: 900;
+}
+.rang-plaque--couronne .rang-plaque__medaillon { filter: drop-shadow(0 0 8px rgba(243,207,124,.6)); }
+.rang-plaque__titre { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.rang-plaque__sur {
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: .6rem; font-weight: 700; letter-spacing: .2em; text-transform: uppercase;
+  color: rgba(214,172,108,.8);
+}
+.rang-plaque__nom {
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: 1.3rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; line-height: 1.1;
+  color: var(--palier);
+}
+.rang-plaque__cote {
+  display: flex; flex-direction: column; align-items: flex-end; flex: none;
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: 1.35rem; font-weight: 700; line-height: 1;
+  color: #f3ead7;
+}
+.rang-plaque__cote small {
+  margin-top: 3px; font-size: .58rem; letter-spacing: .18em; text-transform: uppercase; color: rgba(243,234,215,.55);
+}
+.rang-plaque__jauge {
+  height: 6px; margin-top: 4px;
+  border-radius: 3px; overflow: hidden;
+  background: rgba(0,0,0,.6);
+  box-shadow: inset 0 0 0 1px rgba(214,172,108,.3);
+}
+.rang-plaque__jauge span {
+  display: block; height: 100%; width: 0;
+  background: linear-gradient(90deg, #b07a26, #f3cf7c);
+  transition: width .8s ease;
+}
+.rang-plaque__bornes {
+  display: flex; justify-content: space-between; margin-top: -4px;
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: .62rem; letter-spacing: .1em; text-transform: uppercase;
+  color: rgba(243,234,215,.5);
+}
+.rang-plaque__pied {
+  display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+  margin: 4px 0 0; padding-top: 10px;
+  border-top: 1px solid rgba(214,172,108,.2);
+  font-size: .86rem; color: rgba(243,234,215,.75);
+}
+.rang-plaque__pied b { color: #f3cf7c; font-weight: 600; }
+
+/* ---------- Les chiffres des duels ---------- */
+.rang-profil__stats { display: flex; flex-direction: column; justify-content: center; gap: 14px; min-width: 0; }
+.rang-chiffres { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 0; }
+.rang-chiffres div { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 0 6px; }
+.rang-chiffres div + div { border-left: 1px solid var(--trait); }
+.rang-chiffres dt {
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: .64rem; font-weight: 700; letter-spacing: .16em; text-transform: uppercase;
+  color: var(--encre-douce);
+}
+.rang-chiffres dd {
+  margin: 0;
+  font-family: "IM Fell English","EB Garamond", serif; font-size: 1.75rem; line-height: 1.1;
+  color: var(--vif-encre);
+}
+/* Barre victoires / défaites */
+.rang-ratio { display: flex; align-items: center; gap: 12px; }
+.rang-ratio__barre {
+  flex: 1; height: 6px; border-radius: 3px; overflow: hidden;
+  background: color-mix(in srgb, var(--encre) 18%, transparent);
+}
+.rang-ratio__barre span { display: block; height: 100%; background: var(--vif-encre); }
+.rang-ratio__barre--vide span { display: none; }
+.rang-ratio__legende { flex: none; font-size: .85rem; font-style: italic; color: var(--encre-douce); }
+/* Détail : Contre l'Ombre / Contre des joueurs */
+.rang-detail { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.rang-detail li { display: flex; align-items: baseline; gap: 8px; font-size: .95rem; color: var(--encre); }
+.rang-detail__points { flex: 1; border-bottom: 1px dotted var(--trait); translate: 0 -4px; }
+.rang-detail__valeur { font-variant-numeric: tabular-nums; }
+.rang-detail__taux { min-width: 3.4em; text-align: right; font-family: "Cinzel","Cinzel Repli", serif; font-size: .82rem; color: var(--vif-encre); }
+.rang-detail__vide { font-style: italic; color: var(--encre-douce); }
+
+.rang-profil__note {
+  max-width: none;
+  margin: 22px 0 0; padding-top: 12px;
+  border-top: 1px solid var(--trait);
+  font-size: .8rem; font-style: italic; color: var(--encre-douce);
+}
+.rang-profil__note:empty { display: none; }
+
+@media (max-width: 820px) {
+  .rang-profil__corps { grid-template-columns: minmax(0, 1fr); gap: 22px; }
+}
+@media (max-width: 480px) {
+  .rang-chiffres { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 12px; }
+  .rang-chiffres div:nth-child(3) { border-left: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rang-plaque__jauge span { transition: none; }
+}
+
+/* =====================================================================
+   Le trésor du duelliste (profil.html #duelliste, JS/profil.js afficherOrBourse / afficherTresor)
+   À gauche l'or dans une niche ronde (pièce qui tourne, tas, étincelles, halo selon la richesse),
+   à droite le solde, le tas atteint, comment gagner de l'or.
+   ===================================================================== */
+.tresor {
+  display: grid; grid-template-columns: 230px minmax(0, 1fr);
+  gap: 34px; align-items: center;
+  margin-top: 20px;
+}
+.tresor[hidden] { display: none; }
+/* La niche : un creux rond dans le papier, l'or posé dedans */
+.tresor__or {
+  position: relative;
+  display: grid; place-items: center;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 62%, rgba(255,214,130,.35), transparent 60%),
+    radial-gradient(circle at 50% 45%, color-mix(in srgb, var(--papier) 70%, #fff), var(--papier-2) 72%);
+  box-shadow:
+    inset 0 6px 14px rgba(60,40,20,.28),
+    inset 0 -2px 6px rgba(255,255,255,.5),
+    0 0 0 1px var(--trait),
+    0 0 0 6px color-mix(in srgb, var(--papier) 60%, transparent),
+    0 0 0 7px color-mix(in srgb, var(--vif-encre) 45%, transparent);
+}
+.tresor__or .piece-icone {
+  width: 72%; height: 72%; margin: 0;
+  object-fit: contain;
+  filter: drop-shadow(0 6px 8px rgba(40,20,5,.45)) drop-shadow(0 0 var(--halo-taille, 0px) var(--halo-couleur, transparent));
+}
+.tresor__or .piece-icone--vide { width: 56%; height: 56%; filter: grayscale(1) brightness(.8) drop-shadow(0 4px 6px rgba(40,20,5,.4)); opacity: .7; }
+.page-fiche .duelliste .tresor__or .bourse-etincelles { grid-area: 1 / 1; position: absolute; inset: 22% 20% 26%; width: auto; height: auto; margin: 0; }
+
+.tresor__infos { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.tresor__palier {
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: .7rem; font-weight: 700; letter-spacing: .2em; text-transform: uppercase;
+  color: var(--vif-encre);
+}
+.tresor__solde {
+  display: flex; align-items: baseline; gap: 10px; margin: 0;
+  font-family: "Cinzel Decorative","Cinzel Decorative Repli", serif; font-size: clamp(2.2rem, 5vw, 3rem); font-weight: 900; line-height: 1;
+  color: var(--encre);
+}
+.page-fiche .tresor__solde #solde { color: var(--encre); text-shadow: 0 1px 0 rgba(255,255,255,.5); }
+.tresor__solde small {
+  font-family: "IM Fell English","EB Garamond", serif; font-size: 1rem; font-weight: 400; font-style: italic; letter-spacing: 0;
+  color: var(--encre-douce);
+}
+.tresor__gains { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--trait); }
+.tresor__gains-titre {
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: .64rem; font-weight: 700; letter-spacing: .18em; text-transform: uppercase;
+  color: var(--encre-douce);
+}
+.tresor__gains ul {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 20px;
+  margin: 6px 0 0; padding: 0; list-style: none;
+}
+.tresor__gains li { position: relative; padding-left: 16px; font-size: .92rem; color: var(--encre); }
+.tresor__gains li::before {
+  content: ""; position: absolute; left: 0; top: .55em;
+  width: 7px; height: 7px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #ffe7a3, #c08a2c 70%);
+  box-shadow: 0 0 0 1px rgba(90,58,25,.35);
+}
+.tresor__gains b { color: var(--vif-encre); }
+.tresor__liens { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.tresor__lien {
+  padding: 6px 14px;
+  border: 1px solid var(--trait); border-radius: 2px;
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: .7rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--vif-encre); text-decoration: none;
+  transition: background .15s, color .15s;
+}
+.tresor__lien:hover, .tresor__lien:focus-visible { background: var(--vif-encre); color: var(--papier); }
+
+@media (max-width: 720px) {
+  .tresor { grid-template-columns: minmax(0, 1fr); justify-items: center; gap: 20px; }
+  .tresor__or { width: 190px; }
+  .tresor__infos { width: 100%; }
+  .tresor__gains ul { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* Le rang posé sur le papier, aux couleurs du thème (plus de plaque de bois) :
+   l'encre pour le texte, la couleur du thème (--vif-encre) pour la jauge, le métal du palier pour le médaillon */
+.page-fiche .rang-plaque {
+  padding: 4px 30px 4px 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  border-right: 1px solid var(--trait);
+  color: var(--encre);
+}
+.page-fiche .rang-plaque__sur { color: var(--encre-douce); }
+.page-fiche .rang-plaque__nom { color: color-mix(in srgb, var(--palier) 55%, var(--encre)); }
+.page-fiche .rang-plaque__medaillon { filter: drop-shadow(0 2px 3px rgba(40,20,5,.35)); }
+.page-fiche .rang-plaque__cote { color: var(--encre); }
+.page-fiche .rang-plaque__cote small { color: var(--encre-douce); }
+.page-fiche .rang-plaque__jauge { background: color-mix(in srgb, var(--encre) 18%, transparent); box-shadow: none; }
+.page-fiche .rang-plaque__jauge span { background: var(--vif-encre); }
+.page-fiche .rang-plaque__bornes { color: var(--encre-douce); }
+.page-fiche .rang-plaque__pied { border-top-color: var(--trait); color: var(--encre-douce); }
+.page-fiche .rang-plaque__pied b { color: var(--vif-encre); }
+@media (max-width: 820px) {
+  .page-fiche .rang-plaque { padding: 0 0 20px; border-right: 0; border-bottom: 1px solid var(--trait); }
+}
+/* L'or posé directement sur le papier (sans niche ronde) */
+.page-fiche .tresor__or { border-radius: 0; background: none; box-shadow: none; }

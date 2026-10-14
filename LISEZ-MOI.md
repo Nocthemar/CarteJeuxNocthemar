@@ -73,6 +73,8 @@ mêmes cartes, mêmes pièces, même progression.
    Pour le mode en ligne classé (recherche de partie 1v1 et 2v2, cote et paliers) : lancer `classe.sql`
    (à relancer pour le 2v2), puis relancer `pass_saison.sql` (deux gagnants par salon en 2v2).
    Pour la suppression de compte (page Paramètres) : lancer `compte.sql`.
+   Pour le rang et les statistiques du profil (victoires, défaites, taux, cartes) : lancer `stats_profil.sql`
+   (après `pass_saison.sql` et `echanges.sql` ; lecture seule, ne modifie aucune donnée).
 
 ## Bon à savoir
 

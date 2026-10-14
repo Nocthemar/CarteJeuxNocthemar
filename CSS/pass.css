@@ -413,3 +413,10 @@ body.fete-ouverte { overflow: hidden; }
 .recompense__loupe { width: 64px; }
 .recompense__loupe .carte-jeu { cursor: zoom-in; }
 @media (max-width: 600px) { .recompense__loupe { width: 52px; } }
+
+/* Palier « plateau » : la miniature du plateau de la Boutique */
+.recompense__visuel--plateau img {
+  width: 100%; max-width: 120px; height: 76px; object-fit: cover;
+  border-radius: 4px;
+  box-shadow: 0 0 0 1px rgba(231,196,106,.5), 0 4px 10px rgba(0,0,0,.6);
+}

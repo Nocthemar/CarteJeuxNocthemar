@@ -63,6 +63,38 @@
         </div>
       </section>
 
+      <!-- Rang et statistiques : visibles par tous (JS/profil.js, afficherRang).
+           Rang : palier de la cote classée (table rangs, SQL/classe.sql) ; statistiques : SQL/stats_profil.sql -->
+      <section id="rang-profil" class="carte rang-profil" hidden>
+        <span class="vitrine__sur">Registre des duels</span>
+        <h2>Rang et statistiques</h2>
+        <div class="rang-profil__corps">
+          <!-- Le rang classé : médaillon du palier, cote, jauge vers le palier suivant, bilan en classé -->
+          <div class="rang-plaque" id="rang-plaque">
+            <div class="rang-plaque__haut">
+              <span class="rang-plaque__medaillon" id="rang-medaillon" aria-hidden="true"></span>
+              <div class="rang-plaque__titre">
+                <span class="rang-plaque__sur">Rang classé</span>
+                <strong class="rang-plaque__nom" id="rang-nom"></strong>
+              </div>
+              <span class="rang-plaque__cote" id="rang-cote"></span>
+            </div>
+            <div class="rang-plaque__jauge" id="rang-jauge" role="progressbar" aria-valuemin="0" aria-valuemax="100">
+              <span id="rang-jauge-remplie"></span>
+            </div>
+            <div class="rang-plaque__bornes"><span id="rang-borne-bas"></span><span id="rang-borne-haut"></span></div>
+            <p class="rang-plaque__pied" id="rang-pied"></p>
+          </div>
+          <!-- Les statistiques des duels -->
+          <div class="rang-profil__stats" id="rang-stats">
+            <dl class="rang-chiffres" id="stats-duels"></dl>
+            <div class="rang-ratio" id="stats-ratio"></div>
+            <ul class="rang-detail" id="stats-detail"></ul>
+          </div>
+        </div>
+        <p class="rang-profil__note" id="rang-note"></p>
+      </section>
+
       <!-- Vitrine des cartes favorites (le deck du profil) : visible par tous, modifiable seulement sur son propre profil -->
       <section class="carte deck vitrine">
         <span class="vitrine__sur">Cartes favorites</span>
@@ -70,19 +102,31 @@
         <a id="lien-collection" class="btn-collection" href="collection.html" hidden>Ouvrir ma collection</a>
       </section>
 
-      <!-- Le duelliste : cartes et objets de pouvoir possédés, bourse. Visible uniquement sur son propre profil -->
-      <section id="duelliste" class="carte duelliste" hidden>
-        <h2>Le duelliste</h2>
-
-        <div class="perso__bas">
-          <!-- Les 7 objets de pouvoir du Duel : ceux qu'on possède en couleur, les autres grisés -->
-          <div id="objets-pouvoir" class="stat perso__inventaire"></div>
-
-          <!-- Bourse : visible uniquement sur son propre profil -->
-          <div id="bourse" class="perso__bourse" hidden>
-            <div class="perso__bourse-contenu">
-              <span class="perso__bourse-label">Bourse</span>
-              <span class="perso__bourse-valeur"><img class="piece-icone" src="img/Equipement/Or-icone.webp" alt="pièces"> <span id="solde">0</span></span>
+      <!-- Le trésor du duelliste : la bourse (table wallets). Visible uniquement sur son propre profil.
+           L'or (pièce qui tourne, puis tas de plus en plus gros, étincelles) : JS/profil.js, afficherOrBourse -->
+      <section id="duelliste" class="carte duelliste tresor-carte" hidden>
+        <span class="vitrine__sur">Le duelliste</span>
+        <h2>Le trésor</h2>
+        <div id="bourse" class="tresor" hidden>
+          <div class="tresor__or">
+            <img class="piece-icone" src="img/Equipement/Or-icone.webp" alt="">
+          </div>
+          <div class="tresor__infos">
+            <span class="tresor__palier" id="tresor-palier"></span>
+            <p class="tresor__solde"><span id="solde">0</span><small>pièces d’or</small></p>
+            <div class="tresor__gains">
+              <span class="tresor__gains-titre">Gagner de l’or</span>
+              <ul>
+                <li>Vaincre l’Ombre : <b>2</b>, <b>5</b> ou <b>10</b> or selon la difficulté</li>
+                <li>Recycler tes doublons dans la Collection</li>
+                <li>Vendre des cartes au Marché</li>
+                <li>Certains paliers du Pass de saison</li>
+              </ul>
+            </div>
+            <div class="tresor__liens">
+              <a class="tresor__lien" href="boutique.html">Boutique</a>
+              <a class="tresor__lien" href="marche.html">Marché</a>
+              <a class="tresor__lien" href="collection.html#grimoire">Recycler</a>
             </div>
           </div>
         </div>
