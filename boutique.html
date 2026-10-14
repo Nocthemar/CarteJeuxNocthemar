@@ -42,8 +42,8 @@
       <p>Tout ce qui se vend ici est cosmétique ou narratif. Les pièces se gagnent en jouant, jamais en payant.</p>
     </header>
 
-    <!-- Échoppe I : sélection du marchand, renouvelée par le bot -->
-    <section class="echoppe" id="etal-marchand">
+    <!-- Échoppe I : boosters de cartes (achat et ouverture) -->
+    <section class="echoppe" id="porte-cartes">
       <!-- Solde (connecté), dans le coin de l'échoppe -->
       <div id="bourse" class="bourse" hidden>
         <img class="bourse__piece" src="img/Equipement/Or-icone.webp" alt="">
@@ -54,6 +54,17 @@
       </div>
       <div class="enseigne">
         <span class="enseigne__num">I</span>
+        <span class="enseigne__sur">Boosters de cartes</span>
+        <h2>La porte aux mille cartes</h2>
+      </div>
+      <p class="echoppe__intro">Chaque booster renferme des cartes tirées au hasard. Tape sur la porte pour la briser : sa lumière trahit la rareté qui t'attend.</p>
+      <div id="boosters" class="etal etal--boosters"><p class="vide">Chargement…</p></div>
+    </section>
+
+    <!-- Échoppe II : sélection du marchand, renouvelée par le bot -->
+    <section class="echoppe" id="etal-marchand">
+      <div class="enseigne">
+        <span class="enseigne__num">II</span>
         <span class="enseigne__sur">Boutique du marchand</span>
         <h2>L'étal du marchand ambulant</h2>
       </div>
@@ -62,26 +73,15 @@
       <div id="jour" class="etal"><p class="vide">Chargement…</p></div>
     </section>
 
-    <!-- Échoppe II : cosmétiques du profil -->
+    <!-- Échoppe III : cosmétiques du profil -->
     <section class="echoppe" id="armoire-apparences">
       <div class="enseigne">
-        <span class="enseigne__num">II</span>
+        <span class="enseigne__num">III</span>
         <span class="enseigne__sur">Boutique du profil</span>
         <h2>L'armoire des apparences</h2>
       </div>
       <p class="echoppe__intro">Bannières, titres et thèmes pour ton profil. Une fois acheté, équipe-le depuis ton profil.</p>
       <div id="profil" class="etal"><p class="vide">Chargement…</p></div>
-    </section>
-
-    <!-- Échoppe III : boosters de cartes (achat et ouverture) -->
-    <section class="echoppe" id="porte-cartes">
-      <div class="enseigne">
-        <span class="enseigne__num">III</span>
-        <span class="enseigne__sur">Boosters de cartes</span>
-        <h2>La porte aux mille cartes</h2>
-      </div>
-      <p class="echoppe__intro">Chaque booster renferme des cartes tirées au hasard. Tape sur la porte pour la briser : sa lumière trahit la rareté qui t'attend.</p>
-      <div id="boosters" class="etal etal--boosters"><p class="vide">Chargement…</p></div>
     </section>
 
     <!-- Échoppe IV : plateaux du Duel des Couronnes -->
@@ -99,9 +99,9 @@
 
   <!-- Sommaire : aller directement à une échoppe (JS/boutique.js : l'échoppe à l'écran est mise en avant) -->
   <nav class="sommaire" id="sommaire" aria-label="Échoppes de la boutique">
-    <a href="#etal-marchand"><span class="sommaire__num">I</span><span class="sommaire__nom">Le marchand</span></a>
-    <a href="#armoire-apparences"><span class="sommaire__num">II</span><span class="sommaire__nom">Apparences</span></a>
-    <a href="#porte-cartes"><span class="sommaire__num">III</span><span class="sommaire__nom">Boosters</span></a>
+    <a href="#porte-cartes"><span class="sommaire__num">I</span><span class="sommaire__nom">Boosters</span></a>
+    <a href="#etal-marchand"><span class="sommaire__num">II</span><span class="sommaire__nom">Le marchand</span></a>
+    <a href="#armoire-apparences"><span class="sommaire__num">III</span><span class="sommaire__nom">Apparences</span></a>
     <a href="#atelier-plateaux"><span class="sommaire__num">IV</span><span class="sommaire__nom">Plateaux</span></a>
   </nav>
 
