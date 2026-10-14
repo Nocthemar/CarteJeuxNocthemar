@@ -6,7 +6,12 @@
 import { SITE_ROOT } from './supabase.js';
 import { $, esc } from './commun.js';
 import { htmlInfos } from './cartes.js';
-import { ENERGIE_MAX, COUT_DESTIN, COUT_DEFAUSSE, COUT_MEDITER, peutJouer, peutAttaquer, peutDestin, peutDefausser, peutMediter, rollInfo, coutDe } from './jeu-cartes-moteur.js';
+import {
+  ENERGIE_MAX, COUT_DESTIN, COUT_DEFAUSSE, COUT_MEDITER, CAPACITES, UNIQUES,
+  peutJouer, peutAttaquer, peutDefendre, peutActiver, capaciteActive, peutDestin, peutDefausser, peutMediter,
+  rollInfo, coutDe, actionsDe, capsDe, attaqueDe, defenseDe, trouver,
+  terrainDe,
+} from './jeu-cartes-moteur.js';
 import { jouerSon, SM } from './jeu-cartes-son.js';
 import { particules, onde, flash, voile, secousseEcran, eclair, briser, recul, annonce, envol, symbole } from './jeu-cartes-effets.js';
 import { styleAttaque, couleursVeine } from './jeu-cartes-attaques.js';
@@ -69,11 +74,24 @@ function artSVG(c) {
 }
 
 const rarete = (c) => c.carte?.rarity ?? (c.t === 's' ? 'sort' : 'commune');
-const capacite = (k) => (k === 'guard' ? 'Garde' : k === 'charge' ? 'Charge' : '');
-const ICONE_GARDE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 4 5v6c0 5 3.5 9 8 11 4.5-2 8-6 8-11V5z"/></svg>';
-const ICONE_CHARGE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg>';
+const nomsCapacites = (c) => capsDe(c).map((k) => CAPACITES[k]?.nom).filter(Boolean);
+// Icônes des capacités (24 × 24, remplies)
+const ICONES_CAP = {
+  garde: 'M12 2 4 5v6c0 5 3.5 9 8 11 4.5-2 8-6 8-11V5z',
+  provocation: 'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 4a6 6 0 1 1 0 12 6 6 0 0 1 0-12zm0 3a3 3 0 1 0 0 6 3 3 0 0 0 0-6z',
+  charge: 'M13 2 4 14h6l-1 8 9-12h-6z',
+  riposte: 'M4 3h3l9 9-3 3-9-9zM20 3h-3l-4 4 3 3 4-4zM3 18l3-3 3 3-3 3zM21 18l-3-3-3 3 3 3z',
+  interception: 'M12 2 4 5v6c0 5 3.5 9 8 11zM14 8h4l-2-3zM14 10h6v3h-6zM14 15h4l-2 3z',
+  esquive: 'M3 7h11a3 3 0 1 0-3-3h2a1 1 0 1 1 1 1H3zM3 11h16a3 3 0 1 1-3 3h2a1 1 0 1 0 1-1H3zM3 16h8v2H3z',
+  bouclier: 'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 3 5 2v4c0 3.5-2.2 6-5 7.5C9.2 17 7 14.5 7 11V7z',
+  soin: 'M12 3c4 5 6 8 6 11a6 6 0 0 1-12 0c0-3 2-6 6-11zm-1 7v3H8v2h3v3h2v-3h3v-2h-3v-3z',
+  inspiration: 'M3 8l4 3 5-6 5 6 4-3-2 11H5z',
+  percee: 'M2 11h14l-4-4 2-2 8 7-8 7-2-2 4-4H2z',
+  drain: 'M12 21 4 13a5 5 0 0 1 8-6 5 5 0 0 1 8 6zM11 9v3H8v2h3v3h2v-3h3v-2h-3V9z',
+};
 const urlImage = (c) => (c.carte?.image ? esc(new URL(c.carte.image, SITE_ROOT)) : null);
-const texteCarte = (c) => (c.t === 's' ? c.d : capacite(c.k));
+// Texte des cartes du Codex : l'effet d'un sort, les capacités d'une troupe
+const texteCarte = (c) => (c.t === 's' ? c.d : nomsCapacites(c).join(' · '));
 
 // Face d'une carte, la même partout (main, terrain, aperçu, accueil) :
 // - vraie carte : l'illustration originale en entier, avec dans son cadre noir le nom, le rang,
@@ -101,47 +119,80 @@ function faceCarte(c) {
     </span>`;
 }
 
-const htmlCapacite = (k) => (k ? `<span class="dc-k" title="${capacite(k)}">${k === 'guard' ? ICONE_GARDE : ICONE_CHARGE}</span>` : '');
-const htmlStats = (a, h) => `<span class="dc-stat dc-stat--a">${a}</span><span class="dc-stat dc-stat--h">${h}</span>`;
+// Les capacités : une rangée d'icônes en haut à droite (une couronne si la carte a une capacité unique)
+function htmlCapacites(c) {
+  const caps = capsDe(c);
+  const unique = UNIQUES[c.unique ?? c.def?.unique];
+  if (!caps.length && !unique) return '';
+  return `<span class="dc-caps">${caps.map((k) => `<span class="dc-k" data-infobulle="${esc(`${CAPACITES[k]?.nom ?? k} : ${CAPACITES[k]?.texte ?? ''}`)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" d="${ICONES_CAP[k] ?? ICONES_CAP.garde}"/></svg></span>`).join('')}${unique
+    ? `<span class="dc-k dc-k--unique" data-infobulle="${esc(`${unique.nom} : ${unique.texte}`)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${ICONES_CAP.inspiration}"/></svg></span>` : ''}</span>`;
+}
+// Attaque, Défense, PV (la valeur du moment est mise en avant si elle a changé)
+const htmlStats = (a, d, h, { aMod = false, dMod = 0 } = {}) => `
+  <span class="dc-stat dc-stat--a${aMod ? ' dc-stat--mod' : ''}" title="Attaque">${a}</span>
+  <span class="dc-stat dc-stat--d${dMod > 0 ? ' dc-stat--plus' : dMod < 0 ? ' dc-stat--moins' : ''}" title="Défense">${d}</span>
+  <span class="dc-stat dc-stat--h" title="PV">${h}</span>`;
 
 // Carte en main (ou en aperçu, ou à l'accueil)
 export function htmlCarte(c, { index = null, jouable = false, choisie = false, cout = c.c } = {}) {
   const url = urlImage(c);
-  const etiquette = `${c.n}, coût ${c.c}${c.t === 'u' ? `, ${c.a} attaque, ${c.h} vie` : ''}. ${texteCarte(c)}`;
+  const caps = nomsCapacites(c);
+  const etiquette = `${c.n}, coût ${c.c}${actionsDe(c) > 1 ? ` et ${actionsDe(c)} actions` : ''}${c.t === 'u' ? `, ${c.a} attaque, ${c.d ?? 0} défense, ${c.h} PV` : ''}${caps.length ? `, ${caps.join(', ')}` : ''}. ${c.t === 's' ? c.d : ''}`;
   return `
     <button type="button" class="dc-carte dc-carte--${c.t}${url ? ' dc-carte--image' : ''} rar-${rarete(c)}${jouable ? ' est-jouable' : ''}${choisie ? ' est-choisie' : ''}"
       ${index != null ? `data-index="${index}"` : ''} aria-label="${esc(etiquette)}" ${url ? `style="--masque:url('${url}')"` : ''}>
       <span class="dc-carte__corps">
         ${faceCarte(c)}
         <span class="dc-cout${cout < c.c ? ' dc-cout--reduit' : ''}">${cout}</span>
-        ${htmlCapacite(c.k)}
-        ${c.t === 'u' ? htmlStats(c.a, c.h) : ''}
+        ${actionsDe(c) > 1 ? `<span class="dc-act" title="${actionsDe(c)} actions pour la jouer">${actionsDe(c)}</span>` : ''}
+        ${htmlCapacites(c)}
+        ${c.t === 'u' ? htmlStats(c.a, c.d ?? 0, c.h) : ''}
         <span class="dc-reflet${url ? '' : ' dc-reflet--codex'}"></span>
       </span>
     </button>`;
 }
 
-// Unité sur le terrain : la même face, avec ses statistiques du moment
-function htmlUnite(u, camp, sel) {
-  const pret = camp === 'joueur' && peutAttaquer(u) && sel.monTour;
+// Unité sur le terrain : la même face, avec ses statistiques du moment et ses états
+function htmlUnite(p, u, camp, sel) {
+  const monTour = sel.monTour && camp === 'joueur';
+  const pret = monTour && p.camps.joueur.actions > 0 && (peutAttaquer(u) || peutDefendre(u) || peutActiver(p, 'joueur', u.uid));
   const cible = sel.cibles?.some((c) => c.camp === camp && c.uid === u.uid);
+  const atk = attaqueDe(p, camp, u);
+  const def = defenseDe(u, p);
+  const etats = [
+    u.defend ? ['En garde', 'defense'] : null,
+    u.bloquee || u.gele ? ['Gelée', 'gelee'] : null,
+    u.expose ? ['Exposée', 'exposee'] : null,
+    u.bouclier ? ['Bouclier', 'bouclier'] : null,
+  ].filter(Boolean);
   const classes = [
     'dc-unite', `rar-${rarete(u.def)}`,
-    u.k === 'guard' ? 'a-garde' : '', pret ? 'est-prete' : '',
-    !u.prete || u.aAttaque ? 'est-epuisee' : '',
+    capsDe(u).includes('garde') || capsDe(u).includes('provocation') ? 'a-garde' : '', pret ? 'est-prete' : '',
+    !u.prete || u.aAttaque || u.bloquee ? 'est-epuisee' : '',
+    u.defend ? 'a-defense' : '', u.bouclier ? 'a-bouclier' : '', u.bloquee || u.gele ? 'est-gelee' : '',
     sel.attaquant === u.uid ? 'est-choisie' : '', cible ? 'est-ciblable' : '',
+    sel.cibles && !cible && camp === 'adverse' ? 'est-hors-cible' : '',
     u.h < u.hMax ? 'est-blessee' : '',
   ].filter(Boolean).join(' ');
+  const caps = nomsCapacites(u);
   return `
     <button type="button" class="${classes}" data-uid="${u.uid}" data-camp="${camp}"
-      aria-label="${esc(`${u.n}, ${u.a} attaque, ${u.h} vie${u.k ? `, ${capacite(u.k)}` : ''}${u.brisee ? ', arme brisée' : ''}`)}">
+      aria-label="${esc(`${u.n}, ${atk} attaque, ${def} défense, ${u.h} PV${caps.length ? `, ${caps.join(', ')}` : ''}${etats.length ? `, ${etats.map((e) => e[0]).join(', ')}` : ''}`)}">
       <span class="dc-unite__corps">
         ${faceCarte(u.def)}
-        ${htmlCapacite(u.k)}
-        ${u.brisee ? '<span class="dc-brise" title="Arme brisée">brisée</span>' : ''}
-        ${htmlStats(u.a, u.h)}
+        ${htmlCapacites(u)}
+        ${etats.length ? `<span class="dc-etats">${etats.map(([t, k]) => `<span class="dc-etat dc-etat--${k}">${t}</span>`).join('')}</span>` : ''}
+        ${htmlStats(atk, def, u.h, { aMod: atk !== u.a, dMod: def - u.d })}
       </span>
     </button>`;
+}
+
+// Les actions du tour : des pastilles (pleines = restantes)
+function htmlActions(camp) {
+  const max = Math.max(camp.actionsMax || 2, camp.actions);
+  return `<span class="actions__titre">Actions</span>`
+    + Array.from({ length: max }, (_, i) => `<i class="action-pip${i < camp.actions ? ' action-pip--pleine' : ''}"></i>`).join('')
+    + `<span class="actions__texte">${camp.actions} / ${camp.actionsMax || 2}</span>`;
 }
 
 const COURONNE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8l4 3 5-6 5 6 4-3-2 11H5z"/></svg>';
@@ -226,8 +277,11 @@ export function rendre(p, sel, avatars = {}) {
   $('heros-adverse').innerHTML = htmlHeros(a, 'adverse', avatars.adverse, sel);
   $('heros-joueur').innerHTML = htmlHeros(j, 'joueur', avatars.joueur, sel);
   $('infos-adverse').innerHTML = `
-    <span class="energie energie--adverse" title="Énergie de l'adversaire">${htmlEnergie(a)}</span>`;
+    <span class="energie energie--adverse" title="Énergie de l'adversaire">${htmlEnergie(a)}</span>
+    <span class="actions actions--adverse" title="Actions de l'adversaire ce tour">${htmlActions(a)}</span>`;
   $('energie').innerHTML = htmlEnergie(j);
+  $('actions').innerHTML = htmlActions(j);
+  $('actions').title = `Actions : ${j.actions} sur ${j.actionsMax || 2} ce tour (2 par tour, 3 à partir du tour 5)`;
   $('orbe-valeur').textContent = j.energie;
   $('pioche-joueur').innerHTML = pileTapis(j.deck.length);
   $('pioche-adverse').innerHTML = pileTapis(a.deck.length);
@@ -239,14 +293,20 @@ export function rendre(p, sel, avatars = {}) {
 
   for (const [qui, camp] of [['adverse', a], ['joueur', j]]) {
     $(`terrain-${qui}`).innerHTML = camp.terrain.map((u) => (u
-      ? htmlUnite(u, qui, sel)
+      ? htmlUnite(p, u, qui, sel)
       : '<span class="dc-place" aria-hidden="true"></span>')).join('');
   }
 
-  $('main-joueur').innerHTML = j.main.map((c, i) => htmlCarte(c, {
-    cout: coutDe(j, c),
-    index: i, jouable: sel.monTour && !sel.defausse && peutJouer(p, 'joueur', i), choisie: sel.sortIndex === i,
-  })).join('');
+  $('main-joueur').innerHTML = j.main.map((c, i) => {
+    const html = htmlCarte(c, {
+      cout: coutDe(j, c),
+      index: i, jouable: sel.monTour && !sel.defausse && peutJouer(p, 'joueur', i), choisie: sel.sortIndex === i,
+    });
+    if (!sel.monTour) return html;
+    // Énergie ou actions insuffisantes : un bandeau sur la carte
+    const manque = coutDe(j, c) > j.energie ? `⚡ ${coutDe(j, c)}` : actionsDe(c) > j.actions ? `${actionsDe(c)} actions` : '';
+    return manque ? html.replace('class="dc-carte ', `data-manque="${esc(manque)}" class="dc-carte est-trop-chere `) : html;
+  }).join('');
   const glissable = sel.monTour && peutDefausser(p, 'joueur');
   for (const c of $('main-joueur').children) c.draggable = glissable;
   $('main-joueur').classList.toggle('en-defausse', !!sel.defausse);
@@ -259,8 +319,27 @@ export function rendre(p, sel, avatars = {}) {
   }
 
   $('btn-fin').disabled = !sel.monTour;
+  // Plus d'action : le bouton de fin de tour s'illumine
+  $('btn-fin').classList.toggle('est-suggere', !!sel.monTour && j.actions <= 0);
   $('btn-destin').disabled = !sel.monTour || !peutDestin(p, 'joueur');
-  $('btn-destin').title = j.destinUtilise ? 'Déjà lancé ce tour-ci' : `Coûte ${COUT_DESTIN} énergie, une fois par tour`;
+  $('btn-destin').title = j.destinUtilise ? 'Déjà lancé ce tour-ci' : `Coûte ${COUT_DESTIN} énergie (sans action), une fois par tour`;
+  // Le terrain
+  const terrain = terrainDe(p);
+  $('terrain-duel').innerHTML = terrain ? `<span class="terrain-duel__nom">${esc(terrain.nom)}</span><span class="terrain-duel__texte">${esc(terrain.texte)}</span>` : '';
+  // L'unité choisie : se mettre en garde, ou activer sa capacité
+  const choisie = sel.attaquant ? trouver(j, sel.attaquant) : null;
+  const act = capaciteActive(choisie);
+  $('btn-defendre').disabled = !sel.monTour || !choisie || j.actions < 1 || !peutDefendre(choisie);
+  $('btn-defendre').title = choisie
+    ? `${choisie.n} se met en garde : +2 Défense et Riposte jusqu'à ton prochain tour (1 action, elle n'attaque pas)`
+    : 'Choisis d’abord une de tes unités';
+  $('btn-capacite').hidden = !act;
+  if (act) {
+    $('btn-capacite').disabled = !sel.monTour || !peutActiver(p, 'joueur', choisie.uid);
+    $('btn-capacite').innerHTML = `${esc(act.nom)} <small>1 action${act.cout ? ` · ${act.cout} énergie` : ''}</small>`;
+    $('btn-capacite').title = act.texte;
+    $('btn-capacite').classList.toggle('est-actif', !!sel.capacite);
+  }
   $('btn-defausser').disabled = !sel.monTour || !peutDefausser(p, 'joueur');
   $('btn-defausser').classList.toggle('est-actif', !!sel.defausse);
   $('btn-defausser').title = j.defausseUtilisee ? 'Déjà défaussé ce tour-ci'
@@ -271,7 +350,7 @@ export function rendre(p, sel, avatars = {}) {
 
   $('historique').innerHTML = p.jets.map((x) => `
     <li class="jet jet--${x.q}${x.qui === 'joueur' ? ' jet--moi' : ''}">
-      <b>${x.de}</b><span>${esc(x.quoi)}<small>${esc(x.label)}</small></span>
+      <b>${x.de}</b><span>${esc(x.quoi)}<small>${esc(x.label)}${x.detail ? ` · ${esc(x.detail)}` : ''}</small></span>
     </li>`).join('') || '<li class="jet jet--vide">Aucun jet pour l\'instant.</li>';
 
   $('scene-table').classList.toggle('mon-tour', !!sel.monTour);
@@ -324,6 +403,26 @@ export function flotter(el, texte, type = 'degats') {
   f.style.top = `${r.top + r.height * 0.35}px`;
   document.body.appendChild(f);
   setTimeout(() => f.remove(), reduit ? 600 : 1300);
+}
+
+// Un effet sur une cible (moteur : ev.touches) : dégâts, soin, bonus, état (Gelée, Bouclier…)
+function montrerTouche(t, el = elCible(t)) {
+  if (!el) return;
+  if (t.texte) flotter(el, t.texte, t.etat ? 'rate' : 'buff');
+  else if (t.soin) flotter(el, `+${t.valeur}`, 'soin');
+  else if (t.buff) flotter(el, `+${t.valeur}/+${t.valeur}`, 'buff');
+  else { secouer(el); flotter(el, `-${t.valeur}`); }
+}
+export async function montrerTouches(touches = []) {
+  for (const t of touches) {
+    const el = elCible(t);
+    if (t.soin) EFFET_SORT.heal(el);
+    else if (t.etat) onde(el, '#bfe3f0', 2, 600);
+    else if (t.buff) EFFET_SORT.buff(el);
+    else if (el) particules(el, { n: 14, couleurs: BRAISES, vitesse: 90, gravite: 40, rond: true });
+    montrerTouche(t, el);
+  }
+  if (touches.length) await pause(450);
 }
 
 function classeTemporaire(el, classe, ms) {
@@ -449,8 +548,9 @@ export async function animer(ev) {
           jouerSon('couronne');
         }
         (UFX[ev.carte.n] ?? ((e) => {
-          if (ev.carte.k === 'charge') { particules(e, { n: 16, couleurs: OR, vitesse: 150, gravite: 50 }); jouerSon('acier', 0.05); }
-          if (ev.carte.k === 'guard') onde(e, '#e6eaf1', 1.9, 650);
+          const caps = capsDe(ev.carte);
+          if (caps.includes('charge')) { particules(e, { n: 16, couleurs: OR, vitesse: 150, gravite: 50 }); jouerSon('acier', 0.05); }
+          if (caps.includes('garde') || caps.includes('provocation')) onde(e, '#e6eaf1', 1.9, 650);
         }))(el);
       }, reduit ? 0 : 260);
       await pause(380);
@@ -469,10 +569,7 @@ export async function animer(ev) {
       for (const t of ev.touches ?? []) {
         const el = elCible(t);
         EFFET_SORT[ev.carte.fx]?.(el);
-        if (t.texte) flotter(el, t.texte, 'buff');
-        else if (t.soin) flotter(el, `+${t.valeur}`, 'soin');
-        else if (t.buff) flotter(el, `+${t.valeur}/+${t.valeur}`, 'buff');
-        else { secouer(el); flotter(el, `-${t.valeur}`); }
+        montrerTouche(t, el);
       }
       if (ev.carte.fx === 'draw') particules($('main-joueur'), { n: 12, couleurs: ['#c5d2ef', '#ffffff'], vitesse: 60, monte: 50, gravite: -20, depuis: 'surface' });
       await pause(250);
@@ -484,6 +581,13 @@ export async function animer(ev) {
     case 'attaque': {
       const att = elUnite(ev.uid);
       const cib = elCible(ev.cible);
+      // Interception : une unité adverse s'interpose devant son héros
+      if (ev.interception && cib) {
+        flotter(cib, 'Interception !', 'buff');
+        onde(cib, '#e6eaf1', 2, 600);
+        jouerSon('acier', 0.05);
+        await pause(450);
+      }
       // Chorégraphie de l'attaque (par son nom, sinon sa Veine : JS/jeu-cartes-attaques.js)
       const style = styleAttaque(ev.attaque);
       // 1. le nom de l'attaque s'affiche, l'attaquant se charge, le dé roule ; la cible est marquée
@@ -491,7 +595,9 @@ export async function animer(ev) {
       att?.classList.add('fx-prepare');
       cib?.classList.add('fx-visee');
       style.charge?.(att);
-      await lancerDe(ev.de, ev.info.label, ev.info.q);
+      if (ev.esquive && cib) flotter(cib, 'Esquive : deux dés, le plus bas', 'buff');
+      const calcul = ev.total != null ? ` · ${ev.de}${ev.atk ? ` + ${ev.atk}` : ''}${ev.bonus ? ` + ${ev.bonus}` : ''} = ${ev.total} / ${ev.seuil}` : '';
+      await lancerDe(ev.de, `${ev.info.label}${calcul}`, ev.info.q);
       att?.classList.remove('fx-prepare');
       cib?.classList.remove('fx-visee');
       // 2. l'attaque part (projectile, rayon, élan…) et touche
@@ -517,17 +623,26 @@ export async function animer(ev) {
         impact(cib, ev.info.q, !!ev.cible.heros);
       }
       if (ev.info.q === 'critique' && ev.degats > 0) flotter(cib, 'Critique !', 'critique');
-      flotter(cib, ev.degats > 0 ? `-${ev.degats}` : 'Raté', ev.degats > 0 ? 'degats' : 'rate');
+      if (ev.bouclier) {
+        flotter(cib, 'Bouclier !', 'buff');
+        onde(cib, '#bfe3f0', 2.2, 600);
+        jouerSon('acier', 0.05);
+      } else flotter(cib, ev.degats > 0 ? `-${ev.degats}` : 'Raté', ev.degats > 0 ? 'degats' : 'rate');
       retirerAnnonce();
-      if (ev.riposte > 0) {
+      if (ev.drain > 0) {
+        const heros = elHeros(ev.qui);
+        setTimeout(() => { flotter(heros, `+${ev.drain}`, 'soin'); EFFET_SORT.heal(heros); }, reduit ? 0 : 250);
+      }
+      if (ev.riposte > 0 || ev.bouclierAttaquant) {
         setTimeout(() => {
+          if (ev.bouclierAttaquant) { flotter(att, 'Bouclier !', 'buff'); return; }
           secouer(att);
-          flotter(att, `-${ev.riposte}`);
+          flotter(att, `Riposte -${ev.riposte}`);
           particules(att, { n: 8, couleurs: ['#ffffff', '#c5cad3'], vitesse: 110, gravite: 60, taille: [2, 5], duree: 500 });
         }, reduit ? 0 : 200);
       }
-      if (ev.brise) {
-        flotter(att, 'Arme brisée !', 'rate');
+      if (ev.expose) {
+        flotter(att, 'Exposée : -2 Défense', 'rate');
         particules(att, { n: 18, couleurs: ['#9aa1ad', '#c5cad3', '#5d6574'], vitesse: 150, gravite: 120, taille: [3, 7], duree: 800 });
       }
       await pause(350);
@@ -557,6 +672,43 @@ export async function animer(ev) {
       await mourir(ev.morts);
       await effetsPioche(ev);
       await pause(300);
+      return;
+    }
+    case 'defense': {
+      // L'unité se met en garde
+      const el = elUnite(ev.uid);
+      onde(el, '#e6eaf1', 2, 650);
+      particules(el, { n: 12, couleurs: ['#e6eaf1', '#c5cad3', '#ffffff'], vitesse: 60, monte: 30, gravite: 0, depuis: 'surface' });
+      flotter(el, 'En garde : +2 Défense', 'buff');
+      jouerSon('acier', 0.05);
+      await pause(450);
+      return;
+    }
+    case 'capacite': {
+      // Capacité d'une grande carte : son nom s'affiche, puis ses effets
+      const el = elUnite(ev.uid);
+      const teinte = couleursVeine(ev.veine) ?? OR;
+      const retirer = annonce(el, ev.nom, '✦', teinte[0]);
+      flash(el, 'rgba(255,230,170,.9)', 2.4, 450);
+      onde(el, teinte[0], 2.6, 750);
+      particules(el, { n: 22, couleurs: teinte, vitesse: 120, monte: 60, gravite: 0 });
+      jouerSon('couronne');
+      await pause(650);
+      retirer();
+      await montrerTouches(ev.touches);
+      await mourir(ev.morts);
+      await effetsPioche(ev);
+      await pause(250);
+      return;
+    }
+    case 'effet': {
+      // Capacité unique à l'arrivée d'une grande carte (après sa pose)
+      await banniere(ev.effet.nom, ev.effet.texte, 'banniere--grace');
+      if (ev.destin) await lancerDe(ev.destin.de, `Destin : ${ev.destin.info.label}`, ev.destin.info.q, true);
+      await montrerTouches(ev.touches);
+      if (ev.renfort) await animer({ type: 'apres-pose', uid: ev.renfort, carte: { n: 'Milicien de la Couronne' } });
+      await mourir(ev.morts);
+      await effetsPioche(ev);
       return;
     }
     case 'defausse': {
@@ -613,8 +765,26 @@ async function mourir(uids = []) {
 }
 
 // Valeur d'un jet pour l'aide (« 15 à 19 : coup solide »)
-export const libelleJet = (de) => rollInfo(de)?.label ?? '';
+export const libelleJet = (q) => rollInfo(q)?.label ?? '';
 
+
+// ---------------------------------------------------------------------
+//  Infobulles : au survol d'un élément [data-infobulle] (capacités), une bulle au-dessus de la page
+// ---------------------------------------------------------------------
+const bulle = Object.assign(document.createElement('div'), { className: 'infobulle', hidden: true });
+bulle.setAttribute('role', 'tooltip');
+document.body.appendChild(bulle);
+document.addEventListener('pointerover', (e) => {
+  const el = e.target.closest?.('[data-infobulle]');
+  if (!el) { bulle.hidden = true; return; }
+  bulle.textContent = el.dataset.infobulle;
+  bulle.hidden = false;
+  const r = el.getBoundingClientRect();
+  const b = bulle.getBoundingClientRect();
+  bulle.style.left = `${Math.max(8, Math.min(innerWidth - b.width - 8, r.left + r.width / 2 - b.width / 2))}px`;
+  bulle.style.top = `${r.top - b.height - 8 < 8 ? r.bottom + 8 : r.top - b.height - 8}px`;
+}, { passive: true });
+document.addEventListener('scroll', () => { bulle.hidden = true; }, { passive: true, capture: true });
 
 // ---------------------------------------------------------------------
 //  Inclinaison 3D des cartes en main (le décor, lui, reste fixe : plus fluide)

@@ -2529,3 +2529,202 @@ body.en-duel { overflow: hidden; padding: 0 !important; }
 @media (prefers-reduced-motion: reduce) {
   .dc-unite.est-ciblable::after, .dc-heros.est-ciblable::after, .orbe::after, .dc-heros.est-en-danger .dc-heros__pv::after { animation: none; }
 }
+
+
+/* =====================================================================
+   Système de combat : Défense, capacités, états, actions du tour (JS/jeu-cartes-arene.js)
+   ===================================================================== */
+/* Défense : une pastille d'acier au milieu, entre Attaque et PV */
+.dc-stat--d {
+  left: 50%; translate: -50% 0;
+  background: linear-gradient(160deg, #8aa6c2 0 45%, #4d6680 45.1%);
+}
+.page-jeu .tg-bord .dc-unite .dc-stat--d { left: 50%; }
+.dc-stat--plus  { background: linear-gradient(160deg, #b9f5c8 0 45%, #4f9f68 45.1%); }
+.dc-stat--moins { background: linear-gradient(160deg, #f0a07a 0 45%, #b5582f 45.1%); }
+.dc-stat--a.dc-stat--mod { background: linear-gradient(160deg, #f6d995 0 45%, #b8862f 45.1%); color: #1b1408; text-shadow: none; }
+
+/* Capacités : une rangée d'icônes en haut à droite (la couronne = capacité unique) */
+.dc-caps {
+  position: absolute; top: 3%; right: 5%; z-index: 2;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.dc-caps .dc-k { position: static; width: 18px; height: 18px; padding: 3px; }
+.dc-k--unique { background: linear-gradient(160deg, #f6d995, #b8862f); }
+.dc-k--unique svg { fill: #1b1408; }
+@media (max-width: 760px) { .dc-caps .dc-k { width: 14px; height: 14px; padding: 2px; } }
+
+/* Cartes qui demandent 2 actions : une pastille sous le coût */
+.dc-act {
+  position: absolute; top: 15%; left: 4%; z-index: 2;
+  display: grid; place-items: center;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: #6c4bb3; color: #fff;
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: .66rem; font-weight: 800;
+  box-shadow: 0 0 0 1px rgba(255,255,255,.45);
+}
+.dc-act::after { content: "A"; font-size: .45rem; margin-left: 1px; }
+
+/* États sur le plateau */
+.dc-etats {
+  position: absolute; top: 20%; left: 50%; z-index: 3; translate: -50% 0;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  pointer-events: none;
+}
+.dc-etat {
+  padding: 0 5px;
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: .5rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+  color: #fff; white-space: nowrap;
+  border-radius: 2px;
+}
+.dc-etat--defense { background: rgba(77,102,128,.95); }
+.dc-etat--gelee   { background: rgba(80,150,200,.95); }
+.dc-etat--exposee { background: rgba(183,68,75,.95); }
+.dc-unite.a-defense { filter: drop-shadow(0 0 3px #bcd3ea) drop-shadow(0 0 9px rgba(140,180,220,.6)) var(--ombre); }
+.dc-unite.a-bouclier .dc-unite__corps { box-shadow: 0 0 0 2px rgba(191,227,240,.55), 0 0 12px rgba(191,227,240,.45); border-radius: 6px; }
+.dc-unite.est-gelee .dc-face { filter: grayscale(.3) brightness(.85) hue-rotate(170deg) saturate(1.4); }
+
+/* Actions du tour : des pastilles à côté de l'énergie */
+.actions { display: flex; align-items: center; gap: 4px; }
+.action-pip {
+  width: 12px; height: 12px;
+  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+  background: rgba(255,255,255,.14);
+}
+.action-pip--pleine { background: linear-gradient(160deg, #fff3c9, #f0c873 50%, #b8862f); box-shadow: 0 0 6px rgba(240,200,115,.7); }
+.actions__texte { margin-left: 4px; font-family: "Cinzel","Cinzel Repli", serif; font-size: .72rem; color: var(--gris); white-space: nowrap; }
+.tg-energie { flex-wrap: wrap; }
+.actions--adverse .action-pip { width: 9px; height: 9px; }
+.actions--adverse .actions__texte { font-size: .62rem; }
+.tg-infos .actions, #infos-adverse .actions { margin-left: 8px; }
+
+/* Plus d'action : le bouton de fin de tour s'illumine */
+.btn-fin.est-suggere { animation: fin-suggere 1.6s ease-in-out infinite; }
+@keyframes fin-suggere { 50% { filter: brightness(1.3) drop-shadow(0 0 18px rgba(240,200,115,.9)); } }
+
+/* Défendre et capacité unique */
+.btn-action--garde:not(:disabled) { box-shadow: inset 0 0 0 1px rgba(188,211,234,.7); }
+.btn-action--capacite { grid-column: 1 / -1; background: linear-gradient(160deg, rgba(255,240,200,.18) 0 40%, transparent 40.1%), #5a4520; }
+.btn-action--capacite:not(:disabled) { box-shadow: inset 0 0 0 1px rgba(240,200,115,.8); }
+.btn-action.est-actif { filter: brightness(1.4); }
+.btn-action[hidden] { display: none; }
+
+/* Loupe : la Défense */
+.loupe__stat--d { background: linear-gradient(160deg, #8aa6c2 0 45%, #4d6680 45.1%); }
+
+@media (prefers-reduced-motion: reduce) {
+  .btn-fin.est-suggere { animation: none; filter: brightness(1.25); }
+}
+
+
+/* =====================================================================
+   Constructeur de deck (« Choisir mes cartes », JS/jeu-cartes.js) :
+   le Grimoire à gauche (limites, courbe des coûts, cartes choisies), la réserve filtrée à droite
+   ===================================================================== */
+.choix-deck { max-width: 1280px; }
+.constructeur { display: grid; grid-template-columns: 260px 1fr; gap: 22px; align-items: start; }
+.constructeur__grimoire {
+  position: sticky; top: 12px;
+  display: flex; flex-direction: column; gap: 10px;
+  padding: 14px;
+  border: 1px solid rgba(217,164,65,.25); border-radius: 8px;
+  background: rgba(8,9,14,.55);
+}
+.constructeur__grimoire .choix-deck__titre { margin: 0; }
+.constructeur__grimoire .choix-deck__titre span { color: var(--ambre); }
+.constructeur__limites { display: flex; flex-direction: column; gap: 2px; margin: 0; font-size: .82rem; color: var(--gris); }
+.constructeur__limites b { color: var(--blanc); }
+/* Courbe des coûts : une colonne par coût */
+.constructeur__courbe { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; height: 82px; align-items: end; }
+.courbe__col { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; gap: 3px; }
+.courbe__col b {
+  display: grid; place-items: start center;
+  width: 100%; height: var(--h); min-height: 2px;
+  border-radius: 3px 3px 0 0;
+  background: linear-gradient(180deg, #b48cff, #6a3fd0);
+  font-size: .62rem; color: #fff; line-height: 1.4;
+}
+.courbe__col small { font-family: "Cinzel","Cinzel Repli", serif; font-size: .62rem; color: var(--gris); }
+.constructeur__liste { display: flex; flex-direction: column; gap: 3px; margin: 0; padding: 0; list-style: none; max-height: 46vh; overflow: auto; }
+.ligne-grimoire button {
+  display: grid; grid-template-columns: 24px 1fr auto; align-items: center; gap: 8px;
+  width: 100%; padding: 4px 6px;
+  border: 0; border-left: 3px solid var(--rar, #8d93a0);
+  background: rgba(255,255,255,.05); color: var(--blanc);
+  font: inherit; font-size: .84rem; text-align: left;
+  cursor: pointer;
+}
+.ligne-grimoire button:hover { background: rgba(183,68,75,.25); }
+.ligne-grimoire button:hover .ligne-grimoire__nb::after { content: " −"; color: #f07a80; }
+.ligne-grimoire__cout {
+  display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%;
+  background: linear-gradient(160deg, #b48cff, #6a3fd0); font-family: "Cinzel","Cinzel Repli", serif; font-size: .72rem; font-weight: 800;
+}
+.ligne-grimoire__nom { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ligne-grimoire__nb { color: var(--ambre); font-weight: 700; }
+.ligne-grimoire--vide { padding: 6px; font-size: .82rem; font-style: italic; color: var(--gris); }
+.ligne-grimoire.rar-eveillee { --rar: #4fd987; }
+.ligne-grimoire.rar-mythique { --rar: #5b9bff; }
+.ligne-grimoire.rar-legendaire { --rar: #ff4b5c; }
+.ligne-grimoire.rar-transcendante { --rar: #f6d27a; }
+.ligne-grimoire.rar-objet { --rar: #d9a441; }
+.ligne-grimoire.rar-sort { --rar: #9a6cf0; }
+.constructeur__filtres { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+.constructeur__filtres input, .constructeur__filtres select {
+  padding: 7px 10px;
+  border: 1px solid rgba(217,164,65,.3); border-radius: 4px;
+  background: rgba(8,9,14,.7); color: var(--blanc); font: inherit; font-size: .88rem;
+}
+.constructeur__filtres input { flex: 1 1 180px; }
+.constructeur .choix-deck__aide { text-align: left; margin-bottom: 12px; }
+.constructeur .choix-deck__cartes { justify-content: flex-start; }
+@media (max-width: 820px) {
+  .constructeur { grid-template-columns: 1fr; }
+  .constructeur__grimoire { position: static; }
+  .constructeur__liste { max-height: 30vh; }
+}
+
+
+/* =====================================================================
+   Le terrain du duel, au-dessus des derniers jets
+   ===================================================================== */
+.terrain-duel { display: flex; flex-direction: column; gap: 2px; margin-bottom: 12px; padding: 8px 10px; border-left: 3px solid var(--ambre); background: rgba(217,164,65,.08); }
+.terrain-duel:empty { display: none; }
+.terrain-duel__nom { font-family: "Cinzel","Cinzel Repli", serif; font-size: .74rem; letter-spacing: .08em; color: #f0d9a0; }
+.terrain-duel__texte { font-size: .78rem; line-height: 1.35; color: var(--gris); }
+
+
+
+/* =====================================================================
+   Lisibilité du combat : libellés, cartes trop chères, cibles impossibles, infobulles, effets du tour
+   ===================================================================== */
+.actions__titre { margin-right: 4px; font-family: "Cinzel","Cinzel Repli", serif; font-size: .62rem; letter-spacing: .12em; text-transform: uppercase; color: var(--gris); }
+.actions--adverse .actions__titre { display: none; }
+/* Main : carte trop chère (énergie) ou qui demande plus d'actions */
+#main-joueur .dc-carte.est-trop-chere .dc-face { filter: grayscale(.55) brightness(.7); }
+#main-joueur .dc-carte.est-trop-chere::after {
+  content: attr(data-manque);
+  position: absolute; left: 50%; bottom: 30%; z-index: 4; translate: -50% 0;
+  padding: 1px 7px; border-radius: 3px;
+  background: rgba(150,40,48,.92); color: #fff;
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: .62rem; font-weight: 700; white-space: nowrap;
+  pointer-events: none;
+}
+/* Pendant une attaque, une capacité ou un sort ciblé : les unités adverses impossibles à viser s'effacent */
+.dc-unite.est-hors-cible { opacity: .45; filter: grayscale(.6); }
+/* États du tour */
+.dc-etat--bouclier { background: rgba(80,130,160,.95); }
+/* Infobulle (capacités, capacités uniques) : posée sur la page, au-dessus de tout (JS/jeu-cartes-arene.js) */
+.infobulle {
+  position: fixed; z-index: 90;
+  max-width: 240px; padding: 6px 9px;
+  border: 1px solid rgba(217,164,65,.5); border-radius: 4px;
+  background: rgba(10,11,16,.96); color: var(--blanc);
+  font-family: "EB Garamond", serif; font-size: .85rem; line-height: 1.3;
+  box-shadow: 0 6px 16px rgba(0,0,0,.6);
+  pointer-events: none;
+}
+.infobulle[hidden] { display: none; }
+.dc-caps { overflow: visible; }
+.dc-k { overflow: visible; }
+

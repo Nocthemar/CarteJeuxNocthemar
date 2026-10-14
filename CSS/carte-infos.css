@@ -212,3 +212,47 @@
   .carte-infos--transcendante { top: auto; bottom: 10%; padding: 4cqw 2cqw 3.4cqw; gap: 1.6cqw; }
   .carte-infos--transcendante .carte-infos__tete { margin-top: 0; }
 }
+
+
+/* =====================================================================
+   Le Codex d'une carte (JS/cartes.js : htmlCodex) : loupe du duel et aperçu de la collection
+   ===================================================================== */
+.codex-carte {
+  margin-top: 14px; padding: 12px 14px;
+  border: 1px solid rgba(214,172,108,.35); border-radius: 4px;
+  background: linear-gradient(170deg, rgba(240,217,160,.08), rgba(0,0,0,.2));
+  text-align: left;
+}
+.codex-carte__titre {
+  margin: 0 0 6px;
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: .78rem; letter-spacing: .16em; text-transform: uppercase;
+  color: #f0d9a0;
+}
+.codex-carte__recit { margin: 0 0 10px; font-family: "EB Garamond", serif; font-size: 1rem; font-style: italic; line-height: 1.45; color: #e8dfcc; }
+.codex-carte__origine { display: grid; gap: 3px; margin: 0 0 10px; }
+.codex-carte__origine div { display: flex; gap: 8px; font-size: .88rem; }
+.codex-carte__origine dt { min-width: 82px; color: rgba(240,217,160,.7); font-family: "Cinzel","Cinzel Repli", serif; font-size: .7rem; letter-spacing: .08em; text-transform: uppercase; padding-top: 2px; }
+.codex-carte__origine dd { margin: 0; color: #f0e6d0; }
+.codex-carte__liens { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; }
+.codex-carte__bouton {
+  padding: 6px 12px;
+  border: 1px solid rgba(214,172,108,.55); border-radius: 3px;
+  background: rgba(0,0,0,.35); color: #f0d9a0;
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: .68rem; letter-spacing: .08em; text-transform: uppercase; text-decoration: none;
+  cursor: pointer;
+}
+.codex-carte__bouton:hover { background: rgba(214,172,108,.2); color: #fff; }
+/* Aperçu de la collection : la carte à gauche, le Codex à droite */
+.apercu-carte__codex { width: min(420px, 90vw); max-height: 80vh; overflow: auto; }
+.apercu-carte__codex .codex-carte { margin: 0; background: rgba(12,10,8,.92); }
+.apercu-carte__codex { cursor: default; }
+@media (min-width: 900px) { .apercu-carte { grid-template-columns: auto auto; justify-content: center; align-items: center; gap: 28px; } }
+/* L'illustration en grand */
+.illustration-grande {
+  position: fixed; inset: 0; z-index: 1000;
+  display: grid; place-items: center;
+  padding: 3vh 3vw;
+  background: rgba(4,4,6,.92);
+  cursor: zoom-out;
+}
+.illustration-grande img { max-width: 100%; max-height: 94vh; object-fit: contain; filter: drop-shadow(0 20px 40px rgba(0,0,0,.7)); }

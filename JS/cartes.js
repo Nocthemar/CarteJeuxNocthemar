@@ -111,6 +111,7 @@ export function ouvrirApercu(carte) {
   fond.setAttribute('aria-label', carte.name);
   fond.innerHTML = `
     <div class="apercu-carte__carte">${htmlCarte(carte)}</div>
+    <div class="apercu-carte__codex">${htmlCodex(carte)}</div>
     <button type="button" class="apercu-carte__fermer" aria-label="Fermer">×</button>`;
 
   const clavier = (e) => { if (e.key === 'Escape') fermer(); };
@@ -120,12 +121,67 @@ export function ouvrirApercu(carte) {
     retour?.focus?.();
   };
   // Clic à côté de la carte ou sur × : fermeture
-  fond.addEventListener('click', (e) => { if (!e.target.closest('.carte-jeu')) fermer(); });
+  fond.addEventListener('click', (e) => { if (!e.target.closest('.carte-jeu, .apercu-carte__codex')) fermer(); });
   document.addEventListener('keydown', clavier);
 
   document.body.append(fond);
   fond.querySelector('.apercu-carte__fermer').focus();
 }
+
+// ---------------------------------------------------------------------
+//  Le Codex d'une carte : son récit, son origine (rareté, rang, Veines, provenance), son illustration
+//  en grand, et sa page dans le Codex du site quand elle en a une (Personnages/…, réécrit par JS/lien-site.js)
+// ---------------------------------------------------------------------
+const PAGES_CODEX = {
+  'kaeliss': 'Personnages/Kaeliss.html',
+  'dalek': 'Personnages/Dalek.html',
+  'maitre du jeu': 'Personnages/Maitre_du_jeu.html',
+  'seigneur des marais': 'Personnages/Seigneur_des_Marais.html',
+};
+const PROVENANCES = { boutique: 'Boosters et boutique', recompense: 'Récompense', evenement: 'Événement', discord: 'Serveur Discord' };
+const sansAccents = (s) => String(s ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+
+export function htmlCodex(carte) {
+  if (!carte) return '';
+  const veines = [...new Set(attaquesDe(carte).map((a) => a.veine).filter(Boolean))];
+  const page = PAGES_CODEX[sansAccents(carte.name)];
+  const lignes = [
+    ['Rareté', RARETES[carte.rarity] ?? carte.rarity],
+    carte.rank ? ['Rang', RANGS[carte.rank] ?? carte.rank] : null,
+    veines.length ? ['Veines', veines.map((v) => (VEINES[v] ? `${VEINES[v][1]} ${VEINES[v][0]}` : v)).join(' · ')] : null,
+    carte.source ? ['Provenance', PROVENANCES[carte.source] ?? carte.source] : null,
+  ].filter(Boolean);
+  return `
+    <section class="codex-carte" aria-label="Codex">
+      <h3 class="codex-carte__titre">Codex</h3>
+      <p class="codex-carte__recit">${carte.description ? esc(carte.description) : 'Le Codex ne dit encore rien de cette carte.'}</p>
+      <dl class="codex-carte__origine">${lignes.map(([t, v]) => `<div><dt>${esc(t)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>
+      <p class="codex-carte__liens">
+        ${carte.image ? `<button type="button" class="codex-carte__bouton" data-illustration="${esc(new URL(carte.image, SITE_ROOT))}" data-nom="${esc(carte.name)}">Voir l'illustration en grand</button>` : ''}
+        ${page ? `<a class="codex-carte__bouton" href="${page}" target="_blank" rel="noopener">Lire sa page dans le Codex de Nocthémar</a>` : ''}
+      </p>
+    </section>`;
+}
+
+// L'illustration en grand (bouton du Codex), par-dessus tout
+document.addEventListener('click', (e) => {
+  const bouton = e.target.closest?.('[data-illustration]');
+  if (!bouton) return;
+  e.preventDefault();
+  e.stopPropagation();
+  const fond = document.createElement('div');
+  fond.className = 'illustration-grande';
+  fond.setAttribute('role', 'dialog');
+  fond.setAttribute('aria-modal', 'true');
+  fond.setAttribute('aria-label', bouton.dataset.nom ?? 'Illustration');
+  fond.innerHTML = `<img src="${esc(bouton.dataset.illustration)}" alt="${esc(bouton.dataset.nom ?? '')}"><button type="button" class="apercu-carte__fermer" aria-label="Fermer">×</button>`;
+  const fermer = () => { fond.remove(); document.removeEventListener('keydown', clavier, true); bouton.focus?.(); };
+  const clavier = (ev) => { if (ev.key === 'Escape') { ev.stopPropagation(); fermer(); } };
+  fond.addEventListener('click', fermer);
+  document.addEventListener('keydown', clavier, true);
+  document.body.append(fond);
+  fond.querySelector('button').focus();
+}, true);
 
 // Image introuvable -> on garde le cadre de la carte avec son nom
 document.addEventListener('error', (e) => {

@@ -87,6 +87,8 @@ async function init() {
   initEchanges({
     moi,
     mesCartes: () => [...etat.cartes.values()].map((c) => c.carte),
+    // Favorites protégées : le dernier exemplaire d'une carte du deck du profil ne s'échange pas
+    protegee: (id) => !!deck?.contient(id) && (etat.cartes.get(id)?.quantite ?? 1) <= 1,
     surDonnees: afficher,
     surEchange: recharger,
   }).then(() => { if (avec) ouvrirMarche(avec, 'proposer'); }).catch(console.error);

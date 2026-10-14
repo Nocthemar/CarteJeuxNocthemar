@@ -20,16 +20,20 @@
 // =====================================================================
 import { supabase, getMonJoueur, connexionDiscord } from './supabase.js';
 import { $, esc, notifier } from './commun.js';
-import { chargerDeck, VEINES, RARETES } from './cartes.js';
+import { chargerDeck, VEINES, RARETES, htmlCodex } from './cartes.js';
 import {
   PV_HEROS, TAILLE_DECK, JETS, DESTIN,
-  uniteDepuisCarte, grimoire, construireDeck, melanger, OBJETS, OBJETS_MAX, COPIES_MAX, estObjet, objetDepuisNom, creerPartie, debutTour, finTour,
+  uniteDepuisCarte, grimoire, construireDeck, melanger, OBJETS, OBJETS_MAX, COPIES_MAX, TRANSCENDANTES_MAX, estObjet, estTranscendante,
+  peutAjouter, copiesMax, objetDepuisNom, creerPartie, debutTour, finTour,
+  defendre, peutDefendre, activer, peutActiver, ciblesCapacite, capaciteActive, raisonInjouable,
+  CAPACITES, UNIQUES, SEUIL_BASE, DEFENSE_HEROS, attaqueDe, defenseDe, capsDe, actionsDe,
+  TERRAINS, terrainDe,
   renvoyerMain, renvoiFini, choixRenvoiIA, peutDefausser, defausser, peutMediter, mediter, placerSous, COUT_DEFAUSSE, COUT_MEDITER,
   peutJouer, jouer, ciblesSort, peutAttaquer, ciblesAttaque, attaquer, peutDestin, destin,
-  trouver, ai, TROUPES, coutDe,
+  trouver, ai, TROUPES, SORTS, coutDe,
 } from './jeu-cartes-moteur.js';
 import { trouverNiveau } from './histoire-data.js';
-import { rendre, animer, banniere, pause, htmlCarte, activerProfondeur, secouer, reduit } from './jeu-cartes-arene.js';
+import { rendre, animer, banniere, pause, htmlCarte, activerProfondeur, secouer, flotter, montrerTouches, reduit } from './jeu-cartes-arene.js';
 import { jouerSon, basculerMuet, estMuet, lireVolume, reglerVolume } from './jeu-cartes-son.js';
 import { ouvrirSalon, nouveauCode, codeValide, TAILLE_SALON } from './jeu-cartes-ligne.js';
 import { grimoireOmbre, lireElan, pvElan, noterResultat } from './jeu-cartes-ombre.js';
@@ -186,11 +190,11 @@ let choix = null;            // clés des cartes choisies, un élément par exem
 let editionDeck = false;     // panneau « Choisir mes cartes » ouvert
 let grimoireJoueur = [];     // cartes choisies (sans le complément de base), pour la partie
 
-// Cartes qu'on peut mettre dans son Grimoire : sa collection, les troupes du Codex, ses objets
+// Cartes qu'on peut mettre dans son Grimoire : sa collection, les troupes et les sorts du Codex, ses objets
 function reserve() {
   const persos = unitesGrimoire ?? [];
   const objets = [...new Map(objetsInventaire.map((o) => [o.id, o])).values()];
-  return { persos, troupes: TROUPES, objets, toutes: [...persos, ...TROUPES, ...objets] };
+  return { persos, troupes: TROUPES, sorts: SORTS, objets, toutes: [...persos, ...TROUPES, ...SORTS, ...objets] };
 }
 
 function lireChoix() {
@@ -206,10 +210,7 @@ function cartesChoisies() {
   const cartes = [];
   for (const cle of choix ?? []) {
     const c = toutes.find((x) => cleCarte(x) === cle);
-    if (!c || cartes.length >= TAILLE_DECK) continue;
-    if (cartes.filter((x) => x === c).length >= COPIES_MAX) continue;
-    if (estObjet(c) && cartes.filter(estObjet).length >= OBJETS_MAX) continue;
-    cartes.push(c);
+    if (peutAjouter(cartes, c)) cartes.push(c);   // 2 exemplaires, 1 d'une Transcendante, 2 Transcendantes, 4 objets
   }
   return cartes;
 }
@@ -256,32 +257,119 @@ function afficherDeck() {
   if (salon && !salon.presence.pret) salon.annoncer({ grimoire: idsGrimoire() });
 }
 
-// Panneau de choix : chaque clic ajoute un exemplaire (2 au plus), un clic de plus retire la carte
+// ---------------------------------------------------------------------
+//  Le constructeur de deck (« Choisir mes cartes ») : à gauche le Grimoire (limites, courbe des coûts,
+//  cartes choisies), à droite la réserve avec ses filtres (type, rareté, Veine, coût, recherche, tri).
+//  Un clic sur une carte de la réserve ajoute un exemplaire (un clic de plus au maximum la retire) ;
+//  un clic sur une ligne du Grimoire retire un exemplaire.
+// ---------------------------------------------------------------------
+const filtres = { texte: '', type: '', rarete: '', veine: '', cout: '', tri: 'cout' };
+const ORDRE_RARETE = ['base', 'sort', 'objet', 'commune', 'eveillee', 'mythique', 'legendaire', 'transcendante'];
+const genreDe = (c) => (c.carte ? 'collection' : estObjet(c) ? 'objet' : c.t === 's' ? 'sort' : 'troupe');
+const rareteDe = (c) => c.carte?.rarity ?? (estObjet(c) ? 'objet' : c.t === 's' ? 'sort' : 'base');
+const NOMS_RARETE = { base: 'Troupe du Codex', sort: 'Sort du Codex', objet: 'Objet de pouvoir', ...RARETES };
+
+function htmlConstructeur() {
+  const options = (liste) => liste.map(([v, t]) => `<option value="${esc(v)}">${esc(t)}</option>`).join('');
+  return `
+    <div class="constructeur">
+      <aside class="constructeur__grimoire" aria-label="Ton Grimoire">
+        <h3 class="choix-deck__titre">Ton Grimoire <span id="cg-compte"></span></h3>
+        <p class="constructeur__limites" id="cg-limites"></p>
+        <div class="constructeur__courbe" id="cg-courbe" aria-label="Courbe des coûts en énergie"></div>
+        <ol class="constructeur__liste" id="cg-liste"></ol>
+        <button type="button" class="btn-dc" id="btn-vider-grimoire">Tout retirer</button>
+      </aside>
+      <div class="constructeur__reserve">
+        <div class="constructeur__filtres">
+          <input type="search" id="cf-texte" placeholder="Chercher une carte…" aria-label="Chercher une carte">
+          <select id="cf-type" aria-label="Type">${options([['', 'Tous les types'], ['collection', 'Ta collection'], ['troupe', 'Troupes du Codex'], ['sort', 'Sorts du Codex'], ['objet', 'Objets de pouvoir']])}</select>
+          <select id="cf-rarete" aria-label="Rareté">${options([['', 'Toutes les raretés'], ...Object.entries(RARETES), ['base', 'Codex (troupes et sorts)'], ['objet', 'Objets']])}</select>
+          <select id="cf-veine" aria-label="Veine">${options([['', 'Toutes les Veines'], ...Object.entries(VEINES).map(([k, [nom, ico]]) => [k, `${ico} ${nom}`])])}</select>
+          <select id="cf-cout" aria-label="Coût en énergie">${options([['', 'Tous les coûts'], ['0-1', '0 ou 1 énergie'], ['2', '2 énergie'], ['3', '3 énergie'], ['4', '4 énergie'], ['5', '5 énergie'], ['6+', '6 et plus']])}</select>
+          <select id="cf-tri" aria-label="Trier">${options([['cout', 'Trier par coût'], ['rarete', 'Trier par rareté'], ['nom', 'Trier par nom']])}</select>
+        </div>
+        <p class="choix-deck__aide" id="cf-aide"></p>
+        <div class="choix-deck__cartes" id="cf-cartes"></div>
+      </div>
+    </div>`;
+}
+
 function afficherChoix(cartes) {
   const zone = $('choix-deck');
   zone.hidden = !editionDeck;
   if (!editionDeck) return;
-  const { persos, troupes, objets } = reserve();
+  if (!zone.querySelector('.constructeur')) zone.innerHTML = htmlConstructeur();
+  majConstructeur(cartes);
+}
+
+const coutDans = (c, f) => (!f ? true : f === '0-1' ? c.c <= 1 : f === '6+' ? c.c >= 6 : c.c === Number(f));
+
+function majConstructeur(cartes) {
+  const complet = grimoire(cartes);
+  const nbObjets = cartes.filter(estObjet).length;
+  const nbTrans = cartes.filter(estTranscendante).length;
+  const nbBase = complet.length - cartes.length;
+  $('cg-compte').textContent = `${cartes.length} / ${TAILLE_DECK}`;
+  $('cg-limites').innerHTML = [
+    `Objets <b>${nbObjets} / ${OBJETS_MAX}</b>`,
+    `Transcendantes <b>${nbTrans} / ${TRANSCENDANTES_MAX}</b>`,
+    nbBase ? `+ ${nbBase} carte${nbBase > 1 ? 's' : ''} de base pour compléter` : 'Grimoire complet',
+  ].map((t) => `<span>${t}</span>`).join('');
+
+  // Courbe des coûts : le Grimoire tel qu'il sera joué (cartes de base comprises)
+  const tranches = [0, 1, 2, 3, 4, 5, 6, 7];
+  const parCout = tranches.map((k) => complet.filter((c) => (k === 7 ? c.c >= 7 : c.c === k)).length);
+  const max = Math.max(1, ...parCout);
+  $('cg-courbe').innerHTML = tranches.map((k, i) => `
+    <span class="courbe__col" title="${parCout[i]} carte${parCout[i] > 1 ? 's' : ''} à ${k === 7 ? '7 et plus' : k} d'énergie">
+      <b style="--h:${(parCout[i] / max * 100).toFixed(0)}%">${parCout[i] || ''}</b><small>${k === 7 ? '7+' : k}</small>
+    </span>`).join('');
+
+  // Les cartes choisies, une ligne par carte (coût, nom, exemplaires)
+  const uniques = [...new Map(cartes.map((c) => [cleCarte(c), c])).values()].sort((a, b) => a.c - b.c || a.n.localeCompare(b.n, 'fr'));
+  $('cg-liste').innerHTML = uniques.length ? uniques.map((c) => `
+    <li class="ligne-grimoire rar-${rareteDe(c)}">
+      <button type="button" data-retirer-cle="${esc(cleCarte(c))}" title="Retirer un exemplaire">
+        <span class="ligne-grimoire__cout">${c.c}</span>
+        <span class="ligne-grimoire__nom">${esc(c.n)}</span>
+        <span class="ligne-grimoire__nb">×${exemplaires(cartes, c)}</span>
+      </button>
+    </li>`).join('')
+    : '<li class="ligne-grimoire ligne-grimoire--vide">Aucune carte choisie : ton Grimoire sera fait de cartes de base.</li>';
+
+  // La réserve, filtrée et triée
+  const { toutes } = reserve();
+  const texte = filtres.texte.trim().toLowerCase();
+  const liste = toutes.filter((c) => (!filtres.type || genreDe(c) === filtres.type)
+    && (!filtres.rarete || rareteDe(c) === filtres.rarete || (filtres.rarete === 'base' && rareteDe(c) === 'sort'))
+    && (!filtres.veine || c.veine === filtres.veine)
+    && coutDans(c, filtres.cout)
+    && (!texte || c.n.toLowerCase().includes(texte)));
+  const rang = (c) => ORDRE_RARETE.indexOf(rareteDe(c));
+  liste.sort((a, b) => (filtres.tri === 'nom' ? a.n.localeCompare(b.n, 'fr')
+    : filtres.tri === 'rarete' ? rang(b) - rang(a) || a.c - b.c
+      : a.c - b.c || rang(b) - rang(a) || a.n.localeCompare(b.n, 'fr')));
   const plein = cartes.length >= TAILLE_DECK;
-  const objetsPleins = cartes.filter(estObjet).length >= OBJETS_MAX;
-  const groupe = (titre, liste, bloque) => !liste.length ? '' : `
-    <div class="choix-deck__groupe">
-      <h3 class="choix-deck__titre">${titre} <span>${liste.length}</span></h3>
-      <div class="choix-deck__cartes">${liste.map((c) => {
-        const n = exemplaires(cartes, c);
-        const bloquee = !n && (plein || bloque);
-        return `<span class="deck-place${bloquee ? ' est-bloquee' : ''}" data-cle="${esc(cleCarte(c))}">${htmlCarte(c, { choisie: n > 0 })}${n ? `<span class="deck-place__nb">×${n}</span>` : ''}</span>`;
-      }).join('')}</div>
-    </div>`;
-  zone.innerHTML = `
-    <p class="choix-deck__aide">Un clic ajoute un exemplaire (${COPIES_MAX} au plus), un clic de plus retire la carte.
-      ${TAILLE_DECK} cartes au plus, dont ${OBJETS_MAX} objets ; ce qui manque est complété par des cartes de base.
-      <strong>${cartes.length} / ${TAILLE_DECK}</strong></p>
-    ${groupe('Ta collection', persos, false)}
-    ${moi && !persos.length ? '<p class="choix-deck__vide">Ta collection est vide pour l\'instant.</p>' : ''}
-    ${groupe('Troupes du Codex', troupes, false)}
-    ${groupe('Objets de pouvoir', objets, objetsPleins)}
-    <p class="choix-deck__aide"><button type="button" class="btn-dc" id="btn-vider-grimoire">Tout retirer</button></p>`;
+  $('cf-aide').innerHTML = `${liste.length} carte${liste.length > 1 ? 's' : ''}. Un clic ajoute un exemplaire (${COPIES_MAX} au plus, 1 seul d'une Transcendante), un clic de plus au maximum la retire.`;
+  $('cf-cartes').innerHTML = liste.length ? liste.map((c) => {
+    const n = exemplaires(cartes, c);
+    const bloquee = !n && (plein || !peutAjouter(cartes, c));
+    return `<span class="deck-place${bloquee ? ' est-bloquee' : ''}" data-cle="${esc(cleCarte(c))}" title="${esc(NOMS_RARETE[rareteDe(c)] ?? '')}">${htmlCarte(c, { choisie: n > 0 })}${n ? `<span class="deck-place__nb">×${n}</span>` : ''}</span>`;
+  }).join('')
+    : `<p class="choix-deck__vide">${moi || filtres.type !== 'collection' ? 'Aucune carte ne correspond à ces filtres.' : 'Connecte-toi pour voir ta collection.'}</p>`;
+}
+
+// Retirer un exemplaire d'une carte (liste du Grimoire)
+function retirerUn(cle) {
+  const actuelles = cartesChoisies().map(cleCarte);
+  const i = actuelles.lastIndexOf(cle);
+  if (i < 0) return;
+  actuelles.splice(i, 1);
+  choix = actuelles;
+  jouerSon('clic');
+  garderChoix();
+  afficherDeck();
 }
 
 function basculerCarte(cle) {
@@ -290,10 +378,12 @@ function basculerCarte(cle) {
   if (!c) return;
   const actuelles = cartesChoisies();
   const n = exemplaires(actuelles, c);
-  if (n >= COPIES_MAX) {
-    choix = actuelles.filter((x) => x !== c).map(cleCarte);           // 2 exemplaires : on retire
+  if (n >= copiesMax(c)) {
+    choix = actuelles.filter((x) => x !== c).map(cleCarte);           // exemplaires au plus : on retire
   } else if (actuelles.length >= TAILLE_DECK) {
     return notifier(`Ton Grimoire est plein (${TAILLE_DECK} cartes) : retire d'abord une carte.`, 'erreur');
+  } else if (estTranscendante(c) && actuelles.filter(estTranscendante).length >= TRANSCENDANTES_MAX) {
+    return notifier(`${TRANSCENDANTES_MAX} Transcendantes au plus dans le Grimoire.`, 'erreur');
   } else if (estObjet(c) && actuelles.filter(estObjet).length >= OBJETS_MAX) {
     if (!n) return notifier(`${OBJETS_MAX} objets au plus dans le Grimoire.`, 'erreur');
     choix = actuelles.filter((x) => x !== c).map(cleCarte);
@@ -320,8 +410,17 @@ $('choix-deck').addEventListener('click', (e) => {
     afficherDeck();
     return;
   }
+  const retirer = e.target.closest('[data-retirer-cle]');
+  if (retirer) { retirerUn(retirer.dataset.retirerCle); return; }
   const place = e.target.closest('.deck-place[data-cle]');
   if (place) basculerCarte(place.dataset.cle);
+});
+// Filtres du constructeur
+$('choix-deck').addEventListener('input', (e) => {
+  const champ = { 'cf-texte': 'texte', 'cf-type': 'type', 'cf-rarete': 'rarete', 'cf-veine': 'veine', 'cf-cout': 'cout', 'cf-tri': 'tri' }[e.target.id];
+  if (!champ) return;
+  filtres[champ] = e.target.value;
+  majConstructeur(cartesChoisies());
 });
 
 // Ce que l'adversaire reçoit en ligne : les clés des cartes choisies (l'hôte refait les limites)
@@ -334,7 +433,7 @@ async function grimoireDepuisCles(cles) {
   const ids = [...new Set(liste.filter((k) => /^u\d+$/.test(k)).map((k) => Number(k.slice(1))))];
   const { data } = ids.length ? await supabase.from('cards').select('*').in('id', ids) : { data: [] };
   const unites = new Map((data ?? []).filter(jouable).map((c) => [`u${c.id}`, uniteDepuisCarte(c)]));
-  return liste.map((k) => unites.get(k) ?? TROUPES.find((t) => t.id === k) ?? OBJETS.find((o) => o.id === k)).filter(Boolean);
+  return liste.map((k) => unites.get(k) ?? TROUPES.find((t) => t.id === k) ?? SORTS.find((s) => s.id === k) ?? OBJETS.find((o) => o.id === k)).filter(Boolean);
 }
 
 document.querySelector('.modes').addEventListener('click', (e) => {
@@ -409,8 +508,10 @@ const avatars = () => ({ joueur: moi?.avatar_url ?? null, adverse: role ? salon?
 const afficher = () => rendre(p, sel, avatars());
 const nomAdverse = () => p.camps.adverse.nom;
 
+let terrainAnnonce = false;   // le terrain est annoncé une fois, au premier tour
 function montrerPlateau() {
   finAffichee = false;
+  terrainAnnonce = false;
   abandonParMoi = false;
   ticketPass = demanderTicketPass();
   sel = { monTour: false, attaquant: null, sortIndex: null, cibles: null };
@@ -434,7 +535,10 @@ function nouvellePartieSolo() {
   const premier = Math.random() < 0.5 ? 'joueur' : 'adverse';
   p = creerPartie(melanger(monGrimoire), deckAdverse, moi?.username ?? 'Toi',
     niv ? niv.adversaire : NOM_ADVERSAIRE, premier,
-    niv ? { pvAdverse: niv.pv, energieBonusAdverse: niv.energieBonus } : { pvAdverse: DIFFICULTES[difficulte].pv + pvElan(elan) });
+    {
+      ...(niv ? { pvAdverse: niv.pv, energieBonusAdverse: niv.energieBonus, terrain: niv.terrain }
+        : { pvAdverse: DIFFICULTES[difficulte].pv + pvElan(elan) }),
+    });
   renvoyerMain(p, 'adverse', choixRenvoiIA(p.camps.adverse));   // l'IA renvoie ses cartes trop chères
   montrerPlateau();
   ouvrirRenvoi();
@@ -512,7 +616,12 @@ async function afficherTour(ev) {
   if (monTour && ev.pioche.piochees.length) jouerSon('pioche');
   sel = { monTour: false, attaquant: null, sortIndex: null, cibles: null };
   afficher();
-  await banniere(monTour ? 'À toi de jouer' : `Tour de ${nomAdverse()}`, `Tour ${p.tour}`, monTour ? 'banniere--moi' : '');
+  if (!terrainAnnonce && terrainDe(p)) {
+    terrainAnnonce = true;
+    await banniere(terrainDe(p).nom, terrainDe(p).texte, 'banniere--terrain');
+  }
+  await banniere(monTour ? 'À toi de jouer' : `Tour de ${nomAdverse()}`, `Tour ${p.tour} · ${p.camps[p.actif].actionsMax} actions`, monTour ? 'banniere--moi' : '');
+  if (ev.touches?.length) await montrerTouches(ev.touches);   // Soin en début de tour
   if (ev.pioche.brulees.length) await banniere('Main pleine', `${ev.pioche.brulees[0].n} est brûlée et part au Tombeau.`, 'banniere--malediction');
   if (ev.fatigue) {
     afficher();
@@ -569,6 +678,8 @@ async function appliquer(qui, a) {
   if (a.type === 'jouer') ev = jouer(p, qui, a.index, a.cible ?? null);
   else if (a.type === 'attaque') ev = attaquer(p, qui, a.uid, a.cible);
   else if (a.type === 'destin') ev = destin(p, qui);
+  else if (a.type === 'defendre') ev = defendre(p, qui, a.uid);
+  else if (a.type === 'capacite') ev = activer(p, qui, a.uid, a.cible ?? null);
   else if (a.type === 'defausser') ev = defausser(p, qui, a.index);
   else if (a.type === 'mediter') ev = mediter(p, qui);
   else if (a.type === 'placer') ev = placerSous(p, qui, a.index ?? null);
@@ -582,7 +693,14 @@ async function appliquer(qui, a) {
 async function executer(ev) {
   await animer(ev);
   afficher();
-  if (ev.type === 'pose') await animer({ ...ev, type: 'apres-pose' });
+  await suiteAnimation(ev);
+}
+// Ce qui se joue après le nouveau rendu : l'arrivée sur le plateau, la capacité unique d'arrivée, le Milicien du Destin
+async function suiteAnimation(ev) {
+  if (ev.type === 'pose') {
+    await animer({ ...ev, type: 'apres-pose' });
+    if (ev.effet) { await animer({ ...ev, type: 'effet' }); afficher(); }
+  }
   if (ev.type === 'destin' && ev.uid) await animer({ type: 'apres-pose', uid: ev.uid, carte: { n: 'Milicien de la Couronne' } });
 }
 
@@ -669,7 +787,7 @@ async function afficherXpPass(gagne, resultat) {
 //  Actions du joueur de cet écran
 // ---------------------------------------------------------------------
 function annuler() {
-  sel = { ...sel, attaquant: null, sortIndex: null, cibles: null, defausse: false };
+  sel = { ...sel, attaquant: null, sortIndex: null, capacite: null, cibles: null, defausse: false };
   majConsigne();
   afficher();
 }
@@ -678,10 +796,12 @@ function majConsigne() {
   let t = '';
   if (p && !sel.monTour && !p.fini && role && p.actif === 'adverse') t = `${nomAdverse()} joue…`;
   else if (!sel.monTour) t = '';
-  else if (sel.attaquant) t = 'Choisis la cible de ton attaque (Échap pour annuler).';
+  else if (sel.capacite) t = 'Choisis la cible de la capacité (Échap pour annuler).';
+  else if (sel.attaquant) t = sel.cibles ? 'Choisis la cible de ton attaque, ou « Défendre » (Échap pour annuler).' : 'Cette unité peut se mettre en garde (« Défendre »).';
   else if (sel.sortIndex != null) t = 'Choisis la cible du sort (Échap pour annuler).';
   else if (sel.defausse) t = 'Choisis la carte à défausser (Échap pour annuler).';
-  else t = 'Joue une carte, attaque avec une unité prête, ou finis ton tour. Clic droit : voir une carte.';
+  else if (p && p.camps.joueur.actions <= 0) t = 'Plus d’action : finis ton tour.';
+  else t = `${p?.camps.joueur.actions ?? 0} action(s) : joue une carte, attaque, défends, ou finis ton tour. Clic droit : voir une carte.`;
   $('consigne').textContent = t;
 }
 
@@ -710,12 +830,18 @@ $('main-joueur').addEventListener('click', (e) => {
   if (!b || occupe || !sel.monTour) return;
   const i = Number(b.dataset.index);
   if (sel.defausse) return agir({ type: 'defausser', index: i });
-  if (!peutJouer(p, 'joueur', i)) { secouer(b); jouerSon('clic'); return; }
+  if (!peutJouer(p, 'joueur', i)) {
+    secouer(b);
+    jouerSon('clic');
+    const raison = raisonInjouable(p, 'joueur', i);
+    if (raison) flotter(b, raison, 'rate');
+    return;
+  }
   const carte = p.camps.joueur.main[i];
   const cibles = carte.t === 's' ? ciblesSort(p, 'joueur', carte) : null;
   if (!cibles) return agir({ type: 'jouer', index: i });
   if (sel.sortIndex === i) return annuler();
-  sel = { ...sel, attaquant: null, sortIndex: i, cibles };
+  sel = { ...sel, attaquant: null, capacite: null, sortIndex: i, cibles };
   majConsigne();
   afficher();
 });
@@ -731,14 +857,20 @@ $('scene-table').addEventListener('click', (e) => {
   // Une sélection attend sa cible
   if (sel.cibles?.some((c) => c.camp === cible.camp && (c.heros ? cible.heros : c.uid === cible.uid))) {
     if (sel.sortIndex != null) return agir({ type: 'jouer', index: sel.sortIndex, cible });
+    if (sel.capacite) return agir({ type: 'capacite', uid: sel.capacite, cible });
     if (sel.attaquant) return agir({ type: 'attaque', uid: sel.attaquant, cible });
   }
-  // Une de mes unités prêtes : elle devient l'attaquant
-  if (unite && cible.camp === 'joueur' && sel.sortIndex == null) {
+  // Une de mes unités : elle est choisie (attaquer, défendre ou activer sa capacité)
+  if (unite && cible.camp === 'joueur' && sel.sortIndex == null && !sel.capacite) {
     const u = trouver(p.camps.joueur, cible.uid);
     if (sel.attaquant === u.uid) return annuler();
-    if (!peutAttaquer(u)) { secouer(unite); return; }
-    sel = { ...sel, attaquant: u.uid, sortIndex: null, cibles: ciblesAttaque(p, 'joueur') };
+    const j = p.camps.joueur;
+    if (!j.actions || !(peutAttaquer(u) || peutDefendre(u) || peutActiver(p, 'joueur', u.uid))) {
+      secouer(unite);
+      flotter(unite, !j.actions ? 'Plus d’action ce tour' : u.bloquee ? 'Gelée ce tour' : 'A déjà agi ce tour', 'rate');
+      return;
+    }
+    sel = { ...sel, attaquant: u.uid, sortIndex: null, capacite: null, cibles: peutAttaquer(u) ? ciblesAttaque(p, 'joueur', u.uid) : null };
     jouerSon('clic');
     majConsigne();
     afficher();
@@ -755,11 +887,25 @@ function lancerDestin() {
 }
 
 $('btn-fin').addEventListener('click', finirTour);
+$('btn-defendre').addEventListener('click', () => {
+  if (!p || occupe || !sel.monTour || !sel.attaquant) return;
+  agir({ type: 'defendre', uid: sel.attaquant });
+});
+$('btn-capacite').addEventListener('click', () => {
+  if (!p || occupe || !sel.monTour || !sel.attaquant || !peutActiver(p, 'joueur', sel.attaquant)) return;
+  if (sel.capacite) return annuler();
+  const cibles = ciblesCapacite(p, 'joueur', sel.attaquant);
+  if (!cibles) return agir({ type: 'capacite', uid: sel.attaquant });
+  sel = { ...sel, capacite: sel.attaquant, cibles };
+  jouerSon('clic');
+  majConsigne();
+  afficher();
+});
 $('btn-destin').addEventListener('click', lancerDestin);
 $('btn-defausser').addEventListener('click', () => {
   if (!p || occupe || !sel.monTour || !peutDefausser(p, 'joueur')) return;
   if (sel.defausse) return annuler();
-  sel = { ...sel, attaquant: null, sortIndex: null, cibles: null, defausse: true };
+  sel = { ...sel, attaquant: null, sortIndex: null, capacite: null, cibles: null, defausse: true };
   jouerSon('clic');
   majConsigne();
   afficher();
@@ -861,13 +1007,14 @@ $('btn-abandon').addEventListener('click', () => {
   });
 });
 
-// Raccourcis : Espace pour finir le tour, D pour le Destin, Échap pour annuler
+// Raccourcis : Espace pour finir le tour, D pour le Destin, G pour défendre, Échap pour annuler
 document.addEventListener('keydown', (e) => {
   if ($('ecran-duel').hidden || !$('fin').hidden || $('regles').open || $('renvoi').open || $('meditation').open || $('loupe').open) return;
   if (e.target.closest?.('input, textarea')) return;
   if (e.key === ' ' || e.code === 'Space') { e.preventDefault(); finirTour(); }
   else if (e.key === 'd' || e.key === 'D') lancerDestin();
-  else if (e.key === 'Escape' && (sel.attaquant || sel.sortIndex != null || sel.defausse)) annuler();
+  else if ((e.key === 'g' || e.key === 'G') && sel.attaquant) $('btn-defendre').click();
+  else if (e.key === 'Escape' && (sel.attaquant || sel.capacite || sel.sortIndex != null || sel.defausse)) annuler();
 });
 
 
@@ -1250,8 +1397,7 @@ async function jouerMessage(m) {
     await animer(ev);
     p = etat;
     afficher();
-    if (ev.type === 'pose') await animer({ ...ev, type: 'apres-pose' });
-    if (ev.type === 'destin' && ev.uid) await animer({ type: 'apres-pose', uid: ev.uid, carte: { n: 'Milicien de la Couronne' } });
+    await suiteAnimation(ev);
   }
   invite.activite = Date.now();
   if (p.fini) {
@@ -1305,14 +1451,11 @@ setInterval(() => {
 //  Loupe : une carte en grand, et tout ce qu'elle fait
 //  Clic droit (ou appui long sur un écran tactile) sur une carte : troupes du plateau (les tiennes
 //  et celles de l'adversaire), cartes de ta main, du Tombeau, du renvoi de main, de Méditer.
-//  La fiche : type, rareté, coût, attaque et vie (actuelles et de base), capacité, dégâts selon le d20,
-//  riposte, attaques de la carte (Veine, puissance, effet), état sur le plateau.
+//  La fiche : type, rareté, coût (énergie et actions), Attaque, Défense et PV (actuels et de base),
+//  capacités, capacité unique, chances de toucher au d20, attaques de la carte (Veine, puissance, effet),
+//  état sur le plateau.
 // ---------------------------------------------------------------------
 let tombeauOuvert = null;   // 'joueur' | 'adverse' : le Tombeau affiché (pour retrouver ses cartes)
-const CAPACITES = {
-  guard: ['Garde', "Les unités adverses doivent l'attaquer avant de pouvoir viser autre chose."],
-  charge: ['Charge', 'Peut attaquer dès le tour où elle est posée.'],
-};
 const CHIFFRES_RANG = ['', 'I', 'II', 'III', 'IV', 'V'];
 
 // La carte (et, sur le plateau, l'unité) derrière un élément touché
@@ -1348,14 +1491,16 @@ function ficheLoupe({ def, u, camp, main }) {
   if (carte?.rank) details.push(`Rang ${CHIFFRES_RANG[carte.rank] ?? carte.rank}`);
   const cout = main ? coutDe(p.camps.joueur, def) : def.c;
   const lignes = [
-    `<div class="loupe__ligne"><dt>Coût</dt><dd><b class="loupe__energie">${cout}</b> énergie${cout !== def.c ? ` <small>(au lieu de ${def.c})</small>` : ''}</dd></div>`,
+    `<div class="loupe__ligne"><dt>Coût</dt><dd><b class="loupe__energie">${cout}</b> énergie${cout !== def.c ? ` <small>(au lieu de ${def.c})</small>` : ''}${actionsDe(def) > 1 ? ` · <b>${actionsDe(def)}</b> actions` : ' · 1 action'}</dd></div>`,
   ];
   if (unite) {
-    const a = u ? u.a : def.a;
+    const a = u ? attaqueDe(p, camp, u) : def.a;
+    const d = u ? defenseDe(u, p) : (def.d ?? 0);
     const h = u ? u.h : def.h;
     const hMax = u ? u.hMax : def.h;
     lignes.push(`<div class="loupe__ligne"><dt>Attaque</dt><dd><b class="loupe__stat loupe__stat--a">${a}</b>${u && a !== def.a ? ` <small>(de base : ${def.a})</small>` : ''}</dd></div>`);
-    lignes.push(`<div class="loupe__ligne"><dt>Vie</dt><dd><b class="loupe__stat loupe__stat--h">${h}</b>${u ? ` / ${hMax}` : ''}${u && hMax !== def.h ? ` <small>(de base : ${def.h})</small>` : ''}</dd></div>`);
+    lignes.push(`<div class="loupe__ligne"><dt>Défense</dt><dd><b class="loupe__stat loupe__stat--d">${d}</b>${u && d !== (def.d ?? 0) ? ` <small>(de base : ${def.d ?? 0})</small>` : ''} <small>· pour la toucher : ${SEUIL_BASE + d}</small></dd></div>`);
+    lignes.push(`<div class="loupe__ligne"><dt>PV</dt><dd><b class="loupe__stat loupe__stat--h">${h}</b>${u ? ` / ${hMax}` : ''}${u && hMax !== def.h ? ` <small>(de base : ${def.h})</small>` : ''}</dd></div>`);
   }
   const proprietaire = camp ? ` · <span class="loupe__camp">${camp === 'joueur' ? 'À toi' : esc(nomAdverse())}</span>` : '';
   // en-tête fixe : nom, type, coût, attaque et vie restent en place quand la fiche défile
@@ -1369,28 +1514,40 @@ function ficheLoupe({ def, u, camp, main }) {
   // État sur le plateau
   if (u) {
     const etats = [];
-    if (u.aAttaque) etats.push('A déjà attaqué ce tour');
+    if (u.defend) etats.push('En garde : +2 Défense et Riposte jusqu’à son prochain tour');
+    else if (u.aAttaque) etats.push('A déjà agi ce tour');
     else if (peutAttaquer(u)) etats.push('Prête à attaquer');
     else if (!u.prete) etats.push("Vient d'arriver : attaquera au prochain tour");
+    if (u.bloquee || u.gele) etats.push('Gelée : ne peut ni attaquer ni défendre ce tour');
+    if (u.expose) etats.push('Exposée : -2 Défense jusqu’à son prochain tour');
+    if (u.bouclier) etats.push('Bouclier prêt : les premiers dégâts seront annulés');
     if (u.h < u.hMax) etats.push(`Blessée (${u.hMax - u.h} PV perdus)`);
-    if (u.brisee) etats.push('Arme brisée : attaque divisée par 2 pour de bon');
     if (etats.length) html += `<p class="loupe__etat">${etats.map(esc).join(' · ')}</p>`;
   }
-  // Capacité
-  if (unite && CAPACITES[def.k]) {
-    const [nom, texte] = CAPACITES[def.k];
-    html += `<h3 class="loupe__titre">Capacité</h3><p class="loupe__texte"><b>${nom}</b> : ${esc(texte)}</p>`;
+  // Capacités, et capacité unique des grandes cartes
+  const caps = unite ? capsDe(def).filter((k) => CAPACITES[k]) : [];
+  if (caps.length) {
+    html += `<h3 class="loupe__titre">Capacité${caps.length > 1 ? 's' : ''}</h3>`
+      + caps.map((k) => `<p class="loupe__texte"><b>${CAPACITES[k].nom}</b> : ${esc(CAPACITES[k].texte)}</p>`).join('');
   }
+  const unique = unite ? UNIQUES[def.unique] : null;
+  if (unique) {
+    html += `<h3 class="loupe__titre">Capacité unique</h3><p class="loupe__texte"><b>${esc(unique.nom)}</b> : ${esc(unique.texte)}</p>`;
+    if (unique.actif) html += `<p class="loupe__texte"><b>${esc(unique.actif.nom)}</b> : ${esc(unique.actif.texte)}</p>`;
+  }
+  if (unite && def.condition === 'allie') html += '<p class="loupe__note">Invocation : il faut déjà une de tes unités en jeu pour la poser.</p>';
   // Effet d'un sort ou d'un objet
   if (def.t === 's' && def.d) html += `<h3 class="loupe__titre">Effet</h3><p class="loupe__texte">${esc(def.d)}</p>`;
-  // Dégâts selon le jet de d20, et riposte
+  // Le jet d'attaque : d20 + Attaque contre 8 + Défense de la cible
   if (unite) {
-    const a = u ? u.a : def.a;
+    const a = u ? attaqueDe(p, camp, u) : def.a;
+    const besoinHeros = Math.min(20, Math.max(2, SEUIL_BASE + DEFENSE_HEROS - a));
+    const degats = { echec: 0, faible: 0, normal: a, solide: a + 1, critique: a * 2 };
     const jets = JETS.map((j) => `
-      <li class="jet--${j.q}"><span>${j.min === j.max ? j.min : `${j.min}–${j.max}`}</span><b>${j.degats(a)}</b><small>${esc(j.label)}${j.q === 'echec' ? " · l'arme se brise" : ''}</small></li>`).join('');
-    html += `<h3 class="loupe__titre">Dégâts en attaquant (jet de d20)</h3>
+      <li class="jet--${j.q}"><span>${esc(j.jet)}</span><b>${degats[j.q]}</b><small>${esc(j.label)} · ${esc(j.texte)}</small></li>`).join('');
+    html += `<h3 class="loupe__titre">En attaquant (d20 + ${a} contre 8 + Défense)</h3>
       <ul class="loupe__jets">${jets}</ul>
-      <p class="loupe__texte">Attaquée, elle riposte avec <b>${a}</b> dégât${a > 1 ? 's' : ''} (sans jet).</p>`;
+      <p class="loupe__texte">Contre un héros (Défense ${DEFENSE_HEROS}), elle touche sur <b>${besoinHeros}</b> ou plus au d20.${capsDe(def).includes('riposte') ? ` Attaquée, elle riposte avec <b>${a}</b> dégât${a > 1 ? 's' : ''}.` : ''}</p>`;
   }
   // Attaques de la vraie carte
   const attaques = carte ? [carte.attack_1, carte.attack_2].filter((x) => x?.nom) : [];
@@ -1403,13 +1560,13 @@ function ficheLoupe({ def, u, camp, main }) {
     html += `<h3 class="loupe__titre">Attaques</h3><ul class="loupe__attaques">${items}</ul>`;
     if (attaques.length > 1) html += "<p class=\"loupe__note\">Sur un jet de 15 ou plus, c'est la plus puissante des deux qui est lancée.</p>";
   }
-  if (carte?.description) html += `<p class="loupe__description">${esc(carte.description)}</p>`;
+  if (carte) html += htmlCodex(carte);   // récit, origine, illustration en grand, page du Codex
   return html;
 }
 
 function ouvrirLoupe(info) {
   const { def, u } = info;
-  const visible = u ? { ...def, a: u.a, h: u.h } : def;   // sur le plateau : attaque et vie actuelles
+  const visible = u ? { ...def, a: attaqueDe(p, info.camp, u), d: defenseDe(u, p), h: u.h } : def;   // sur le plateau : valeurs actuelles
   $('loupe-carte').innerHTML = htmlCarte(visible, { cout: info.main ? coutDe(p.camps.joueur, def) : def.c });
   $('loupe-fiche').innerHTML = ficheLoupe(info);
   jouerSon('clic');
@@ -1487,7 +1644,9 @@ curseurVolume.addEventListener('change', () => jouerSon('clic'));
 majVolume();
 
 function remplirRegles() {
-  $('regles-jets').innerHTML = JETS.map((j) => `<li><b>${j.min === j.max ? j.min : `${j.min}–${j.max}`}</b> ${esc(j.label.replace(' !', ''))} : ${esc(j.texte)}</li>`).join('');
+  $('regles-jets').innerHTML = JETS.map((j) => `<li><b>${esc(j.jet)}</b> ${esc(j.label.replace(' !', ''))} : ${esc(j.texte)}</li>`).join('');
+  $('regles-capacites').innerHTML = Object.values(CAPACITES).map((k) => `<li><b>${esc(k.nom)}</b> ${esc(k.texte)}</li>`).join('');
+  $('regles-terrains').innerHTML = Object.values(TERRAINS).map((t) => `<li><b>${esc(t.nom)}</b> ${esc(t.texte)}</li>`).join('');
   $('regles-destin').innerHTML = DESTIN.map((j) => `<li><b>${j.min === j.max ? j.min : `${j.min}–${j.max}`}</b> ${esc(j.label)} : ${esc(j.texte)}</li>`).join('');
   $('regles-pv').textContent = PV_HEROS;
 }

@@ -8,7 +8,7 @@
 --
 --  Effacé : cartes et grimoire, deck du profil, boosters (non ouverts et historique), Pass de saison
 --  (XP, paliers réclamés, premium, parties, cosmétiques du pass), mode Histoire (niveaux terminés, XP),
---  plateaux achetés, échanges (proposés et reçus).
+--  plateaux achetés, échanges et contrats (proposés et reçus), annonces du tableau de guilde, souhaits.
 --  Effacé aussi (partagé avec le bot Discord) : la bourse remise à 0 (wallets), les cosmétiques possédés
 --  (inventory : thèmes, titres, bannières de la roue des apparences) et les transactions.
 --  Gardé : seulement le compte (players).
@@ -29,16 +29,23 @@ begin
     'player_boosters', 'booster_ouvertures',                  -- boosters
     'pass_progression', 'pass_parties', 'pass_cosmetiques',   -- Pass de saison
     'histoire_progression', 'player_pass',                    -- mode Histoire
-    'joueur_plateaux'                                         -- plateaux achetés
+    'joueur_plateaux',                                        -- plateaux achetés
+    'souhaits'                                                -- liste de souhaits
   ] loop
     if to_regclass('public.' || v_table) is not null then
       execute format('delete from public.%I where discord_id = $1', v_table) using v_joueur;
     end if;
   end loop;
 
-  -- Échanges proposés ou reçus
+  -- Échanges proposés ou reçus, contrats et annonces du tableau de guilde
   if to_regclass('public.echanges') is not null then
     delete from public.echanges where de = v_joueur or pour = v_joueur;
+  end if;
+  if to_regclass('public.contrats') is not null then
+    delete from public.contrats where de = v_joueur or pour = v_joueur;
+  end if;
+  if to_regclass('public.annonces') is not null then
+    delete from public.annonces where auteur = v_joueur;
   end if;
 
   -- Cosmétiques équipés sur le profil (bannière, titre, thème) : retirés

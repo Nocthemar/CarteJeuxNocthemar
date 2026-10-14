@@ -19,7 +19,9 @@ mêmes cartes, mêmes pièces, même progression.
 
 ## Les fichiers
 
-- `JS/jeu-cartes-moteur.js` : les règles (Grimoire, pioche, Tombeau, attaques, d20, Destin, IA)
+- `JS/jeu-cartes-moteur.js` : les règles (Grimoire, pioche, Tombeau, actions, attaques au d20 contre la Défense, capacités,
+  capacités uniques des grandes cartes `UNIQUES` (les pouvoirs des personnages : Kaéliss, Dalek…), terrains `TERRAINS`,
+  Jet du Destin `DESTIN`, IA). Les noms et effets des terrains et des capacités uniques sont à ajuster là
 - `JS/jeu-cartes-arene.js` : l'affichage du plateau et les animations
 - `JS/jeu-cartes-effets.js`, `JS/jeu-cartes-son.js` : effets visuels et sons
 - `JS/jeu-cartes-attaques.js` : l'animation de chaque attaque (par Veine, et les attaques
@@ -61,6 +63,8 @@ mêmes cartes, mêmes pièces, même progression.
    Pour les échanges de cartes entre joueurs (le marché du grimoire, signet « Échanges ») : lancer `echanges.sql`.
    Pour les doublons (plusieurs exemplaires d'une carte, recyclage contre de l'or) : lancer `doublons.sql`,
    puis relancer `boosters.sql` et `echanges.sql`.
+   Pour le commerce (contrats à sceaux avec or et objets, tableau de guilde, liste de souhaits) : lancer `commerce.sql`
+   (après `echanges.sql` et `doublons.sql`).
 
 ## Bon à savoir
 

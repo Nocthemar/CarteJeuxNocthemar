@@ -87,7 +87,7 @@
         </button>
 
       </div>
-      <button type="button" class="choix__echanges" id="btn-hub-echanges">⇄ Échanger des cartes avec un ami <span class="choix__echanges-nb" id="badge-hub" hidden></span></button>
+      <button type="button" class="choix__echanges" id="btn-hub-echanges">⇄ Le marché : contrats, tableau de guilde <span class="choix__echanges-nb" id="badge-hub" hidden></span></button>
     </section>
 
     <!-- La roue ouverte, en grand au centre de la page (JS/collection-roue.js) -->
@@ -161,66 +161,120 @@
         <p class="deck-aide">Glisse une carte du grimoire sur un emplacement, ou touche l'étoile ★ d'une carte. 5 cartes au maximum.</p>
       </section>
 
-      <!-- Le marché : échanger des cartes avec un ami, depuis le grimoire (JS/collection-echanges.js, SQL/echanges.sql) -->
+      <!-- Le marché : contrats entre joueurs, tableau de guilde, souhaits (JS/collection-echanges.js, SQL/commerce.sql) -->
       <section id="marche" class="marche" aria-labelledby="marche-titre" hidden>
         <header class="marche__tete">
           <h2 id="marche-titre" class="marche__titre"><span aria-hidden="true">❦</span> Le marché <span aria-hidden="true">❦</span></h2>
+          <p class="marche__bourse">Ta bourse : <b id="marche-bourse">…</b> or</p>
           <div class="marche__onglets" role="tablist" aria-label="Le marché">
-            <button type="button" role="tab" class="marche__onglet" data-onglet="proposer" aria-selected="true">Proposer</button>
-            <button type="button" role="tab" class="marche__onglet" data-onglet="courrier" aria-selected="false">Courrier <span id="compte-recus"></span></button>
+            <button type="button" role="tab" class="marche__onglet" data-onglet="proposer" aria-selected="true">Rédiger</button>
+            <button type="button" role="tab" class="marche__onglet" data-onglet="courrier" aria-selected="false">Contrats <span id="compte-recus"></span></button>
+            <button type="button" role="tab" class="marche__onglet" data-onglet="guilde" aria-selected="false">Tableau de guilde</button>
+            <button type="button" role="tab" class="marche__onglet" data-onglet="souhaits" aria-selected="false">Souhaits</button>
             <button type="button" role="tab" class="marche__onglet" data-onglet="registre" aria-selected="false">Registre</button>
           </div>
         </header>
 
-        <!-- Proposer -->
+        <!-- Rédiger un contrat (ou le modifier) -->
         <div class="marche__panneau" data-panneau="proposer">
           <div class="table-echange__ami">
             <label for="recherche-ami">Avec qui ?</label>
             <div class="proposer__recherche">
-              <input type="search" id="recherche-ami" placeholder="Pseudo de ton ami…" autocomplete="off">
+              <input type="search" id="recherche-ami" placeholder="Pseudo du joueur…" autocomplete="off">
               <ul id="resultats-ami" class="proposer__resultats" hidden></ul>
             </div>
             <div id="ami-choisi" class="proposer__choisi" hidden></div>
           </div>
-          <p class="marche__aide" id="marche-aide">Choisis un ami, puis touche dans ton grimoire les cartes que tu lui donnes.</p>
+          <p class="marche__aide" id="marche-aide">Choisis un joueur, puis touche dans ton grimoire les cartes que tu lui donnes.</p>
 
           <div id="proposer-cartes" class="marche__plan" hidden>
+            <p class="contrat-edition" id="contrat-edition" hidden></p>
             <!-- La table : ce qui part, ce qui arrive -->
             <div class="plateau-echange">
               <div class="plateau-echange__cote">
-                <h3>Tu donnes <span id="compte-donnees">0 / 5</span></h3>
+                <h3>Tu donnes <span id="compte-donnees">0 / 6</span></h3>
                 <div id="table-donnees" class="plateau-echange__eventail"></div>
+                <label class="plateau-echange__or">Or <input type="number" id="or-donne" min="0" max="1000000" step="1" value="0" inputmode="numeric"></label>
+                <div class="plateau-echange__objets" id="objets-donnes"></div>
+                <p class="plateau-echange__valeur" id="valeur-donne"></p>
               </div>
               <div class="plateau-echange__balance" aria-hidden="true">⚖</div>
               <div class="plateau-echange__cote">
-                <h3>Tu reçois <span id="compte-demandees">0 / 5</span></h3>
+                <h3>Tu reçois <span id="compte-demandees">0 / 6</span></h3>
                 <div id="table-demandees" class="plateau-echange__eventail"></div>
+                <label class="plateau-echange__or">Or <input type="number" id="or-demande" min="0" max="1000000" step="1" value="0" inputmode="numeric"></label>
+                <div class="plateau-echange__objets" id="objets-demandes"></div>
+                <p class="plateau-echange__valeur" id="valeur-demande"></p>
               </div>
+              <p class="plateau-echange__equilibre" id="equilibre"></p>
               <div class="plateau-echange__envoi">
-                <input type="text" id="message-echange" maxlength="200" placeholder="Un petit mot pour sceller l'accord (facultatif)">
-                <button type="button" class="btn-dc-or" id="btn-proposer" disabled>Proposer l'échange</button>
+                <input type="text" id="message-echange" maxlength="200" placeholder="Une clause ou un petit mot (facultatif)">
+                <button type="button" class="btn-petit" id="btn-annuler-edition" hidden>Annuler la modification</button>
+                <button type="button" class="btn-dc-or" id="btn-proposer" disabled>Rédiger et apposer mon sceau</button>
               </div>
             </div>
-            <!-- Le grimoire de l'ami -->
+            <p class="souhaits-ami" id="souhaits-ami" hidden></p>
+            <!-- Le grimoire de l'autre joueur -->
             <div class="coffre">
               <h3 class="coffre__titre" id="titre-ses-cartes">Son grimoire</h3>
-              <p class="coffre__aide">Touche une carte pour la demander. Une carte que tu as déjà te donnera un exemplaire de plus.</p>
+              <p class="coffre__aide">Touche une carte pour la demander. Une carte que tu as déjà te donnera un exemplaire de plus. ♥ = sur ta liste de souhaits.</p>
               <div id="ses-cartes" class="coffre__grille"></div>
             </div>
           </div>
         </div>
 
-        <!-- Courrier : reçu (accepter / refuser) et envoyé (annuler) -->
+        <!-- Contrats ouverts : apposer son sceau, modifier, rompre -->
         <div class="marche__panneau" data-panneau="courrier" hidden>
-          <h3 class="marche__rubrique">Reçu</h3>
-          <div id="recus" class="echanges__lettres"></div>
-          <h3 class="marche__rubrique">Envoyé <span id="compte-envoyes"></span></h3>
-          <div id="envoyes" class="echanges__lettres"></div>
+          <p class="marche__aide">Un contrat est ratifié quand les deux joueurs y ont apposé leur sceau. Toute modification brise les sceaux : chacun doit revalider.</p>
+          <div id="contrats" class="contrats"></div>
         </div>
 
-        <!-- Registre : les derniers échanges -->
+        <!-- Tableau de guilde : annonces publiques -->
+        <div class="marche__panneau" data-panneau="guilde" hidden>
+          <form class="guilde__placarder" id="form-annonce">
+            <h3 class="marche__rubrique">Placarder une annonce</h3>
+            <select id="annonce-type" aria-label="Type d'annonce">
+              <option value="vente">Je vends</option>
+              <option value="recherche">Je cherche</option>
+            </select>
+            <select id="annonce-carte" aria-label="Carte" required></select>
+            <label class="guilde__prix">pour <input type="number" id="annonce-prix" min="1" max="1000000" value="100" required inputmode="numeric"> or</label>
+            <input type="text" id="annonce-message" maxlength="140" placeholder="Un mot (facultatif)">
+            <button type="submit" class="btn-dc-or">Clouer l'annonce</button>
+          </form>
+          <div class="guilde__filtres">
+            <select id="filtre-type" aria-label="Filtrer par type">
+              <option value="">Toutes les annonces</option>
+              <option value="vente">À vendre</option>
+              <option value="recherche">Recherchées</option>
+              <option value="souhaits">Sur ma liste de souhaits</option>
+              <option value="miennes">Mes annonces</option>
+            </select>
+            <select id="filtre-rarete" aria-label="Filtrer par rareté">
+              <option value="">Toutes les raretés</option>
+              <option value="commune">Commune</option>
+              <option value="eveillee">Éveillée</option>
+              <option value="mythique">Mythique</option>
+              <option value="legendaire">Légendaire</option>
+              <option value="transcendante">Transcendante</option>
+            </select>
+            <input type="search" id="filtre-nom" placeholder="Nom de la carte…" aria-label="Chercher une carte">
+          </div>
+          <div id="tableau-guilde" class="guilde__tableau"></div>
+        </div>
+
+        <!-- Liste de souhaits -->
+        <div class="marche__panneau" data-panneau="souhaits" hidden>
+          <p class="marche__aide">Les cartes que tu recherches : les autres joueurs les voient quand ils rédigent un contrat avec toi, et le tableau de guilde te signale les annonces qui les concernent.</p>
+          <div id="mes-souhaits" class="souhaits"></div>
+          <h3 class="marche__rubrique">Toutes les cartes</h3>
+          <input type="search" id="souhait-recherche" class="souhaits__recherche" placeholder="Chercher une carte…" aria-label="Chercher une carte">
+          <div id="catalogue-souhaits" class="souhaits souhaits--catalogue"></div>
+        </div>
+
+        <!-- Registre : contrats ratifiés ou rompus, annonces conclues -->
         <div class="marche__panneau" data-panneau="registre" hidden>
-          <div id="historique-echanges" class="echanges__lettres"></div>
+          <div id="historique-echanges" class="contrats"></div>
         </div>
       </section>
 

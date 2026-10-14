@@ -13,7 +13,7 @@
 //  2 cartes de l'Ombre d'un rang, et lui donne 1 PV de plus (ou de moins, pvElan) :
 //  tu gagnes souvent, elle se renforce ; tu perds, elle s'adoucit.
 // =====================================================================
-import { CARTES_BASE, OBJETS, COPIES_MAX, estObjet, grimoire, melanger } from './jeu-cartes-moteur.js';
+import { CARTES_BASE, OBJETS, estObjet, grimoire, melanger, peutAjouter } from './jeu-cartes-moteur.js';
 
 const RANGS = ['base', 'commune', 'eveillee', 'mythique', 'legendaire', 'transcendante'];
 const ELAN_MAX = 3;
@@ -46,9 +46,9 @@ export function grimoireOmbre(grimoireJoueur, catalogue, elan = 0) {
     }
   }
 
-  const nb = new Map();
-  const libre = (c) => (nb.get(c.id) ?? 0) < COPIES_MAX;
-  const prendre = (c) => { nb.set(c.id, (nb.get(c.id) ?? 0) + 1); return c; };
+  const cartes = [];
+  // Encore de la place pour cette carte (exemplaires, Transcendantes, objets) ?
+  const libre = (c) => peutAjouter(cartes, c);
 
   // Une carte de base de coût voisin (même genre : troupe ou sort), sinon n'importe quelle carte de base ;
   // moinsChere : strictement moins chère (élan négatif), si possible
@@ -72,13 +72,12 @@ export function grimoireOmbre(grimoireJoueur, catalogue, elan = 0) {
     return null;
   };
 
-  const cartes = [];
   for (const { c, rang, moinsChere } of modele) {
     const memeCarte = rangDe(c) === rang && !moinsChere && libre(c);   // carte inchangée par l'élan
     const carte = rang === null
       ? auHasard(OBJETS.filter(libre))
       : rang === 0 ? (memeCarte ? c : carteBase(c.c, c.t, moinsChere)) : carteDuRang(rang, c.c, c.t);
-    if (carte) cartes.push(prendre(carte));
+    if (carte) cartes.push(carte);
   }
   // grimoire() respecte les limites et complète avec des cartes de base s'il en manque
   return melanger(grimoire(cartes));
