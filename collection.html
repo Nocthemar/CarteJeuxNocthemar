@@ -87,7 +87,7 @@
         </button>
 
       </div>
-      <button type="button" class="choix__echanges" id="btn-hub-echanges">⇄ Le marché : contrats, tableau de guilde <span class="choix__echanges-nb" id="badge-hub" hidden></span></button>
+      <button type="button" class="choix__echanges" id="btn-hub-echanges">⇄ Échanger avec un joueur <span class="choix__echanges-nb" id="badge-hub" hidden></span></button>
     </section>
 
     <!-- La roue ouverte, en grand au centre de la page (JS/collection-roue.js) -->
@@ -161,15 +161,15 @@
         <p class="deck-aide">Glisse une carte du grimoire sur un emplacement, ou touche l'étoile ★ d'une carte. 5 cartes au maximum.</p>
       </section>
 
-      <!-- Le marché : contrats entre joueurs, tableau de guilde, souhaits (JS/collection-echanges.js, SQL/commerce.sql) -->
+      <!-- Les échanges : contrats à sceaux entre joueurs, souhaits (JS/collection-echanges.js, SQL/commerce.sql).
+           Les ventes publiques sont sur la page Marché (marche.html). -->
       <section id="marche" class="marche" aria-labelledby="marche-titre" hidden>
         <header class="marche__tete">
           <h2 id="marche-titre" class="marche__titre"><span aria-hidden="true">❦</span> Le marché <span aria-hidden="true">❦</span></h2>
-          <p class="marche__bourse">Ta bourse : <b id="marche-bourse">…</b> or</p>
+          <p class="marche__bourse">Ta bourse : <b id="marche-bourse">…</b> or · <a href="marche.html">Le Marché des cartes →</a></p>
           <div class="marche__onglets" role="tablist" aria-label="Le marché">
             <button type="button" role="tab" class="marche__onglet" data-onglet="proposer" aria-selected="true">Rédiger</button>
             <button type="button" role="tab" class="marche__onglet" data-onglet="courrier" aria-selected="false">Contrats <span id="compte-recus"></span></button>
-            <button type="button" role="tab" class="marche__onglet" data-onglet="guilde" aria-selected="false">Tableau de guilde</button>
             <button type="button" role="tab" class="marche__onglet" data-onglet="souhaits" aria-selected="false">Souhaits</button>
             <button type="button" role="tab" class="marche__onglet" data-onglet="registre" aria-selected="false">Registre</button>
           </div>
@@ -229,50 +229,16 @@
           <div id="contrats" class="contrats"></div>
         </div>
 
-        <!-- Tableau de guilde : annonces publiques -->
-        <div class="marche__panneau" data-panneau="guilde" hidden>
-          <form class="guilde__placarder" id="form-annonce">
-            <h3 class="marche__rubrique">Placarder une annonce</h3>
-            <select id="annonce-type" aria-label="Type d'annonce">
-              <option value="vente">Je vends</option>
-              <option value="recherche">Je cherche</option>
-            </select>
-            <select id="annonce-carte" aria-label="Carte" required></select>
-            <label class="guilde__prix">pour <input type="number" id="annonce-prix" min="1" max="1000000" value="100" required inputmode="numeric"> or</label>
-            <input type="text" id="annonce-message" maxlength="140" placeholder="Un mot (facultatif)">
-            <button type="submit" class="btn-dc-or">Clouer l'annonce</button>
-          </form>
-          <div class="guilde__filtres">
-            <select id="filtre-type" aria-label="Filtrer par type">
-              <option value="">Toutes les annonces</option>
-              <option value="vente">À vendre</option>
-              <option value="recherche">Recherchées</option>
-              <option value="souhaits">Sur ma liste de souhaits</option>
-              <option value="miennes">Mes annonces</option>
-            </select>
-            <select id="filtre-rarete" aria-label="Filtrer par rareté">
-              <option value="">Toutes les raretés</option>
-              <option value="commune">Commune</option>
-              <option value="eveillee">Éveillée</option>
-              <option value="mythique">Mythique</option>
-              <option value="legendaire">Légendaire</option>
-              <option value="transcendante">Transcendante</option>
-            </select>
-            <input type="search" id="filtre-nom" placeholder="Nom de la carte…" aria-label="Chercher une carte">
-          </div>
-          <div id="tableau-guilde" class="guilde__tableau"></div>
-        </div>
-
         <!-- Liste de souhaits -->
         <div class="marche__panneau" data-panneau="souhaits" hidden>
-          <p class="marche__aide">Les cartes que tu recherches : les autres joueurs les voient quand ils rédigent un contrat avec toi, et le tableau de guilde te signale les annonces qui les concernent.</p>
+          <p class="marche__aide">Les cartes que tu recherches : les autres joueurs les voient quand ils rédigent un contrat avec toi.</p>
           <div id="mes-souhaits" class="souhaits"></div>
           <h3 class="marche__rubrique">Toutes les cartes</h3>
           <input type="search" id="souhait-recherche" class="souhaits__recherche" placeholder="Chercher une carte…" aria-label="Chercher une carte">
           <div id="catalogue-souhaits" class="souhaits souhaits--catalogue"></div>
         </div>
 
-        <!-- Registre : contrats ratifiés ou rompus, annonces conclues -->
+        <!-- Registre : contrats ratifiés ou rompus, ventes conclues sur le Marché -->
         <div class="marche__panneau" data-panneau="registre" hidden>
           <div id="historique-echanges" class="contrats"></div>
         </div>

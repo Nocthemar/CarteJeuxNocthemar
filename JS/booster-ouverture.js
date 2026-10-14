@@ -12,8 +12,9 @@
 // =====================================================================
 import { jouerSon } from './jeu-cartes-son.js';
 import { versoDe, htmlInfos } from './cartes.js';
+import { animationsReduites } from './preferences.js';
 
-const reduit = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const reduit = animationsReduites();
 const RARETES = ['commune', 'eveillee', 'mythique', 'legendaire', 'transcendante'];
 const NOMS_RARETE = { commune: 'Commune', eveillee: 'Éveillée', mythique: 'Mythique', legendaire: 'Légendaire', transcendante: 'Transcendante' };
 export const COULEURS_RARETE = {

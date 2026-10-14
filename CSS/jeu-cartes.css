@@ -1939,8 +1939,14 @@ body.en-duel { overflow: hidden; padding: 0 !important; }
 }
 /* Les cartes de personnage ont un cadre décoratif transparent autour : les objets, un peu réduits, paraissent de la même taille */
 .menu .accueil__deck .dc-carte.rar-objet { scale: .86; translate: 0 -4%; }
-/* Mode en ligne : les blocs « Ouvrir » et « Rejoindre un salon » empilés dans la colonne du menu */
+/* Mode en ligne : la partie privée (deux boutons côte à côte) puis le classé, chacun sur toute la largeur */
 .menu .ligne__accueil { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+.prive { grid-column: 1 / -1; }
+.prive__boutons { display: flex; flex-wrap: wrap; gap: 10px; }
+.prive__code { display: grid; gap: 6px; width: 100%; max-width: 360px; }
+.prive__code[hidden] { display: none; }
+.prive__code label { font-size: .9rem; font-style: italic; color: var(--gris); }
+#btn-ouvrir-code[aria-expanded="true"] { filter: brightness(.85); }
 .menu .ligne__bloc { min-width: 0; }
 
 /* --- Fond du plateau : la ruelle de Nocthémar (img/Fond/font plateux jeux.jpg),
@@ -2743,3 +2749,163 @@ body.en-duel { overflow: hidden; padding: 0 !important; }
 /* Éraflure : le coup passe de justesse (1 dégât) */
 .centre__resultat--eraflure { color: #e6c78a; }
 .d20--eraflure polygon { stroke: #c9a45e; }
+
+
+/* =====================================================================
+   Cartes plus sobres : l'illustration d'abord. Attaque · Défense · PV en une petite barre discrète
+   au bas de la carte, capacités en petites icônes translucides (plus nettes au survol)
+   ===================================================================== */
+.dc-carte .dc-stat, .dc-unite .dc-stat,
+.page-jeu .tg-bord .dc-unite .dc-stat {
+  display: inline-flex; align-items: center; gap: 1px; white-space: nowrap;
+  bottom: 0; transform: translateY(45%);
+  min-width: 0; height: auto; padding: 1px 4px 0;
+  clip-path: none; border-radius: 3px;
+  background: rgba(8,9,13,.72);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.08);
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: .6rem; font-weight: 700; line-height: 1.35;
+  text-shadow: none;
+}
+/* les trois valeurs côte à côte, centrées */
+.dc-carte .dc-stat--a, .dc-unite .dc-stat--a, .page-jeu .tg-bord .dc-unite .dc-stat--a { left: 50%; right: auto; translate: calc(-100% - 15px) 0; color: #e9d7ae; }
+.dc-carte .dc-stat--d, .dc-unite .dc-stat--d, .page-jeu .tg-bord .dc-unite .dc-stat--d { left: 50%; right: auto; translate: -50% 0; color: #a9c6e4; }
+.dc-carte .dc-stat--h, .dc-unite .dc-stat--h, .page-jeu .tg-bord .dc-unite .dc-stat--h { left: 50%; right: auto; translate: 15px 0; color: #f0959b; }
+.dc-stat--a::before, .dc-stat--d::before, .dc-stat--h::before { font-size: .85em; margin-right: 2px; opacity: .8; }
+.dc-stat--a::before { content: "⚔"; }
+.dc-stat--d::before { content: "⛨"; }
+.dc-stat--h::before { content: "♥"; }
+/* valeurs modifiées : la couleur seule le dit */
+.dc-stat.dc-stat--a.dc-stat--mod { background: rgba(8,9,13,.72); color: #ffd36b; text-shadow: none; }
+.dc-stat.dc-stat--plus { background: rgba(8,9,13,.72); color: #8fe6a6; }
+.dc-stat.dc-stat--moins { background: rgba(8,9,13,.72); color: #f2a27c; }
+.dc-unite.est-blessee .dc-stat--h { background: rgba(60,10,14,.82); color: #ffb1b5; }
+
+/* capacités : petites et translucides, nettes au survol */
+.dc-caps { top: 4%; right: 4%; gap: 1px; }
+.dc-caps .dc-k {
+  width: 13px; height: 13px; padding: 2px;
+  background: rgba(8,9,13,.62);
+  opacity: .8;
+  transition: opacity .15s;
+}
+.dc-caps .dc-k svg { fill: #e8e2d4; }
+.dc-caps .dc-k--unique { background: rgba(184,134,47,.85); }
+.dc-caps .dc-k--unique svg { fill: #1b1408; }
+.dc-carte:hover .dc-k, .dc-unite:hover .dc-k { opacity: 1; }
+@media (max-width: 760px) { .dc-caps .dc-k { width: 11px; height: 11px; padding: 1px; } }
+
+/* coût (collection, constructeur) et actions : plus petits */
+.dc-cout { width: 18px; height: 20px; font-size: .68rem; }
+.dc-act { width: 14px; height: 14px; font-size: .56rem; top: 13%; }
+
+/* états du plateau : plus fins */
+.dc-etat { padding: 0 4px; font-size: .46rem; letter-spacing: .05em; opacity: .92; }
+
+
+/* Conseils facultatifs (bouton 💡) : la consigne du tour, discrète, au-dessus de ta main */
+body.avec-conseils.page-jeu .tg-tapis > .centre__consigne {
+  position: absolute; left: 50%; top: 93%; bottom: auto; right: auto; z-index: 20;
+  width: max-content; max-width: min(560px, 80vw); height: auto; margin: 0; padding: 5px 14px;
+  overflow: visible; clip: auto; clip-path: none; white-space: normal;
+  translate: -50% 0;
+  border: 1px solid rgba(217,164,65,.35); border-radius: 999px;
+  background: rgba(10,11,16,.82);
+  color: #e8dfcc; font-size: .82rem; font-style: italic; text-align: center; line-height: 1.3;
+  pointer-events: none;
+}
+body.avec-conseils.page-jeu .tg-tapis > .centre__consigne:empty { display: none; }
+#btn-conseils.est-actif { background: rgba(217,164,65,.25); box-shadow: inset 0 0 0 1px rgba(217,164,65,.6); }
+
+/* Barre d'outils du duel : les cinq boutons sur une seule ligne */
+.en-duel .historique__outils { flex-wrap: nowrap; gap: 5px; }
+.en-duel .historique__outils .btn-outil { flex: 1 1 0; min-width: 0; }
+
+
+/* =====================================================================
+   En ligne : le classé (choix du mode, recherche, rang) et la partie privée
+   ===================================================================== */
+.ligne__sous-titre {
+  grid-column: 1 / -1; margin: 6px 0 -4px;
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: .78rem; letter-spacing: .16em; text-transform: uppercase;
+  color: var(--gris);
+}
+.classe { grid-column: 1 / -1; display: grid; gap: 10px; justify-items: start; }
+.classe__rang { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; margin: 0; color: var(--gris); }
+.classe__palier {
+  padding: 2px 10px; border-radius: 3px;
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: .78rem; letter-spacing: .1em; text-transform: uppercase;
+  color: #1b1408; background: #b98b5a;
+}
+.classe__palier--argent { background: #c9cfd8; }
+.classe__palier--or { background: #e7c46a; }
+.classe__palier--platine { background: #9fd9d0; }
+.classe__palier--diamant { background: #8fb6ff; }
+.classe__palier--couronne { background: linear-gradient(180deg, #fff1c4, #e7b23e); box-shadow: 0 0 10px rgba(231,178,62,.6); }
+.classe__modes { display: flex; flex-wrap: wrap; gap: 6px; }
+.classe__mode {
+  padding: 8px 16px; border: 0; clip-path: var(--facette);
+  background: rgba(14,17,24,.75); box-shadow: inset 0 0 0 1px var(--ligne);
+  color: var(--gris); font-family: "Cinzel","Cinzel Repli", serif; font-size: .8rem; letter-spacing: .08em; cursor: pointer;
+}
+.classe__mode small { margin-left: 4px; font-size: .62rem; font-style: italic; opacity: .8; }
+.classe__mode[aria-checked="true"] { color: #1b1408; background: linear-gradient(180deg, #f3cf7c, var(--ambre) 60%, #b07a26); }
+.classe__mode:disabled { opacity: .45; cursor: not-allowed; }
+.classe__etat { margin: 0; min-height: 1.2em; color: var(--gris); font-style: italic; }
+.classe.est-en-recherche .classe__etat::before {
+  content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 8px; border-radius: 50%;
+  background: var(--ambre); animation: classe-pouls 1s ease-in-out infinite;
+}
+@keyframes classe-pouls { 50% { opacity: .2; } }
+.fin__classe { margin: 8px 0 0; color: var(--gris); }
+.fin__classe b { color: var(--blanc); }
+.fin__classe--gain b:first-child { color: #8fe6a6; }
+@media (prefers-reduced-motion: reduce) { .classe.est-en-recherche .classe__etat::before { animation: none; } }
+
+
+/* =====================================================================
+   2 contre 2 : le salon de quatre (format, équipes) et, pendant le duel, l'allié et les adversaires
+   ===================================================================== */
+.salon__format { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin: 0 0 12px; }
+.salon__format[hidden] { display: none; }
+.salon__format-btn {
+  padding: 6px 14px; border: 0; border-radius: 3px; cursor: pointer;
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--gris); background: rgba(255,255,255,.04); box-shadow: inset 0 0 0 1px var(--ligne);
+}
+.salon__format-btn small { margin-left: 4px; font-family: "EB Garamond", serif; font-size: .8rem; font-weight: 400; font-style: italic; letter-spacing: 0; text-transform: none; opacity: .85; }
+.salon__format-btn[aria-checked="true"] { color: #1b1408; background: linear-gradient(180deg, #f3cf7c, var(--ambre) 60%, #b07a26); box-shadow: none; }
+.salon__format-btn:disabled { cursor: default; }
+.salon__format-btn:disabled:not([aria-checked="true"]) { opacity: .45; }
+.salon__joueurs--equipes { align-items: start; }
+.salon__equipe { display: grid; gap: 8px; min-width: 0; }
+.salon__equipe-titre {
+  margin: 0; font-family: "Cinzel","Cinzel Repli", serif; font-size: .74rem; letter-spacing: .16em; text-transform: uppercase; color: var(--ambre);
+}
+.salon__equipe-titre small { font-family: "EB Garamond", serif; font-size: .82rem; font-style: italic; letter-spacing: 0; text-transform: none; color: var(--gris); }
+.salon__equipe-btn { display: flex; margin: 10px auto 0; min-height: 34px; padding: 4px 16px; font-size: .75rem; }
+.salon__equipe-btn[hidden] { display: none; }
+
+/* Pendant le duel */
+.equipe-duel { display: flex; gap: 8px; align-items: center; font-size: .82rem; color: var(--gris); }
+.equipe-duel[hidden] { display: none; }
+.equipe-duel b { font-family: "Cinzel","Cinzel Repli", serif; font-size: .78rem; color: var(--blanc); }
+.equipe-duel small { font-style: italic; }
+.equipe-duel--allie {
+  flex-direction: column; align-items: flex-end; gap: 0;
+  padding: 6px 12px; border-radius: 4px;
+  background: rgba(10,12,18,.6); box-shadow: inset 0 0 0 1px var(--ligne);
+  transition: box-shadow .3s, background .3s;
+}
+.equipe-duel__label { font-family: "Cinzel","Cinzel Repli", serif; font-size: .62rem; letter-spacing: .16em; text-transform: uppercase; color: var(--ambre); }
+.equipe-duel--allie.est-actif { background: rgba(217,164,65,.14); box-shadow: inset 0 0 0 1px var(--ambre), 0 0 18px rgba(217,164,65,.25); }
+.equipe-duel__membre {
+  display: flex; flex-direction: column; align-items: flex-end;
+  padding: 4px 10px; border-radius: 4px; background: rgba(10,12,18,.55); box-shadow: inset 0 0 0 1px var(--ligne);
+  opacity: .7; transition: opacity .3s, box-shadow .3s;
+}
+.equipe-duel__membre.est-actif { opacity: 1; box-shadow: inset 0 0 0 1px #c45b61, 0 0 16px rgba(196,91,97,.3); }
+@media (max-width: 600px) {
+  .equipe-duel--adverse small { display: none; }
+}
+/* L'allié : posé au-dessus de ta plaque (énergie + héros), à gauche */
+.equipe-duel--allie { position: absolute; left: 18px; bottom: calc(100% + 8px); align-items: flex-start; z-index: 6; }

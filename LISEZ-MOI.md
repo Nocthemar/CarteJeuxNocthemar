@@ -15,7 +15,9 @@ mêmes cartes, mêmes pièces, même progression.
 | `jeu-cartes.html` | Le menu et le plateau du Duel des Couronnes |
 | `histoire.html` | Le mode Histoire (carte des chapitres et des niveaux) |
 | `pass.html` | Le Pass de saison : 30 paliers, piste gratuite et piste premium (payée en or du jeu) |
-| `collection.html` | La collection de cartes (le grimoire) et les cartes favorites |
+| `collection.html` | La collection de cartes (le grimoire), les favorites et les échanges à sceaux |
+| `marche.html` | Le Marché : les cartes mises en vente par les joueurs (acheter, vendre) |
+| `parametres.html` | Paramètres : volumes (général, musique, effets), animations, effets, conseils, compte |
 
 ## Les fichiers
 
@@ -28,6 +30,9 @@ mêmes cartes, mêmes pièces, même progression.
   signatures des personnages : pour une nouvelle carte, ajouter son attaque dans `ATTAQUES`)
 - `JS/jeu-cartes-ombre.js` : le niveau caché de l’Ombre (son Grimoire en miroir du tien, et l’élan selon tes victoires et défaites)
 - `JS/jeu-cartes-ligne.js` : le mode en ligne (salons Supabase Realtime)
+- `JS/jeu-cartes-equipes.js` : le 2 contre 2 en ligne (camp partagé : un héros de 30 PV et une rangée par équipe ;
+  l'hôte fait tourner l'arbitre, chaque écran voit la partie depuis sa place). Les règles du camp partagé sont dans
+  `creerPartieEquipes()` du moteur
 - `JS/jeu-cartes.js` : le pilote de la page du jeu
 - `JS/boutique-boosters.js`, `JS/booster-ouverture.js`, `CSS/booster.css` : les boosters de cartes (achat dans la Boutique, animation d'ouverture)
 - `JS/pass.js`, `CSS/pass.css` : la page du Pass de saison (l'XP se gagne en fin de duel, dans `JS/jeu-cartes.js`)
@@ -65,6 +70,9 @@ mêmes cartes, mêmes pièces, même progression.
    puis relancer `boosters.sql` et `echanges.sql`.
    Pour le commerce (contrats à sceaux avec or et objets, tableau de guilde, liste de souhaits) : lancer `commerce.sql`
    (après `echanges.sql` et `doublons.sql`).
+   Pour le mode en ligne classé (recherche de partie 1v1 et 2v2, cote et paliers) : lancer `classe.sql`
+   (à relancer pour le 2v2), puis relancer `pass_saison.sql` (deux gagnants par salon en 2v2).
+   Pour la suppression de compte (page Paramètres) : lancer `compte.sql`.
 
 ## Bon à savoir
 

@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Paramètres — Nocthémar</title>
+  <link rel="icon" type="image/png" href="img/Logo/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800&family=Cinzel+Decorative:wght@700;900&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="CSS/polices.css">
+  <link rel="stylesheet" href="CSS/index.css">
+  <link rel="stylesheet" href="CSS/compte.css">
+  <link rel="stylesheet" href="CSS/parametres.css">
+<!-- Thème clair / sombre : appliqué avant l'affichage -->
+<script>try{if(localStorage.getItem('nocthemar-theme')==='jour')document.documentElement.dataset.theme='jour'}catch(e){}</script>
+<link rel="stylesheet" href="CSS/theme-jour.css">
+</head>
+<body class="page-profil page-parametres">
+
+  <header class="topbar">
+    <a class="brand" href="index.html">Nocthémar</a>
+    <span class="brand-sub">Duel des Couronnes</span>
+    <nav class="nav-links">
+      <a href="index.html">Accueil</a>
+      <a href="index.html#categories">Le Codex</a>
+    </nav>
+    <a href="boutique.html" class="nav-boutique">Boutique</a>
+    <div id="discord-auth"></div>
+  </header>
+
+  <!-- Paramètres (JS/parametres.js) : son, affichage, compte. Tout est retenu dans ce navigateur,
+       sauf la suppression du compte (SQL/compte.sql). -->
+  <main class="profil-wrap reglages">
+    <header class="reglages-entete">
+      <h1>Paramètres</h1>
+      <p>Réglés pour ce navigateur : ils s’appliquent à toutes les pages du jeu.</p>
+    </header>
+
+    <!-- Son -->
+    <section class="reglages-bloc" aria-labelledby="titre-son">
+      <h2 id="titre-son">Son</h2>
+      <div class="reglage reglage--curseur">
+        <label for="vol-general">Volume général</label>
+        <input type="range" id="vol-general" min="0" max="100" step="5">
+        <output id="val-general">80 %</output>
+      </div>
+      <div class="reglage reglage--curseur">
+        <label for="vol-musique">Musique <small>ambiance générée pendant le jeu</small></label>
+        <input type="range" id="vol-musique" min="0" max="100" step="5">
+        <output id="val-musique">40 %</output>
+      </div>
+      <div class="reglage reglage--curseur">
+        <label for="vol-effets">Effets sonores <small>coups, dés, cartes, sceaux</small></label>
+        <input type="range" id="vol-effets" min="0" max="100" step="5">
+        <output id="val-effets">100 %</output>
+      </div>
+      <div class="reglage">
+        <label class="reglage__case"><input type="checkbox" id="muet"> Tout couper</label>
+        <span class="reglage__boutons">
+          <button type="button" class="btn-sobre" id="essai-effet">Écouter un effet</button>
+          <button type="button" class="btn-sobre" id="essai-musique">Écouter la musique</button>
+        </span>
+      </div>
+    </section>
+
+    <!-- Affichage -->
+    <section class="reglages-bloc" aria-labelledby="titre-affichage">
+      <h2 id="titre-affichage">Affichage et animations</h2>
+      <label class="reglage reglage--case">
+        <input type="checkbox" id="anim-reduites">
+        <span><b>Animations réduites</b><small>Coupe les mouvements, envols de cartes et secousses (le jeu va plus vite).</small></span>
+      </label>
+      <label class="reglage reglage--case">
+        <input type="checkbox" id="effets-legers">
+        <span><b>Effets légers (performances)</b><small>Moins de particules et de braises : pour les ordinateurs et téléphones modestes.</small></span>
+      </label>
+      <label class="reglage reglage--case">
+        <input type="checkbox" id="conseils">
+        <span><b>Conseils pendant le duel</b><small>Une ligne discrète indique quoi faire (aussi avec le bouton 💡 du duel).</small></span>
+      </label>
+      <label class="reglage reglage--case">
+        <input type="checkbox" id="theme-clair">
+        <span><b>Thème clair</b><small>Pages claires, comme le jour sur Nocthémar.</small></span>
+      </label>
+    </section>
+
+    <!-- Compte -->
+    <section class="reglages-bloc" aria-labelledby="titre-compte">
+      <h2 id="titre-compte">Compte</h2>
+      <div class="reglage" id="compte-deconnecte" hidden>
+        <span>Tu n’es pas connecté.</span>
+        <button type="button" class="btn-or" id="btn-connecter">Connecter Discord</button>
+      </div>
+      <div id="compte-connecte" hidden>
+        <div class="reglage">
+          <span class="reglage__compte"><img id="compte-avatar" alt=""><b id="compte-nom"></b></span>
+          <button type="button" class="btn-sobre" id="btn-deconnexion">Se déconnecter</button>
+        </div>
+        <div class="reglage reglage--danger">
+          <span><b>Supprimer mon compte</b><small>Efface définitivement tes cartes, ton or, ta progression et ton profil.</small></span>
+          <button type="button" class="btn-danger" id="btn-supprimer">Supprimer…</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Confirmation de la suppression du compte -->
+  <dialog class="reglages-dialogue" id="dialogue-suppression" aria-labelledby="suppression-titre">
+    <h2 id="suppression-titre">Supprimer ton compte ?</h2>
+    <p>C’est <b>définitif</b> : tes cartes, ton grimoire, ton or, tes objets, ta progression (Pass, Histoire, rang) et ton profil seront effacés. Personne ne pourra les récupérer.</p>
+    <label for="confirmation">Pour confirmer, tape <b>SUPPRIMER</b> :</label>
+    <input type="text" id="confirmation" autocomplete="off" spellcheck="false">
+    <div class="reglages-dialogue__boutons">
+      <button type="button" class="btn-sobre" id="suppression-annuler">Annuler</button>
+      <button type="button" class="btn-danger" id="suppression-ok" disabled>Supprimer définitivement</button>
+    </div>
+  </dialog>
+
+  <div id="notif" class="notif" role="status" aria-live="polite"></div>
+
+  <script src="JS/lien-site.js"></script>
+  <script src="JS/barre-laterale.js"></script>
+  <script type="module" src="JS/auth.js"></script>
+  <script type="module" src="JS/parametres.js"></script>
+</body>
+</html>

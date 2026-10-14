@@ -10,6 +10,7 @@
 // =====================================================================
 import { supabase, SITE_ROOT } from './supabase.js';
 import { $, esc, couleur, notifier } from './commun.js';
+import { animationsReduites } from './preferences.js';
 
 const CATEGORIES = [
   { kind: 'plateau', titre: 'Plateaux', vide: 'Aucun plateau', icone: '▣' },
@@ -21,7 +22,7 @@ const LIBELLE = { plateau: 'Plateau de duel', theme: 'Thème', title: 'Titre', b
 const CHAMP = { banner: 'banner_item_id', title: 'title_item_id', theme: 'theme_item_id' };   // colonnes de players
 // Les images des bannières restent sur le site Nocthémar (JS/lien-site.js), comme en boutique
 const RACINE_IMAGES = window.NOCTHEMAR_SITE ? new URL(window.NOCTHEMAR_SITE) : SITE_ROOT;
-const reduit = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const reduit = animationsReduites();
 const CLE_CATEGORIE = 'collection-roue-categorie';
 
 const roue = {

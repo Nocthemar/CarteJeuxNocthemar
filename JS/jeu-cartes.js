@@ -15,6 +15,8 @@
 //  il envoie chaque événement avec l'état de la partie (sa main et sa pioche masquées).
 //  L'invité (« adverse » pour le moteur) voit tout en miroir (miroir()) : ses troupes
 //  en bas, et envoie ses actions à l'hôte.
+//  2 contre 2 (camp partagé, salon de quatre) : l'hôte fait tourner un arbitre (JS/jeu-cartes-equipes.js)
+//  et les quatre écrans, le sien compris, rejouent ses messages comme l'invité d'un 1 contre 1.
 //  Règles : JS/jeu-cartes-moteur.js — Affichage : JS/jeu-cartes-arene.js
 //  Sons : JS/jeu-cartes-son.js — Salon : JS/jeu-cartes-ligne.js
 // =====================================================================
@@ -34,9 +36,10 @@ import {
 } from './jeu-cartes-moteur.js';
 import { trouverNiveau } from './histoire-data.js';
 import { rendre, animer, banniere, pause, htmlCarte, activerProfondeur, secouer, flotter, montrerTouches, reduit } from './jeu-cartes-arene.js';
-import { jouerSon, basculerMuet, estMuet, lireVolume, reglerVolume } from './jeu-cartes-son.js';
+import { jouerSon, basculerMuet, estMuet, lireVolume, reglerVolume, musiqueAuPremierGeste } from './jeu-cartes-son.js';
 import { ouvrirSalon, nouveauCode, codeValide, TAILLE_SALON } from './jeu-cartes-ligne.js';
 import { grimoireOmbre, lireElan, pvElan, noterResultat } from './jeu-cartes-ombre.js';
+import { alleger, miroir, vueEquipe, vueEvEquipe, creerArbitre } from './jeu-cartes-equipes.js';
 
 const NOM_ADVERSAIRE = "L'Ombre du Codex";
 
@@ -81,6 +84,7 @@ let objetsInventaire = [];  // objets possédés par le joueur (cartes de pouvoi
 let unitesCatalogue = [];   // toutes les unités du catalogue (l'Ombre et le mode Histoire)
 let unitesGrimoire = null;  // unités de la collection du joueur (son Grimoire se construit avec)
 let salon = null;
+let equipe = null;          // 2 contre 2 en cours : { camp, index, sieges, arbitre (chez l'hôte), cles }
 let histoire = null;        // niveau du mode Histoire en cours : { chapitre, niveau, index }, sinon null
 let p = null;               // partie en cours (chez l'invité : copie en miroir reçue de l'hôte)
 let occupe = false;         // une animation, le tour de l'IA, ou une action envoyée est en cours
@@ -504,8 +508,31 @@ function texteRecompense({ gagne, recompenses: r, erreur }) {
 // ---------------------------------------------------------------------
 //  Partie : déroulé commun (solo et hôte)
 // ---------------------------------------------------------------------
-const avatars = () => ({ joueur: moi?.avatar_url ?? null, adverse: role ? salon?.adversaire?.avatar ?? null : null });
-const afficher = () => rendre(p, sel, avatars());
+function avatars() {
+  if (equipe && p?.equipes) {
+    // 2 contre 2 : en face, le portrait du joueur adverse qui a la main (ou du premier)
+    const campEux = equipe.camp === 'joueur' ? 'adverse' : 'joueur';
+    const eux = equipe.sieges.find((x) => x.camp === campEux && x.index === (p.camps.adverse.membreActif ?? 0));
+    return { joueur: moi?.avatar_url ?? null, adverse: eux?.avatar ?? null };
+  }
+  return { joueur: moi?.avatar_url ?? null, adverse: role ? salon?.adversaire?.avatar ?? null : null };
+}
+const afficher = () => { rendre(p, sel, avatars()); majEquipesDuel(); };
+// C'est à moi de jouer (en 2 contre 2 : à moi, pas seulement à mon équipe)
+const aMoi = () => !!p && p.actif === 'joueur' && p.moiActif !== false;
+
+// 2 contre 2 : mon allié (à côté de mon héros) et les deux adversaires (en haut)
+function majEquipesDuel() {
+  const actif = !!p?.equipes && !!p.allie;
+  $('equipe-allie').hidden = $('equipe-adverse').hidden = !actif;
+  if (!actif) return;
+  const cartes = (n) => `${n} carte${n > 1 ? 's' : ''}`;
+  $('equipe-allie').innerHTML = `<span class="equipe-duel__label">Ton allié</span>
+    <b>${esc(p.allie.nom)}</b><small>${p.allie.actif ? 'joue…' : cartes(p.allie.cartes)}</small>`;
+  $('equipe-allie').classList.toggle('est-actif', p.allie.actif);
+  $('equipe-adverse').innerHTML = p.ennemis.map((x) => `
+    <span class="equipe-duel__membre${x.actif ? ' est-actif' : ''}"><b>${esc(x.nom)}</b><small>${x.actif ? 'joue…' : cartes(x.cartes)}</small></span>`).join('');
+}
 const nomAdverse = () => p.camps.adverse.nom;
 
 let terrainAnnonce = false;   // le terrain est annoncé une fois, au premier tour
@@ -581,7 +608,7 @@ $('btn-renvoi').addEventListener('click', () => {
     // L'hôte applique le renvoi ; on attend la suite
     $('renvoi-attente').hidden = false;
     invite.renvoi = { pid: invite.pid, id: crypto.randomUUID(), n: invite.dernier, a: { type: 'renvoi', indices } };
-    salon?.envoyer('choix', invite.renvoi);
+    envoyerAuMaitre(invite.renvoi);
     return;
   }
   enFile(async () => {
@@ -612,7 +639,7 @@ async function commencerTour() {
 // Affichage d'un début de tour (commun aux trois rôles)
 async function afficherTour(ev) {
   occupe = true;
-  const monTour = p.actif === 'joueur';
+  const monTour = aMoi();
   if (monTour && ev.pioche.piochees.length) jouerSon('pioche');
   sel = { monTour: false, attaquant: null, sortIndex: null, cibles: null };
   afficher();
@@ -620,19 +647,19 @@ async function afficherTour(ev) {
     terrainAnnonce = true;
     await banniere(terrainDe(p).nom, terrainDe(p).texte, 'banniere--terrain');
   }
-  await banniere(monTour ? 'À toi de jouer' : `Tour de ${nomAdverse()}`, `Tour ${p.tour} · ${p.camps[p.actif].actionsMax} actions`, monTour ? 'banniere--moi' : '');
+  await banniere(monTour ? 'À toi de jouer' : `Tour de ${p.nomActif ?? nomAdverse()}${p.equipes && p.actif === 'joueur' ? ' (ton allié)' : ''}`, `Tour ${p.tour} · ${p.camps[p.actif].actionsMax} actions`, monTour ? 'banniere--moi' : '');
   if (ev.touches?.length) await montrerTouches(ev.touches);   // Soin en début de tour
   if (ev.pioche.brulees.length) await banniere('Main pleine', `${ev.pioche.brulees[0].n} est brûlée et part au Tombeau.`, 'banniere--malediction');
   if (ev.fatigue) {
     afficher();
-    await banniere('Épuisement', `Grimoire vide : ${monTour ? 'ton héros' : nomAdverse()} perd ${ev.fatigue} PV.`, 'banniere--malediction');
+    await banniere('Épuisement', `Grimoire vide : ${p.actif === 'joueur' ? 'ton héros' : nomAdverse()} perd ${ev.fatigue} PV.`, 'banniere--malediction');
   }
   deverrouiller();
 }
 
 function deverrouiller() {
   occupe = false;
-  sel = { monTour: p.actif === 'joueur' && !p.fini, attaquant: null, sortIndex: null, cibles: null };
+  sel = { monTour: aMoi() && !p.fini, attaquant: null, sortIndex: null, cibles: null };
   majConsigne();
   afficher();
   if (sel.monTour && p.camps.joueur.meditation?.length) ouvrirMeditation();
@@ -729,6 +756,7 @@ async function terminer(raison = '') {
   ].map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('');
   if (resultat) $('fin-texte').textContent += ' ' + texteRecompense(resultat);
   afficherXpPass(gagne, resultat);
+  afficherResultatClasse(gagne);
   $('btn-rejouer').textContent = role ? 'Revanche' : histoire ? (gagne ? 'Rejouer le niveau' : 'Réessayer') : 'Rejouer';
   $('btn-menu-fin').textContent = histoire ? 'Retour à la carte' : 'Retour au menu';
   $('btn-menu-fin').hidden = !!role;
@@ -801,14 +829,17 @@ function annuler() {
 
 function majConsigne() {
   let t = '';
-  if (p && !sel.monTour && !p.fini && role && p.actif === 'adverse') t = `${nomAdverse()} joue…`;
+  if (p && !sel.monTour && !p.fini && role && !aMoi()) t = `${p.nomActif ?? nomAdverse()} joue…`;
   else if (!sel.monTour) t = '';
   else if (sel.capacite) t = 'Choisis la cible de la capacité (Échap pour annuler).';
   else if (sel.attaquant) t = sel.cibles ? 'Choisis la cible de ton attaque, ou « Défendre » (Échap pour annuler).' : 'Cette unité peut se mettre en garde (« Défendre »).';
   else if (sel.sortIndex != null) t = 'Choisis la cible du sort (Échap pour annuler).';
   else if (sel.defausse) t = 'Choisis la carte à défausser (Échap pour annuler).';
   else if (p && p.camps.joueur.actions <= 0) t = 'Plus d’action : finis ton tour.';
-  else t = `${p?.camps.joueur.actions ?? 0} action(s) : joue une carte, attaque, défends, ou finis ton tour. Clic droit : voir une carte.`;
+  else {
+    const n = p?.camps.joueur.actions ?? 0;
+    t = `${n} action${n > 1 ? 's' : ''} : joue une carte, attaque, défends, ou finis ton tour. Clic droit : voir une carte.`;
+  }
   $('consigne').textContent = t;
 }
 
@@ -1004,7 +1035,7 @@ $('btn-abandon').addEventListener('click', () => {
   if (!p || p.fini || !confirm('Abandonner le duel ?')) return;
   abandonParMoi = true;
   if (role === 'invite') {
-    salon?.envoyer('choix', { pid: invite.pid, id: crypto.randomUUID(), n: invite.dernier, a: { type: 'abandon' } });
+    envoyerAuMaitre({ pid: invite.pid, id: crypto.randomUUID(), n: invite.dernier, a: { type: 'abandon' } });
     return;
   }
   enFile(async () => {
@@ -1033,6 +1064,116 @@ function majPanneauLigne() {
   $('ligne-connexion').hidden = !!moi;
   $('ligne-accueil').hidden = !moi || !!salon;
   $('ligne-salon').hidden = !salon;
+  if (moi && !salon) chargerRang();
+}
+
+
+// ---------------------------------------------------------------------
+//  En ligne : le classé (SQL/classe.sql)
+//  « Rechercher une partie » : le serveur met le joueur dans une file et l'apparie avec un joueur
+//  de cote proche ; il donne aux deux le même salon (le plus ancien dans la file est l'hôte).
+//  Les deux joueurs entrent dans le salon et se déclarent prêts tout seuls : le duel commence.
+//  À la fin, chacun déclare son résultat ; la cote bouge quand les deux concordent.
+// ---------------------------------------------------------------------
+const PALIERS = [[1700, 'Couronne'], [1550, 'Diamant'], [1400, 'Platine'], [1250, 'Or'], [1100, 'Argent'], [0, 'Bronze']];
+const palierDe = (cote) => PALIERS.find(([min]) => cote >= min)[1];
+const classe = { mode: '1v1', minuteur: null, debut: 0, salon: null };
+
+async function chargerRang() {
+  const { data, error } = await supabase.from('rangs').select('cote, victoires, defaites').eq('discord_id', moi.discord_id).maybeSingle();
+  if (error) { $('classe-rang').textContent = 'Le classé n’est pas encore installé (SQL/classe.sql).'; return; }
+  const r = data ?? { cote: 1000, victoires: 0, defaites: 0 };
+  $('classe-rang').innerHTML = `<b class="classe__palier classe__palier--${palierDe(r.cote).toLowerCase()}">${palierDe(r.cote)}</b>
+    <span>${r.cote} points · ${r.victoires} victoire${r.victoires > 1 ? 's' : ''} · ${r.defaites} défaite${r.defaites > 1 ? 's' : ''}</span>`;
+}
+
+function arreterRecherche() {
+  clearInterval(classe.minuteur);
+  classe.minuteur = null;
+  $('btn-chercher').textContent = 'Rechercher une partie';
+  $('btn-chercher').classList.add('btn-dc--ambre');
+  $('bloc-classe').classList.remove('est-en-recherche');
+}
+
+async function chercherPartie() {
+  const { data, error } = await supabase.rpc('chercher_classee', { p_mode: classe.mode });
+  if (!classe.minuteur) return;   // recherche annulée entre-temps
+  if (error) {
+    arreterRecherche();
+    $('classe-etat').textContent = /PGRST202|schema cache/.test(`${error.code} ${error.message}`)
+      ? 'Le classé n’est pas encore installé (SQL/classe.sql).' : (error.message || 'Recherche impossible.');
+    return;
+  }
+  if (data?.salon) {
+    arreterRecherche();
+    classe.salon = data.salon;
+    $('classe-etat').textContent = classe.mode === '2v2' ? 'Équipes formées ! Le duel commence…' : 'Adversaire trouvé ! Le duel commence…';
+    jouerSon('cloche');
+    entrerSalon(data.salon, data.role, { format: classe.mode, equipe: data.equipe ?? null });
+    await salon?.annoncer({ pret: true, grimoire: idsGrimoire() });
+    majBoutonPret();
+    // l'adversaire ne vient pas (onglet fermé entre-temps) : on revient à la recherche
+    setTimeout(() => {
+      const incomplet = salon?.format === '2v2' ? salon.liste().length < TAILLE_EQUIPES : !salon?.adversaire;
+      if (salon && salon.code === classe.salon && !role && incomplet) {
+        notifier(salon.format === '2v2' ? 'Un joueur n’est pas venu : la partie est annulée.' : 'Ton adversaire n’est pas venu : la partie est annulée.', 'erreur');
+        classe.salon = null;
+        quitterSalon();
+      }
+    }, 30000);
+    return;
+  }
+  const s = Math.floor((Date.now() - classe.debut) / 1000);
+  $('classe-etat').textContent = `Recherche ${classe.mode === '2v2' ? 'de trois joueurs' : 'd’un adversaire'}… ${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+}
+
+$('btn-chercher').addEventListener('click', async () => {
+  if (classe.minuteur) {
+    arreterRecherche();
+    $('classe-etat').textContent = 'Recherche annulée.';
+    await supabase.rpc('quitter_classee');
+    return;
+  }
+  classe.debut = Date.now();
+  classe.minuteur = setInterval(chercherPartie, 2500);
+  $('btn-chercher').textContent = 'Annuler la recherche';
+  $('btn-chercher').classList.remove('btn-dc--ambre');
+  $('bloc-classe').classList.add('est-en-recherche');
+  $('classe-etat').textContent = classe.mode === '2v2' ? 'Recherche de trois joueurs… 0:00' : 'Recherche d’un adversaire… 0:00';
+  jouerSon('clic');
+  chercherPartie();
+});
+document.querySelector('.classe__modes').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-classe-mode]');
+  if (!b || b.disabled || classe.minuteur) return;
+  classe.mode = b.dataset.classeMode;
+  document.querySelectorAll('.classe__mode').forEach((x) => x.setAttribute('aria-checked', String(x === b)));
+});
+// Quitter la page en pleine recherche : on sort de la file
+addEventListener('pagehide', () => { if (classe.minuteur) supabase.rpc('quitter_classee'); });
+
+// Fin d'une partie classée : le résultat est déclaré au serveur ; la cote s'affiche quand l'autre a déclaré le sien
+async function afficherResultatClasse(gagne) {
+  const el = $('fin-classe');
+  el.hidden = true;
+  if (!role || !salon || salon.code !== classe.salon) return;
+  const code = classe.salon;
+  classe.salon = null;   // une revanche dans ce salon n'est plus classée
+  el.textContent = equipe ? 'Partie classée : en attente du résultat de l’équipe adverse…' : 'Partie classée : en attente du résultat de ton adversaire…';
+  el.hidden = false;
+  for (let essai = 0; essai < 8; essai++) {
+    const { data, error } = await supabase.rpc('resultat_classe', { p_salon: code, p_victoire: gagne });
+    if (error) { el.textContent = `Partie classée : ${error.message}`; return; }
+    if (data?.ok) {
+      el.innerHTML = data.deja ? `Partie classée : ta cote est de <b>${data.cote}</b> points (${palierDe(data.cote)}).`
+        : `Partie classée : <b>${data.ecart > 0 ? '+' : ''}${data.ecart}</b> points · ta cote : <b>${data.cote}</b> (${palierDe(data.cote)})`;
+      el.classList.toggle('fin__classe--gain', (data.ecart ?? 0) > 0);
+      return;
+    }
+    if (data && data.ok === false) { el.textContent = `Partie classée : ${data.raison}`; return; }
+    await new Promise((r) => setTimeout(r, 2500));
+  }
+  el.textContent = 'Partie classée : ton adversaire n’a pas déclaré son résultat ; la partie sera comptée s’il le fait.';
 }
 
 $('btn-connexion').addEventListener('click', () => connexionDiscord());
@@ -1049,14 +1190,24 @@ $('form-rejoindre').addEventListener('submit', (e) => {
   if (!codeValide(code)) return notifier('Ce code n\'est pas valide : cinq lettres ou chiffres.', 'erreur');
   entrerSalon(code, sessionStorage.getItem(`duel-hote-${code}`) ? 'hote' : 'invite');
 });
+// « Rejoindre un salon » : affiche (ou cache) le champ du code
+$('btn-ouvrir-code').addEventListener('click', () => {
+  const ouvert = $('form-rejoindre').hidden;
+  $('form-rejoindre').hidden = !ouvert;
+  $('btn-ouvrir-code').setAttribute('aria-expanded', String(ouvert));
+  if (ouvert) $('code-salon').focus();
+});
 $('code-salon').addEventListener('input', (e) => { e.target.value = e.target.value.toUpperCase(); });
 
-function entrerSalon(code, r) {
+// opts (classé) : { format: '1v1' | '2v2', equipe: 'A' | 'B' } donnés par le serveur
+function entrerSalon(code, r, opts = {}) {
   salon = ouvrirSalon(code, {
     discord_id: moi.discord_id,
     nom: moi.username ?? 'Aventurier',
     avatar: moi.avatar_url ?? null,
     role: r,
+    ...(r === 'hote' ? { format: opts.format ?? '1v1' } : {}),
+    ...(opts.equipe ? { equipe: opts.equipe } : {}),
   }, {
     surPresence,
     surMessage,
@@ -1064,7 +1215,10 @@ function entrerSalon(code, r) {
   });
   salon.role = r;
   salon.adversaire = null;
+  salon.formatFixe = opts.format ?? null;   // classé : le format ne se change pas
+  salon.format = opts.format ?? '1v1';
   salon.annoncer({ grimoire: idsGrimoire() });
+  majFormatSalon();
 
   // Le lien de la page devient le lien d'invitation (?salon=CODE)
   history.replaceState(null, '', `${location.pathname}?salon=${code}`);
@@ -1081,6 +1235,7 @@ async function quitterSalon() {
   salon = null;
   role = null;
   p = null;
+  equipe = null;
   oublierAbsence();
   sessionStorage.removeItem(`duel-hote-${s.code}`);
   history.replaceState(null, '', location.pathname);
@@ -1100,6 +1255,7 @@ function revenirAccueil() {
 function revenirAuSalon() {
   role = null;
   p = null;
+  equipe = null;
   oublierAbsence();
   revenirAccueil();
   majBoutonPret();
@@ -1127,6 +1283,7 @@ $('btn-pret').addEventListener('click', async () => {
   if (!salon) return;
   await salon.annoncer({ pret: !salon.presence.pret, grimoire: idsGrimoire() });
   majBoutonPret();
+  majFormatSalon();
   surPresence(salon.liste());
 });
 
@@ -1135,9 +1292,15 @@ function surPresence(tous) {
   // Page rechargée : l'ancienne connexion reste visible quelques secondes ; on ne garde que la plus récente
   // d'un même compte dans un même rôle
   const liste = tous.filter((x) => !tous.some((y) => y !== x && y.discord_id === x.discord_id && y.role === x.role && y.rejoint > x.rejoint));
+  // Le format du salon : fixé par le classé, sinon choisi par l'hôte (sa présence le dit à tous)
+  const format = salon.formatFixe
+    ?? (salon.role === 'hote' ? salon.presence.format : liste.find((x) => x.role === 'hote')?.format) ?? '1v1';
+  if (format !== salon.format && !role) { salon.format = format; majFormatSalon(); }
+  if (salon.format === '2v2' && (!role || equipe)) return surPresenceEquipes(liste);
   // Salon de deux : les deux premiers arrivés jouent, les suivants repartent
   const dedans = liste.slice(0, TAILLE_SALON);
-  if (liste.length > TAILLE_SALON && !dedans.some((x) => x.cle === salon.cle)) {
+  // (seulement quand l'hôte est là : avant, on ne connaît pas encore le format du salon, peut-être un 2 contre 2)
+  if (liste.length > TAILLE_SALON && liste.some((x) => x.role === 'hote') && !dedans.some((x) => x.cle === salon.cle)) {
     notifier('Ce salon est complet.', 'erreur');
     quitterSalon();
     return;
@@ -1205,6 +1368,8 @@ function attendreRetour(nom) {
 function oublierAbsence() {
   clearTimeout(absence);
   absence = null;
+  for (const t of absencesEquipe.values()) clearTimeout(t);
+  absencesEquipe.clear();
 }
 
 function afficherJoueurs(dedans) {
@@ -1228,15 +1393,206 @@ function afficherJoueurs(dedans) {
 
 
 // ---------------------------------------------------------------------
+//  En ligne : le salon de quatre (2 contre 2, camp partagé)
+//  Format choisi par l'hôte (ou par le classé). Chacun choisit son équipe (A ou B, deux joueurs
+//  chacune) ; quand les quatre sont prêts, l'hôte lance l'arbitre (JS/jeu-cartes-equipes.js).
+// ---------------------------------------------------------------------
+const TAILLE_EQUIPES = 4;
+const absencesEquipe = new Map();   // discord_id -> minuteur : un joueur parti, qu'on attend encore
+
+function majFormatSalon() {
+  if (!salon) return;
+  const fmt = salon.format ?? '1v1';
+  document.querySelectorAll('[data-format]').forEach((b) => {
+    b.setAttribute('aria-checked', String(b.dataset.format === fmt));
+    b.disabled = salon.role !== 'hote' || !!salon.formatFixe || !!salon.presence.pret || !!role;
+  });
+  $('salon-format').hidden = !!salon.formatFixe;
+  $('salon-format').title = salon.role === 'hote' ? '' : 'Le format est choisi par l’hôte du salon';
+  $('btn-equipe').hidden = fmt !== '2v2' || !!salon.formatFixe;
+  $('btn-equipe').disabled = !!salon.presence.pret || !!role;
+  $('salon-joueurs').classList.toggle('salon__joueurs--equipes', fmt === '2v2');
+}
+
+$('salon-format').addEventListener('click', async (e) => {
+  const b = e.target.closest('[data-format]');
+  if (!b || b.disabled || !salon || salon.role !== 'hote' || salon.format === b.dataset.format) return;
+  salon.format = b.dataset.format;
+  await salon.annoncer({ format: salon.format, ...(salon.format === '2v2' ? {} : { equipe: null }) });
+  jouerSon('clic');
+  majFormatSalon();
+  surPresence(salon.liste());
+});
+
+$('btn-equipe').addEventListener('click', async () => {
+  if (!salon || role || salon.presence.pret) return;
+  const autreEquipe = salon.presence.equipe === 'A' ? 'B' : 'A';
+  const dedans = salon.liste().slice(0, TAILLE_EQUIPES);
+  if (dedans.filter((x) => x.equipe === autreEquipe && x.cle !== salon.cle).length >= 2) {
+    notifier(`L’équipe ${autreEquipe} est déjà complète.`, 'erreur');
+    return;
+  }
+  await salon.annoncer({ equipe: autreEquipe });
+  jouerSon('clic');
+  surPresence(salon.liste());
+});
+
+function surPresenceEquipes(liste) {
+  const dedans = liste.slice(0, TAILLE_EQUIPES);
+  if (liste.length > TAILLE_EQUIPES && !dedans.some((x) => x.cle === salon.cle)) {
+    notifier('Ce salon est complet.', 'erreur');
+    quitterSalon();
+    return;
+  }
+  const moiDedans = dedans.find((x) => x.cle === salon.cle);
+  const n = (eq) => dedans.filter((x) => x.equipe === eq).length;
+  // Pas encore d'équipe : celle qui a le moins de joueurs (l'hôte prend la A)
+  if (moiDedans && !salon.presence.equipe && !role) {
+    salon.annoncer({ equipe: salon.role === 'hote' ? 'A' : n('A') - (moiDedans.equipe === 'A' ? 1 : 0) <= n('B') ? 'A' : 'B' })
+      .then(() => surPresence(salon.liste()));
+    return;
+  }
+  // Arrivées presque en même temps : une équipe à trois ; le dernier arrivé passe dans l'autre
+  const monEq = salon.presence.equipe;
+  if (moiDedans && monEq && !role && !salon.formatFixe && !salon.presence.pret) {
+    const miens = dedans.filter((x) => x.equipe === monEq).sort((x, y) => x.rejoint - y.rejoint);
+    const autreEq = monEq === 'A' ? 'B' : 'A';
+    if (miens.length > 2 && miens.slice(2).some((x) => x.cle === salon.cle) && n(autreEq) < 2) {
+      salon.annoncer({ equipe: autreEq }).then(() => surPresence(salon.liste()));
+      return;
+    }
+  }
+  afficherJoueursEquipes(dedans);
+  majFormatSalon();
+
+  // En plein duel : on surveille les départs
+  if (equipe && p && !p.fini) { suivreAbsencesEquipes(dedans); return; }
+  if (role) return;
+
+  const hotes = dedans.filter((x) => x.role === 'hote');
+  const etat = $('salon-etat');
+  const attendus = dedans.filter((x) => !x.pret).map((x) => x.nom);
+  if (!moiDedans) etat.textContent = 'Connexion au salon…';
+  else if (hotes.length > 1) etat.textContent = 'Ce salon a deux hôtes (onglet dupliqué ?) : créez un nouveau salon.';
+  else if (!hotes.length) etat.textContent = 'L’hôte n’est pas (ou plus) dans ce salon. Attends-le, ou crée ton propre salon.';
+  else if (dedans.length < TAILLE_EQUIPES) etat.textContent = salon.formatFixe
+    ? `En attente des autres joueurs (${dedans.length}/4)…`
+    : `En attente de joueurs (${dedans.length}/4)… Copie le lien du salon et envoie-le à tes amis.`;
+  else if (n('A') !== 2 || n('B') !== 2) etat.textContent = 'Il faut deux joueurs par équipe : utilisez « Changer d’équipe ».';
+  else if (new Set(dedans.map((x) => x.discord_id)).size < TAILLE_EQUIPES) etat.textContent = 'Un même compte est entré deux fois : il faut quatre joueurs différents.';
+  else if (!salon.presence.pret) etat.textContent = 'Vérifie ton deck, puis déclare-toi prêt.';
+  else if (attendus.length) etat.textContent = `En attente de ${attendus.join(', ')}…`;
+  else etat.textContent = 'Le duel commence !';
+
+  // L'hôte lance le duel quand les quatre joueurs sont prêts, deux par équipe
+  if (salon.role === 'hote' && hotes.length === 1 && dedans.length === TAILLE_EQUIPES && !attendus.length
+    && n('A') === 2 && n('B') === 2 && new Set(dedans.map((x) => x.discord_id)).size === TAILLE_EQUIPES) {
+    commencerEquipes(dedans);
+  }
+}
+
+function afficherJoueursEquipes(dedans) {
+  const fiche = (x) => {
+    if (!x) return `
+      <div class="salon__joueur salon__joueur--vide">
+        <span class="salon__avatar" aria-hidden="true">?</span>
+        <span class="salon__nom">Place libre</span>
+      </div>`;
+    const c = x.cle === salon.cle;
+    return `
+      <div class="salon__joueur${x.pret ? ' est-pret' : ''}">
+        ${x.avatar ? `<img class="salon__avatar" src="${esc(x.avatar)}" alt="">` : '<span class="salon__avatar" aria-hidden="true">✦</span>'}
+        <span class="salon__nom">${esc(x.nom)}${c ? ' <small>(toi)</small>' : ''}</span>
+        <span class="salon__role">${x.role === 'hote' ? 'Hôte' : 'Invité'}</span>
+        <span class="salon__pret">${x.pret ? 'Prêt' : 'Prépare son deck…'}</span>
+      </div>`;
+  };
+  $('salon-joueurs').innerHTML = ['A', 'B'].map((eq) => {
+    const membres = dedans.filter((x) => x.equipe === eq).slice(0, 2);
+    return `
+      <div class="salon__equipe">
+        <h4 class="salon__equipe-titre">Équipe ${eq}${salon.presence.equipe === eq ? ' <small>(la tienne)</small>' : ''}</h4>
+        ${fiche(membres[0])}${fiche(membres[1])}
+      </div>`;
+  }).join('');
+}
+
+// L'hôte lance le 2 contre 2 : son équipe est « joueur » pour le moteur (lui en premier)
+async function commencerEquipes(dedans) {
+  role = 'invite';   // réserve la place tout de suite (pas de double lancement) ; son écran rejoue l'arbitre
+  const monEq = salon.presence.equipe;
+  const ordre = (eq) => dedans.filter((x) => x.equipe === eq)
+    .sort((x, y) => (x.cle === salon.cle ? -1 : y.cle === salon.cle ? 1 : x.rejoint - y.rejoint));
+  const sieges = [
+    ...ordre(monEq).map((x, i) => ({ ...x, camp: 'joueur', index: i })),
+    ...ordre(monEq === 'A' ? 'B' : 'A').map((x, i) => ({ ...x, camp: 'adverse', index: i })),
+  ];
+  const decks = await Promise.all(sieges.map(async (x) => construireDeck(x.cle === salon.cle ? grimoireJoueur : await grimoireDepuisCles(x.grimoire))));
+  await salon.annoncer({ pret: false });
+  majBoutonPret();
+  equipe = {
+    camp: 'joueur', index: 0, sieges,
+    cles: Object.fromEntries(sieges.map((x) => [x.discord_id, x.cle])),
+    arbitre: creerArbitre({
+      sieges, decks,
+      envoyer: (msg) => { salon?.envoyer('jeu', msg); recevoirJeu(msg); },
+    }),
+  };
+  Object.assign(invite, { pid: null, dernier: 0, choixEnvoye: null, renvoi: null });
+  equipe.arbitre.demarrer();
+}
+
+// Un joueur a quitté le salon en plein 2 contre 2 : on l'attend un peu. L'hôte surveille les trois
+// autres (un départ fait perdre son équipe) ; les autres surveillent l'hôte (sans lui, plus de partie)
+function suivreAbsencesEquipes(dedans) {
+  const ici = new Map(dedans.map((x) => [x.discord_id, x]));
+  for (const x of equipe.sieges) {
+    if (x.discord_id === moi?.discord_id) continue;
+    const estHote = x.camp === 'joueur' && x.index === 0;
+    if (!equipe.arbitre && !estHote) continue;
+    const present = ici.get(x.discord_id);
+    if (!present) {
+      if (!absencesEquipe.has(x.discord_id)) {
+        notifier(`${x.nom} s'est déconnecté : on l'attend encore ${DELAI_RETOUR / 1000} secondes…`, 'erreur');
+        absencesEquipe.set(x.discord_id, setTimeout(() => joueurParti(x), DELAI_RETOUR));
+      }
+      continue;
+    }
+    const revenu = absencesEquipe.has(x.discord_id);
+    if (revenu) {
+      clearTimeout(absencesEquipe.get(x.discord_id));
+      absencesEquipe.delete(x.discord_id);
+      notifier(`${x.nom} est de retour.`);
+    }
+    equipe.cles ??= {};
+    const cleAvant = equipe.cles[x.discord_id];
+    equipe.cles[x.discord_id] = present.cle;
+    const recharge = !!cleAvant && cleAvant !== present.cle;
+    if (recharge && estHote && !equipe.arbitre) {
+      // L'hôte a rechargé sa page : la partie (qu'il faisait tourner) est perdue
+      return finSansHote(`${x.nom} (l'hôte) a rechargé la page : le duel est interrompu.`);
+    }
+    if ((revenu || recharge) && equipe.arbitre) equipe.arbitre.envoyerEtat();
+  }
+}
+function joueurParti(x) {
+  absencesEquipe.delete(x.discord_id);
+  if (!equipe || !p || p.fini) return;
+  if (equipe.arbitre) return equipe.arbitre.forfait(x.camp, `${x.nom} a quitté le duel : son équipe perd.`);
+  finSansHote(`${x.nom} (l'hôte) a quitté le duel : son équipe perd.`);
+}
+// Sans l'hôte, la partie s'arrête : son équipe perd
+function finSansHote(raison) {
+  if (!p || p.fini) return;
+  p.fini = equipe.camp === 'joueur' ? 'adverse' : 'joueur';
+  terminer(raison);
+}
+
+
+// ---------------------------------------------------------------------
 //  En ligne : l'hôte fait tourner la partie
 // ---------------------------------------------------------------------
 const hote = { pid: null, n: 0, historique: [], choixVus: new Set() };
-
-// Copie allégée : des fiches des cartes, on garde seulement ce que la face affiche
-// (image, rareté, et le nom, le rang et les attaques écrits dans le cadre : htmlInfos de JS/cartes.js)
-const alleger = (x) => JSON.parse(JSON.stringify(x, (k, v) => (k === 'carte' && v
-  ? { id: v.id, image: v.image, rarity: v.rarity, name: v.name, rank: v.rank, attack_1: v.attack_1, attack_2: v.attack_2 }
-  : v)));
 
 // État envoyé à l'invité : la main et la pioche de l'hôte sont masquées
 function etatPourInvite() {
@@ -1321,31 +1677,34 @@ function traiterChoix(c) {
 // ---------------------------------------------------------------------
 const invite = { pid: null, dernier: 0, activite: 0, choixEnvoye: null, renvoi: null };
 
-// Le plateau vu de l'autre côté : « joueur » et « adverse » échangés partout
-const ECHANGE = { joueur: 'adverse', adverse: 'joueur' };
-function miroir(x) {
-  if (Array.isArray(x)) return x.map(miroir);
-  if (!x || typeof x !== 'object') return x;
-  const o = {};
-  for (const [k, v] of Object.entries(x)) {
-    if (k === 'camps' && v) o.camps = { joueur: miroir(v.adverse), adverse: miroir(v.joueur) };
-    else if (k === 'renvoi' && v && typeof v === 'object') o.renvoi = { joueur: v.adverse, adverse: v.joueur };
-    else if (['qui', 'camp', 'actif', 'fini'].includes(k) && ECHANGE[v]) o[k] = ECHANGE[v];
-    else o[k] = miroir(v);
-  }
-  return o;
-}
-
 function envoyerChoix(a) {
   invite.choixEnvoye = { pid: invite.pid, id: crypto.randomUUID(), n: invite.dernier, a };
   invite.activite = Date.now();
   majConsigne();
-  salon?.envoyer('choix', invite.choixEnvoye);
+  envoyerAuMaitre(invite.choixEnvoye);
+}
+
+// Une action vers celui qui fait tourner la partie : l'hôte (par le salon), ou mon propre arbitre (2 contre 2)
+function envoyerAuMaitre(c) {
+  const msg = { ...c, de: moi?.discord_id ?? null };
+  if (equipe?.arbitre) return equipe.arbitre.recevoir(msg);
+  salon?.envoyer('choix', msg);
+}
+// Redemande les messages manqués
+function demanderSuite() {
+  if (equipe?.arbitre) return;   // l'hôte reçoit ses propres messages sans perte
+  salon?.envoyer('renvoi', { depuis: invite.dernier + 1, pid: invite.pid });
 }
 
 function surMessage(evenement, contenu) {
   if (!salon) return;
-  if (salon.role === 'hote') {
+  // 2 contre 2, chez l'hôte : les actions et demandes des trois autres vont à l'arbitre
+  if (equipe?.arbitre) {
+    if (evenement === 'choix') equipe.arbitre.recevoir(contenu);
+    else if (evenement === 'renvoi') equipe.arbitre.renvoyer(contenu);
+    return;
+  }
+  if (salon.role === 'hote' && !contenu?.equipes) {
     if (evenement === 'choix') traiterChoix(contenu);
     // L'invité a manqué des messages : on les renvoie dans l'ordre,
     // ou, s'il en manque beaucoup (ou s'il a rechargé la page), l'état de la partie d'un coup
@@ -1357,6 +1716,12 @@ function surMessage(evenement, contenu) {
     return;
   }
   if (evenement !== 'jeu') return;
+  recevoirJeu(contenu);
+}
+
+// Un message « jeu » de l'hôte (ou, chez l'hôte d'un 2 contre 2, de son propre arbitre)
+function recevoirJeu(contenu) {
+  if (!salon) return;
   // Les événements sont rejoués dans l'ordre, sans trou ni doublon.
   // Nouveau duel (même si son tout premier message s'est perdu) : on repart de zéro
   if (contenu.etatComplet) {
@@ -1369,7 +1734,7 @@ function surMessage(evenement, contenu) {
   if (contenu.pid !== invite.pid) Object.assign(invite, { pid: contenu.pid, dernier: 0, choixEnvoye: null });
   if (contenu.n <= invite.dernier) return;
   if (contenu.n > invite.dernier + 1) {
-    salon.envoyer('renvoi', { depuis: invite.dernier + 1, pid: invite.pid });
+    demanderSuite();
     return;
   }
   invite.dernier = contenu.n;
@@ -1378,9 +1743,21 @@ function surMessage(evenement, contenu) {
   enFile(() => jouerMessage(contenu));
 }
 
+// La partie et ses événements vus d'ici : en miroir (invité d'un 1 contre 1), ou depuis ma place (2 contre 2)
+function majEquipe(m) {
+  if (!m.equipes) { if (m.ev?.type === 'debut' || m.etatComplet) equipe = null; return; }
+  const sieges = m.sieges ?? m.ev?.sieges;
+  const s = sieges?.find((x) => x.discord_id === moi?.discord_id);
+  if (s) equipe = { ...(equipe ?? {}), camp: s.camp, index: s.index, sieges };
+}
+const lireEtat = (m) => (m.equipes && equipe ? vueEquipe(m.etat, equipe.camp, equipe.index) : miroir(m.etat));
+const lireEv = (m) => (m.equipes && equipe ? vueEvEquipe(m.ev, equipe.camp, equipe.index) : miroir(m.ev));
+
 async function jouerMessage(m) {
-  const ev = miroir(m.ev);
-  const etat = miroir(m.etat);
+  majEquipe(m);
+  if (m.equipes && !equipe) return;   // pas une de mes parties
+  const ev = lireEv(m);
+  const etat = lireEtat(m);
   if (ev.type === 'debut') {
     role = 'invite';
     p = etat;
@@ -1399,7 +1776,7 @@ async function jouerMessage(m) {
   } else if (ev.type === 'renvoi') {
     p = etat;
     afficher();
-    if (ev.qui === 'joueur' && ev.n) jouerSon('pioche');
+    if (ev.qui === 'joueur' && !ev.coequipier && ev.n) jouerSon('pioche');
   } else {
     await animer(ev);
     p = etat;
@@ -1408,9 +1785,9 @@ async function jouerMessage(m) {
   }
   invite.activite = Date.now();
   if (p.fini) {
-    const raison = ev.type === 'abandon'
-      ? (ev.qui === 'joueur' ? 'Tu as abandonné le duel.' : `${nomAdverse()} a abandonné le duel.`)
-      : '';
+    const raison = ev.type !== 'abandon' ? ''
+      : ev.raison ? ev.raison
+      : ev.qui === 'joueur' ? 'Tu as abandonné le duel.' : `${nomAdverse()} a abandonné le duel.`;
     return terminer(raison);
   }
   if (ev.type === 'tour' && $('renvoi').open) $('renvoi').close();
@@ -1421,8 +1798,10 @@ async function jouerMessage(m) {
 // L'état complet reçu de l'hôte : le plateau est remis à jour d'un coup, sans rejouer les animations
 async function jouerEtat(m) {
   const nouveau = role !== 'invite' || !p;
+  majEquipe(m);
+  if (m.equipes && !equipe) return;
   role = 'invite';
-  p = miroir(m.etat);
+  p = lireEtat(m);
   if (nouveau) {
     if (salon) salon.cleDuel = salon.adversaire?.cle ?? null;
     await salon?.annoncer({ pret: false });
@@ -1448,9 +1827,10 @@ setInterval(() => {
   if (sel.monTour) return;   // c'est à lui de jouer
   if (Date.now() - invite.activite < SILENCE_MAX) return;
   invite.activite = Date.now();
-  if (invite.renvoi && !p.renvoi?.joueur) salon.envoyer('choix', invite.renvoi);   // renvoi de main perdu
-  if (invite.choixEnvoye) salon.envoyer('choix', invite.choixEnvoye);
-  salon.envoyer('renvoi', { depuis: invite.dernier + 1, pid: invite.pid });
+  if (equipe?.arbitre) return;   // l'hôte d'un 2 contre 2 : rien ne se perd chez lui
+  if (invite.renvoi && !p.renvoi?.joueur) envoyerAuMaitre(invite.renvoi);   // renvoi de main perdu
+  if (invite.choixEnvoye) envoyerAuMaitre(invite.choixEnvoye);
+  demanderSuite();
 }, 1000);
 
 
@@ -1650,6 +2030,24 @@ curseurVolume.addEventListener('input', () => { reglerVolume(curseurVolume.value
 curseurVolume.addEventListener('change', () => jouerSon('clic'));
 majVolume();
 
+// Conseils facultatifs : la consigne du tour (« Joue une carte… ») s'affiche au-dessus de ta main.
+// Coupés par défaut ; le bouton 💡 (ou la page Paramètres) les active, retenu dans le navigateur (duel-conseils).
+const CLE_CONSEILS = 'duel-conseils';
+function majConseils(actifs) {
+  document.body.classList.toggle('avec-conseils', actifs);
+  $('btn-conseils').setAttribute('aria-pressed', String(actifs));
+  $('btn-conseils').classList.toggle('est-actif', actifs);
+}
+let conseils = false;
+try { conseils = localStorage.getItem(CLE_CONSEILS) === '1'; } catch { /* stockage indisponible */ }
+majConseils(conseils);
+$('btn-conseils').addEventListener('click', () => {
+  conseils = !conseils;
+  try { localStorage.setItem(CLE_CONSEILS, conseils ? '1' : '0'); } catch { /* stockage indisponible */ }
+  majConseils(conseils);
+  jouerSon('clic');
+});
+
 function remplirRegles() {
   $('regles-jets').innerHTML = JETS.map((j) => `<li><b>${esc(j.jet)}</b> ${esc(j.label.replace(' !', ''))} : ${esc(j.texte)}</li>`).join('');
   $('regles-capacites').innerHTML = Object.values(CAPACITES).map((k) => `<li><b>${esc(k.nom)}</b> ${esc(k.texte)}</li>`).join('');
@@ -1662,4 +2060,5 @@ $('regles-fermer').addEventListener('click', () => $('regles').close());
 $('regles').addEventListener('click', (e) => { if (e.target === $('regles')) $('regles').close(); });
 
 if (reduit) document.documentElement.classList.add('anim-reduites');
+musiqueAuPremierGeste();   // l'ambiance musicale (volume « musique » des Paramètres)
 init();

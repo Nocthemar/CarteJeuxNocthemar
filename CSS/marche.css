@@ -1,0 +1,95 @@
+/* =====================================================================
+   Le Marché (marche.html, JS/marche.js) : une page sobre — l'en-tête, la vente, les filtres,
+   puis les cartes en vente en grille (la carte d'abord, le prix et le bouton dessous)
+   Utilise les variables de CSS/compte.css (à charger APRÈS compte.css).
+   ===================================================================== */
+.page-marche .marche-page { max-width: 1120px; }
+
+.marche-entete { text-align: center; margin: 10px 0 22px; }
+.marche-entete h1 {
+  margin: 0 0 6px;
+  font-family: "Cinzel Decorative","Cinzel Decorative Repli", serif;
+  font-size: clamp(1.6rem, 3.4vw, 2.4rem);
+  color: var(--texte);
+}
+.marche-entete p { margin: 0 auto; max-width: 560px; color: var(--texte-doux); font-style: italic; }
+.marche-entete__bourse { margin-top: 10px !important; font-style: normal !important; font-family: "Cinzel","Cinzel Repli", serif; letter-spacing: .06em; }
+.marche-entete__bourse b { color: #e7c46a; }
+.marche-connexion { text-align: center; color: var(--texte-doux); font-style: italic; }
+
+/* Boutons */
+.btn-or {
+  padding: 8px 16px; border: 0; border-radius: 3px;
+  background: linear-gradient(180deg, #f3cf7c, #d9a441 60%, #b07a26);
+  color: #1b1408; font-family: "Cinzel","Cinzel Repli", serif; font-size: .74rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+  cursor: pointer; transition: filter .15s;
+}
+.btn-or:hover:not(:disabled) { filter: brightness(1.08); }
+.btn-or:disabled { opacity: .45; cursor: not-allowed; }
+.btn-sobre {
+  padding: 7px 14px; border: 1px solid var(--bord, rgba(240,236,227,.2)); border-radius: 3px;
+  background: transparent; color: var(--texte-doux);
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: .7rem; letter-spacing: .08em; text-transform: uppercase; cursor: pointer;
+}
+.btn-sobre:hover { color: var(--texte); border-color: rgba(240,236,227,.4); }
+
+/* Vendre une carte */
+.marche-vendre {
+  margin: 0 0 18px; padding: 0;
+  border: 1px solid rgba(217,164,65,.3); border-radius: 6px;
+  background: rgba(0,0,0,.22);
+}
+.marche-vendre summary {
+  padding: 12px 16px; cursor: pointer;
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: .82rem; letter-spacing: .1em; text-transform: uppercase; color: #f0d9a0;
+}
+.marche-vendre__form { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px 16px; padding: 0 16px 16px; }
+.marche-vendre__form label { display: flex; flex-direction: column; gap: 4px; font-size: .8rem; color: var(--texte-doux); }
+.marche-vendre__form select { min-width: 260px; }
+.marche-vendre__prix { display: inline-flex; align-items: center; gap: 6px; color: var(--texte); }
+.marche-vendre__prix input { width: 110px; text-align: right; }
+.marche-vendre__aide { flex-basis: 100%; margin: 0; font-size: .82rem; font-style: italic; color: var(--texte-doux); }
+
+/* Champs */
+.page-marche input[type="search"], .page-marche input[type="number"], .page-marche select {
+  padding: 7px 10px;
+  border: 1px solid rgba(217,164,65,.3); border-radius: 4px;
+  background: rgba(10,8,6,.55); color: var(--texte); font: inherit; font-size: .92rem;
+}
+
+/* Filtres */
+.marche-filtres { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 18px; }
+.marche-filtres input[type="search"] { flex: 1 1 200px; }
+.marche-filtres__miennes { display: inline-flex; align-items: center; gap: 6px; font-size: .88rem; color: var(--texte-doux); }
+
+/* Les ventes */
+.marche-liste { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 20px; }
+.marche-vide { grid-column: 1 / -1; padding: 22px; text-align: center; color: var(--texte-doux); font-style: italic; border: 1px dashed rgba(240,236,227,.18); }
+.vente {
+  display: flex; flex-direction: column; gap: 10px;
+  padding: 12px 12px 14px;
+  border: 1px solid rgba(240,236,227,.1); border-radius: 6px;
+  background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(0,0,0,.2));
+  transition: border-color .2s, transform .2s;
+}
+.vente:hover { border-color: rgba(217,164,65,.45); transform: translateY(-2px); }
+.vente.est-mienne { border-color: rgba(217,164,65,.5); }
+.vente__carte { padding: 0; border: 0; background: none; cursor: zoom-in; }
+.vente__carte > * { width: 100%; }
+.vente__infos { display: flex; flex-direction: column; align-items: center; gap: 3px; text-align: center; }
+.vente__nom { margin: 0; font-family: "Cinzel","Cinzel Repli", serif; font-size: .9rem; color: var(--texte); }
+.vente__rarete { margin: 0; font-size: .74rem; letter-spacing: .08em; text-transform: uppercase; color: var(--texte-doux); }
+.vente.rar-eveillee .vente__rarete { color: #4fd987; }
+.vente.rar-mythique .vente__rarete { color: #5b9bff; }
+.vente.rar-legendaire .vente__rarete { color: #ff6b7a; }
+.vente.rar-transcendante .vente__rarete { color: #f6d27a; }
+.vente__prix { margin: 4px 0 0; font-family: "Cinzel","Cinzel Repli", serif; font-size: 1.15rem; font-weight: 700; color: #e7c46a; }
+.vente__prix span { font-size: .75rem; color: var(--texte-doux); }
+.vente__vendeur { margin: 0 0 6px; font-size: .8rem; font-style: italic; color: var(--texte-doux); }
+.vente .btn-or, .vente .btn-sobre { width: 100%; }
+@media (prefers-reduced-motion: reduce) { .vente, .vente:hover { transition: none; transform: none; } }
+
+/* Message de connexion centré ; liste vide sur toute la largeur */
+.marche-connexion { max-width: none; margin: 0 auto 18px; }
+.marche-liste:has(> .marche-vide) { display: block; }
+.marche-vide { max-width: none; }

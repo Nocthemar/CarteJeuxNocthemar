@@ -4,6 +4,7 @@
 //  Aucune règle ici : tout vient de JS/jeu-cartes-moteur.js.
 // =====================================================================
 import { SITE_ROOT } from './supabase.js';
+import { animationsReduites } from './preferences.js';
 import { $, esc } from './commun.js';
 import { htmlInfos } from './cartes.js';
 import {
@@ -16,7 +17,7 @@ import { jouerSon, SM } from './jeu-cartes-son.js';
 import { particules, onde, flash, voile, secousseEcran, eclair, briser, recul, annonce, envol, symbole } from './jeu-cartes-effets.js';
 import { styleAttaque, couleursVeine } from './jeu-cartes-attaques.js';
 
-export const reduit = matchMedia('(prefers-reduced-motion: reduce)').matches;
+export const reduit = animationsReduites();
 
 // Pause d'animation : nulle si l'utilisateur réduit les animations ou si l'onglet est caché
 export const pause = (ms) => new Promise((r) => setTimeout(r, reduit || document.hidden ? 0 : ms));
@@ -742,14 +743,17 @@ export async function animer(ev) {
 // et vole jusqu'à dest. La carte d'origine est cachée pendant le vol (le plateau est redessiné après).
 async function volerDepuisMain(ev, dest) {
   if (!dest || reduit) return;
-  const source = ev.qui === 'joueur'
-    ? $('main-joueur')?.querySelector(`[data-index="${ev.index}"]`)
-    : $('main-adverse')?.lastElementChild;
-  if (!source) return;
-  source.style.visibility = 'hidden';
+  // 2 contre 2 : une carte de mon allié part de son encart, à côté de mon héros (JS/jeu-cartes.js)
+  const allie = !!ev.coequipier;
+  const source = allie ? $('equipe-allie')
+    : ev.qui === 'joueur'
+      ? $('main-joueur')?.querySelector(`[data-index="${ev.index}"]`)
+      : $('main-adverse')?.lastElementChild;
+  if (!source || (allie && source.hidden)) return;
+  if (!allie) source.style.visibility = 'hidden';
   jouerSon('elan');
   await envol(source, dest, {
-    html: ev.qui === 'adverse' ? htmlCarte(ev.carte) : null,
+    html: ev.qui === 'adverse' || allie ? htmlCarte(ev.carte) : null,
     rotation: ev.qui === 'joueur' ? -10 : 10,
     duree: 440,
   });

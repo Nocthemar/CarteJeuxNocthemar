@@ -1,19 +1,28 @@
 // =====================================================================
-//  Duel des Couronnes — sons, tous créés par le navigateur (Web Audio),
-//  sans fichier audio : chocs, acier, tonnerre, feu, cloche, dé, fanfare.
-//  Pas de musique. Le bouton « son » coupe tout, le curseur règle le volume
-//  (les deux choix sont retenus dans le navigateur).
+//  Duel des Couronnes — sons, tous créés par le navigateur (Web Audio), sans fichier audio :
+//  chocs, acier, tonnerre, feu, cloche, dé, fanfare, cire… et une ambiance musicale générée.
+//  Trois volumes (page Paramètres, et le curseur du duel pour le général) :
+//    général (tout), effets (les sons du jeu), musique (l'ambiance). Le bouton « son » coupe tout.
+//  Tous les choix sont retenus dans le navigateur.
 // =====================================================================
 const CLE_MUET = 'duel-couronnes-muet';
 const CLE_VOLUME = 'duel-couronnes-volume';
+const CLE_EFFETS = 'duel-couronnes-volume-effets';
+const CLE_MUSIQUE = 'duel-couronnes-volume-musique';
 let ctx = null;
 let general = null;   // volume général : tous les sons passent par ce gain
+let busEffets = null;
+let busMusique = null;
 let muet = false;
 let volume = 0.8;     // de 0 à 1
+let volEffets = 1;
+let volMusique = 0.4;
+const lireNombre = (cle, defaut) => { const v = parseFloat(localStorage.getItem(cle)); return Number.isFinite(v) ? Math.min(1, Math.max(0, v)) : defaut; };
 try {
   muet = localStorage.getItem(CLE_MUET) === '1';
-  const v = parseFloat(localStorage.getItem(CLE_VOLUME));
-  if (Number.isFinite(v)) volume = Math.min(1, Math.max(0, v));
+  volume = lireNombre(CLE_VOLUME, volume);
+  volEffets = lireNombre(CLE_EFFETS, volEffets);
+  volMusique = lireNombre(CLE_MUSIQUE, volMusique);
 } catch { /* stockage indisponible */ }
 
 function audio() {
@@ -22,8 +31,14 @@ function audio() {
     if (!AC) return null;
     ctx = new AC();
     general = ctx.createGain();
-    general.gain.value = volume;
+    general.gain.value = muet ? 0 : volume;
     general.connect(ctx.destination);
+    busEffets = ctx.createGain();
+    busEffets.gain.value = volEffets;
+    busEffets.connect(general);
+    busMusique = ctx.createGain();
+    busMusique.gain.value = volMusique;
+    busMusique.connect(general);
   }
   if (ctx.state === 'suspended') ctx.resume();
   return ctx;
@@ -39,7 +54,7 @@ function enveloppe(g, t, crete, attaque, duree) {
 function sortie(volume = 0.6) {
   const g = ctx.createGain();
   g.gain.value = volume;
-  g.connect(general);
+  g.connect(busEffets);
   return g;
 }
 
@@ -104,6 +119,8 @@ export const SND = {
   chaine(t)    { for (let i = 0; i < 5; i++) [2400, 3600].forEach((f) => note(t + i * 0.055, f + Math.random() * 300, 0.12, { type: 'triangle', crete: 0.06 })); },
   coeur(t)     { [0, 0.22].forEach((d, i) => note(t + d, i ? 55 : 65, 0.18, { vers: 35, crete: 0.6 })); },
   forge(t)     { note(t, 95, 0.3, { vers: 50, crete: 0.6 }); [1200, 2470, 3300].forEach((f) => note(t, f, 0.6, { type: 'triangle', crete: 0.08 })); souffle(t, 0.1, { freq: 2000, crete: 0.4 }); },
+  // Le sceau de cire posé sur un contrat : un petit choc mat et un crépitement
+  cire(t)      { note(t, 150, 0.16, { vers: 70, crete: 0.45 }); souffle(t, 0.07, { type: 'bandpass', freq: 1600, q: 1.5, crete: 0.3 }); for (let i = 0; i < 4; i++) souffle(t + 0.05 + Math.random() * 0.2, 0.02, { type: 'highpass', freq: 3500, crete: 0.12 }); },
   couronne(t)  { [523, 784, 1047].forEach((f) => note(t, f, 0.9, { type: 'triangle', crete: 0.1 })); souffle(t, 0.4, { type: 'highpass', freq: 3000, crete: 0.15, attaque: 0.05 }); },
 };
 
@@ -114,7 +131,7 @@ export const SM = {
 };
 
 export function jouerSon(nom, delai = 0) {
-  if (muet || volume === 0 || !SND[nom]) return;
+  if (muet || volume === 0 || volEffets === 0 || !SND[nom]) return;
   try {
     if (!audio()) return;
     SND[nom](ctx.currentTime + delai);
@@ -125,6 +142,7 @@ export const estMuet = () => muet;
 export function basculerMuet() {
   muet = !muet;
   try { localStorage.setItem(CLE_MUET, muet ? '1' : '0'); } catch { /* rien */ }
+  if (general) general.gain.setTargetAtTime(muet ? 0 : volume, ctx.currentTime, 0.02);
   return muet;
 }
 
@@ -132,7 +150,96 @@ export function basculerMuet() {
 export const lireVolume = () => volume;
 export function reglerVolume(v) {
   volume = Math.min(1, Math.max(0, v));
-  if (general) general.gain.setTargetAtTime(volume, ctx.currentTime, 0.02);
   if (volume > 0 && muet) basculerMuet();
+  if (general) general.gain.setTargetAtTime(muet ? 0 : volume, ctx.currentTime, 0.02);
   try { localStorage.setItem(CLE_VOLUME, String(volume)); } catch { /* rien */ }
+}
+
+// Volumes des effets et de la musique (page Paramètres)
+export const lireVolumes = () => ({ general: volume, effets: volEffets, musique: volMusique });
+export function reglerVolumeEffets(v) {
+  volEffets = Math.min(1, Math.max(0, v));
+  if (busEffets) busEffets.gain.setTargetAtTime(volEffets, ctx.currentTime, 0.02);
+  try { localStorage.setItem(CLE_EFFETS, String(volEffets)); } catch { /* rien */ }
+}
+export function reglerVolumeMusique(v) {
+  volMusique = Math.min(1, Math.max(0, v));
+  if (busMusique) busMusique.gain.setTargetAtTime(volMusique, ctx.currentTime, 0.05);
+  try { localStorage.setItem(CLE_MUSIQUE, String(volMusique)); } catch { /* rien */ }
+  if (volMusique > 0) demarrerMusique(); else arreterMusique();
+}
+
+
+// ---------------------------------------------------------------------
+//  L'ambiance musicale, générée : une nappe grave et lente (ré mineur, si bémol, do, la mineur),
+//  et de temps en temps une cloche lointaine. Elle démarre au premier geste du joueur
+//  (les navigateurs l'exigent) et suit le volume « musique ».
+// ---------------------------------------------------------------------
+const ACCORDS = [[146.83, 220, 293.66], [116.54, 174.61, 293.66], [130.81, 196, 329.63], [110, 164.81, 261.63]];
+const CLOCHES = [587.33, 698.46, 783.99, 880, 1046.5, 1174.66];   // ré mineur pentatonique, en haut
+let musique = null;
+
+export function demarrerMusique() {
+  if (musique || volMusique === 0 || !audio()) return;
+  const t0 = ctx.currentTime;
+  const nappe = ctx.createGain();
+  nappe.gain.setValueAtTime(0.0001, t0);
+  nappe.gain.exponentialRampToValueAtTime(0.11, t0 + 4);   // fondu d'entrée
+  const filtre = ctx.createBiquadFilter();
+  filtre.type = 'lowpass'; filtre.frequency.value = 900; filtre.Q.value = 0.3;
+  nappe.connect(filtre).connect(busMusique);
+  // trois voix, chacune avec deux oscillateurs légèrement désaccordés
+  const voix = ACCORDS[0].map((f) => {
+    const oscs = [['sine', 0], ['triangle', 4]].map(([type, decalage]) => {
+      const o = ctx.createOscillator();
+      o.type = type; o.frequency.value = f; o.detune.value = decalage;
+      const g = ctx.createGain(); g.gain.value = type === 'sine' ? 0.5 : 0.18;
+      o.connect(g).connect(nappe);
+      o.start(t0);
+      return o;
+    });
+    return oscs;
+  });
+  let i = 0;
+  const changerAccord = () => {
+    i = (i + 1) % ACCORDS.length;
+    const t = ctx.currentTime;
+    voix.forEach((oscs, v) => oscs.forEach((o) => o.frequency.setTargetAtTime(ACCORDS[i][v], t, 1.2)));
+  };
+  const cloche = () => {
+    const t = ctx.currentTime;
+    const f = CLOCHES[Math.floor(Math.random() * CLOCHES.length)];
+    [[f, 0.05], [f * 2.01, 0.015]].forEach(([fr, crete]) => {
+      const o = ctx.createOscillator(); o.frequency.value = fr;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(crete, t + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 3.5);
+      o.connect(g).connect(busMusique);
+      o.start(t); o.stop(t + 3.6);
+    });
+  };
+  musique = {
+    nappe, voix,
+    accords: setInterval(changerAccord, 9000),
+    cloches: setInterval(() => { if (Math.random() < 0.6) cloche(); }, 4500),
+  };
+}
+
+export function arreterMusique() {
+  if (!musique) return;
+  const { nappe, voix, accords, cloches } = musique;
+  musique = null;
+  clearInterval(accords); clearInterval(cloches);
+  const t = ctx.currentTime;
+  nappe.gain.cancelScheduledValues(t);
+  nappe.gain.setTargetAtTime(0.0001, t, 0.6);
+  voix.flat().forEach((o) => o.stop(t + 3));
+}
+
+// Lance la musique au premier geste du joueur sur la page (clic, touche)
+export function musiqueAuPremierGeste() {
+  const lancer = () => { demarrerMusique(); removeEventListener('pointerdown', lancer); removeEventListener('keydown', lancer); };
+  addEventListener('pointerdown', lancer);
+  addEventListener('keydown', lancer);
 }

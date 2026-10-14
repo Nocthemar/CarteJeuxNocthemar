@@ -13,8 +13,9 @@
 import { particules, onde, flash, voile, secousseEcran, projectile, griffes, rayon, symbole, pointes } from './jeu-cartes-effets.js';
 import { jouerSon } from './jeu-cartes-son.js';
 import { VEINES } from './cartes.js';
+import { animationsReduites } from './preferences.js';
 
-const reduit = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const reduit = animationsReduites();
 const pause = (ms) => new Promise((r) => setTimeout(r, reduit || document.hidden ? 0 : ms));
 
 // L'attaquant s'élance vers sa cible (corps à corps) ; renvoie la fonction qui le ramène

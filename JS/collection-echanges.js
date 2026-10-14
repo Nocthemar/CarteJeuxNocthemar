@@ -6,19 +6,18 @@
 //    on ajoute de l'or et des objets / cosmétiques de chaque côté. « Rédiger et apposer mon sceau ».
 //  - Contrats : les contrats ouverts, sur parchemin. Chacun appose son sceau de cire ; le second
 //    sceau ratifie le contrat. Le modifier brise les sceaux (il faut revalider), le rompre l'annule.
-//  - Tableau de guilde : annonces publiques de vente et de recherche, conclues d'un clic.
 //  - Souhaits : les cartes qu'on recherche (vues par les autres joueurs).
-//  - Registre : contrats ratifiés ou rompus, annonces conclues.
+//  - Registre : contrats ratifiés ou rompus, ventes du Marché (marche.html) conclues.
 //  Les favorites (dernier exemplaire d'une carte du deck du profil) sont protégées.
 //  Tout est vérifié par le serveur ; un contrat ratifié met le grimoire à jour (surEchange).
 // =====================================================================
 import { supabase } from './supabase.js';
 import { $, esc, notifier } from './commun.js';
-import { htmlCarte, ouvrirApercu, RARETES } from './cartes.js';
+import { htmlCarte, ouvrirApercu } from './cartes.js';
+import { jouerSon } from './jeu-cartes-son.js';
 
 const MAX_CARTES = 6;
 const MAX_OBJETS = 4;
-const JOURS_ANNONCE = 14;
 const STATUTS = { ratifie: 'Ratifié', rompu: 'Rompu', impossible: 'Impossible' };
 // Valeur indicative d'une carte selon sa rareté (pour estimer l'équilibre d'un contrat)
 const VALEUR = { commune: 50, eveillee: 100, mythique: 250, legendaire: 600, transcendante: 1500 };
@@ -46,7 +45,6 @@ const etat = {
   joueurs: new Map(),
   souhaits: new Set(),     // mes souhaits (ids de cartes)
   catalogue: null,
-  annonces: [],
   contratsVus: new Map(),  // id -> statut (pour signaler une ratification faite par l'autre)
 };
 const moi = () => etat.moi.discord_id;
@@ -84,7 +82,6 @@ export async function initEchanges({ moi: joueur, mesCartes, protegee, surDonnee
   $('recherche-ami').addEventListener('input', saisieAmi);
   $('btn-proposer').addEventListener('click', proposer);
   $('btn-annuler-edition').addEventListener('click', () => { quitterEdition(); afficherTable(); });
-  $('form-annonce').addEventListener('submit', publierAnnonce);
   // Les contrats se mettent à jour pendant que le marché est ouvert (le sceau de l'autre, une ratification)
   setInterval(() => { if (etat.ouvert && !document.hidden) afficherContrats(); }, 15000);
   await Promise.all([chargerBourse(), chargerSouhaits()]);
@@ -116,7 +113,6 @@ function fermerMarche() {
 function choisirOnglet(nom) {
   document.querySelectorAll('.marche__onglet').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.onglet === nom)));
   document.querySelectorAll('.marche__panneau').forEach((p) => { p.hidden = p.dataset.panneau !== nom; });
-  if (nom === 'guilde') chargerGuilde();
   if (nom === 'souhaits') afficherSouhaits();
   if (nom === 'courrier' || nom === 'registre') afficherContrats();
   etat.surDonnees();
@@ -220,7 +216,7 @@ async function afficherContrats() {
   }
   $('compte-recus').textContent = aSigner.length ? `(${aSigner.length})` : '';
   $('contrats').innerHTML = ouverts.length ? ouverts.map((c) => htmlContrat(c)).join('')
-    : '<p class="echanges__vide">Aucun contrat ouvert. Rédige-en un, ou réponds à une annonce du tableau de guilde.</p>';
+    : '<p class="echanges__vide">Aucun contrat ouvert. Rédige-en un avec un joueur.</p>';
 
   const clos = liste.filter((c) => c.statut !== 'ouvert').slice(0, 15);
   const registre = [
@@ -285,7 +281,7 @@ function htmlAnnonceConclue(a) {
   return `
     <article class="contrat contrat--clos contrat--ratifie contrat--annonce">
       <header class="contrat__tete">
-        <h3 class="contrat__titre">Tableau de guilde</h3>
+        <h3 class="contrat__titre">Marché</h3>
         <p class="contrat__parties"><b>${esc(nomDe(vendeur))}</b> a vendu « ${esc(c?.name ?? 'une carte')} » à <b>${esc(nomDe(acheteur))}</b> pour ${nombre(a.prix)} or</p>
         <time datetime="${esc(a.conclu_le)}">${new Date(a.conclu_le).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}</time>
       </header>
@@ -328,10 +324,9 @@ async function clicMarche(e) {
   const coeur = e.target.closest('[data-souhait]');
   if (coeur) { await basculerSouhait(Number(coeur.dataset.souhait)); return; }
 
-  const bouton = e.target.closest('[data-sceau], [data-modifier], [data-rompre], [data-conclure], [data-retirer], [data-contrat-avec]');
+  const bouton = e.target.closest('[data-sceau], [data-modifier], [data-rompre]');
   if (!bouton || bouton.disabled) return;
   if (bouton.dataset.modifier) { await chargerEdition(Number(bouton.dataset.modifier)); return; }
-  if (bouton.dataset.contratAvec) { await ouvrirMarche(bouton.dataset.contratAvec, 'proposer'); return; }
   bouton.disabled = true;
   if (bouton.dataset.sceau) await apposerSceau(Number(bouton.dataset.sceau), Number(bouton.dataset.version));
   else if (bouton.dataset.rompre) {
@@ -340,11 +335,6 @@ async function clicMarche(e) {
     notifier(error ? error.message : 'Contrat rompu.', error ? 'erreur' : 'ok');
     if (etat.edition?.id === Number(bouton.dataset.rompre)) quitterEdition();
     await afficherContrats();
-  } else if (bouton.dataset.conclure) await conclureAnnonce(Number(bouton.dataset.conclure));
-  else if (bouton.dataset.retirer) {
-    const { error } = await supabase.rpc('retirer_annonce', { p_id: Number(bouton.dataset.retirer) });
-    notifier(error ? error.message : 'Annonce décrochée du tableau.', error ? 'erreur' : 'ok');
-    await chargerGuilde();
   }
   bouton.disabled = false;
 }
@@ -357,13 +347,12 @@ function basculer(ensemble, cle, max, message) {
 
 function saisieMarche(e) {
   if (e.target.matches('#or-donne, #or-demande')) afficherTable(false);
-  else if (e.target.matches('#filtre-type, #filtre-rarete, #filtre-nom')) afficherGuilde();
-  else if (e.target.matches('#annonce-type')) remplirChoixAnnonce();
   else if (e.target.matches('#souhait-recherche')) afficherSouhaits();
 }
 
 async function apposerSceau(id, version) {
   const { data, error } = await supabase.rpc('apposer_sceau', { p_id: id, p_version: version });
+  if (!error) jouerSon('cire');   // le sceau de cire se pose
   if (error) notifier(error.message || 'Impossible d’apposer ton sceau.', 'erreur');
   else if (data?.ratifie) {
     notifier('Les deux sceaux sont apposés : le contrat est ratifié ! Ton grimoire est à jour.');
@@ -565,6 +554,7 @@ async function proposer() {
   }
   // Le rédacteur appose aussitôt son sceau
   const { error: errSceau } = await supabase.rpc('apposer_sceau', { p_id: id, p_version: version });
+  if (!errSceau) jouerSon('cire');
   notifier(errSceau
     ? `Contrat enregistré, mais ton sceau n'a pas pu être apposé : ${errSceau.message}`
     : `Contrat ${enEdition ? 'modifié' : 'rédigé'} et scellé de ton côté. ${etat.ami.username ?? 'L’autre joueur'} doit maintenant apposer le sien.`, errSceau ? 'erreur' : 'ok');
@@ -617,118 +607,5 @@ async function basculerSouhait(id) {
   if (data) etat.souhaits.add(id); else etat.souhaits.delete(id);
   notifier(data ? 'Ajoutée à ta liste de souhaits.' : 'Retirée de ta liste de souhaits.');
   if (!document.querySelector('[data-panneau="souhaits"]').hidden) await afficherSouhaits();
-  if (!document.querySelector('[data-panneau="guilde"]').hidden) afficherGuilde();
   if (etat.ami) afficherSesCartes();
-}
-
-
-// ---------------------------------------------------------------------
-//  Le tableau de guilde
-// ---------------------------------------------------------------------
-async function chargerGuilde() {
-  const depuis = new Date(Date.now() - JOURS_ANNONCE * 864e5).toISOString();
-  const { data, error } = await supabase.from('annonces').select('*').eq('statut', 'ouverte').gte('cree_le', depuis)
-    .order('cree_le', { ascending: false }).limit(150);
-  if (error) {
-    $('tableau-guilde').innerHTML = `<p class="echanges__vide">${absent(error) ? 'Le tableau de guilde n’est pas encore installé (SQL/commerce.sql).' : 'Impossible de charger le tableau.'}</p>`;
-    return;
-  }
-  etat.annonces = data ?? [];
-  await precharger({ cartes: etat.annonces.map((a) => a.card_id), joueurs: etat.annonces.map((a) => a.auteur) });
-  await chargerCatalogue();
-  remplirChoixAnnonce();
-  afficherGuilde();
-}
-
-function remplirChoixAnnonce() {
-  const vente = $('annonce-type').value === 'vente';
-  const liste = vente ? etat.mesCartes() : (etat.catalogue ?? []);
-  const avant = $('annonce-carte').value;
-  $('annonce-carte').innerHTML = liste.length
-    ? [...liste].sort((x, y) => x.name.localeCompare(y.name, 'fr')).map((c) =>
-      `<option value="${c.id}">${esc(c.name)} · ${esc(RARETES[c.rarity] ?? c.rarity ?? '')}${vente && etat.protegee(c.id) ? ' (favorite)' : ''}</option>`).join('')
-    : `<option value="">${vente ? 'Ton grimoire est vide' : 'Aucune carte'}</option>`;
-  if ([...$('annonce-carte').options].some((o) => o.value === avant)) $('annonce-carte').value = avant;
-}
-
-function afficherGuilde() {
-  const type = $('filtre-type').value;
-  const rarete = $('filtre-rarete').value;
-  const texte = $('filtre-nom').value.trim().toLowerCase();
-  const liste = etat.annonces.filter((a) => {
-    const c = etat.cartes.get(a.card_id);
-    if (!c) return false;
-    if (type === 'vente' || type === 'recherche') { if (a.type !== type) return false; }
-    if (type === 'souhaits' && !(a.type === 'vente' && etat.souhaits.has(a.card_id))) return false;
-    if (type === 'miennes' && a.auteur !== moi()) return false;
-    if (rarete && c.rarity !== rarete) return false;
-    if (texte && !c.name.toLowerCase().includes(texte)) return false;
-    return true;
-  });
-  $('tableau-guilde').innerHTML = liste.length ? liste.map(htmlAnnonce).join('')
-    : '<p class="echanges__vide">Aucune annonce ne correspond. Cloue la tienne !</p>';
-}
-
-// Une annonce : une affiche clouée sur le panneau, avec le sceau de son auteur
-function htmlAnnonce(a) {
-  const c = etat.cartes.get(a.card_id);
-  const mienne = a.auteur === moi();
-  const souhait = a.type === 'vente' && etat.souhaits.has(a.card_id);
-  const jeLAi = etat.mesCartes().some((x) => x.id === a.card_id);
-  let actions;
-  if (mienne) actions = `<button type="button" class="btn-petit btn-petit--retirer" data-retirer="${a.id}">Décrocher</button>`;
-  else if (a.type === 'vente') actions = `<button type="button" class="btn-dc-or" data-conclure="${a.id}">Acheter · ${nombre(a.prix)} or</button>`;
-  else actions = `<button type="button" class="btn-dc-or" data-conclure="${a.id}" ${jeLAi ? '' : 'disabled title="Tu n’as pas cette carte"'}>Vendre la mienne · ${nombre(a.prix)} or</button>`;
-  if (!mienne) actions += `<button type="button" class="btn-petit" data-contrat-avec="${esc(a.auteur)}">Proposer un contrat</button>`;
-  return `
-    <article class="affiche affiche--${a.type} rar-${esc(c.rarity ?? 'commune')}${souhait ? ' est-souhaitee' : ''}${mienne ? ' est-mienne' : ''}">
-      <span class="affiche__clou" aria-hidden="true"></span>
-      <p class="affiche__type">${a.type === 'vente' ? 'À vendre' : 'Recherché'}</p>
-      <div class="affiche__carte">${htmlCarte(c)}${loupe(c.id)}</div>
-      <h4 class="affiche__nom">${esc(c.name)}</h4>
-      <p class="affiche__prix">${nombre(a.prix)} or</p>
-      ${a.message ? `<p class="affiche__mot">« ${esc(a.message)} »</p>` : ''}
-      ${souhait ? '<p class="affiche__souhait">♥ Sur ta liste de souhaits</p>' : ''}
-      <footer class="affiche__pied">
-        ${sceau(a.auteur, true)}
-        <span class="affiche__date">${new Date(a.cree_le).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</span>
-      </footer>
-      <div class="affiche__actions">${actions}</div>
-    </article>`;
-}
-
-async function publierAnnonce(e) {
-  e.preventDefault();
-  const carte = Number($('annonce-carte').value);
-  if (!carte) return;
-  const type = $('annonce-type').value;
-  if (type === 'vente' && etat.protegee(carte)) { notifier('C’est une de tes favorites (dernier exemplaire) : retire-la d’abord des favorites.', 'erreur'); return; }
-  const bouton = e.submitter ?? $('form-annonce').querySelector('[type="submit"]');
-  bouton.disabled = true;
-  const { error } = await supabase.rpc('publier_annonce', {
-    p_type: type, p_card_id: carte, p_prix: Math.floor(Number($('annonce-prix').value) || 0), p_message: $('annonce-message').value.trim() || null,
-  });
-  bouton.disabled = false;
-  if (error) { notifier(error.message || 'Annonce impossible.', 'erreur'); return; }
-  notifier('Ton annonce est clouée sur le tableau de guilde.');
-  $('annonce-message').value = '';
-  await chargerGuilde();
-}
-
-async function conclureAnnonce(id) {
-  const a = etat.annonces.find((x) => x.id === id);
-  const c = a && etat.cartes.get(a.card_id);
-  if (!a || !c) return;
-  const question = a.type === 'vente'
-    ? `Acheter « ${c.name} » à ${nomDe(a.auteur)} pour ${nombre(a.prix)} or ?`
-    : `Vendre ton exemplaire de « ${c.name} » à ${nomDe(a.auteur)} pour ${nombre(a.prix)} or ?`;
-  if (!confirm(question)) return;
-  const { data, error } = await supabase.rpc('conclure_annonce', { p_id: id });
-  if (error) notifier(error.message || 'Impossible de conclure.', 'erreur');
-  else if (!data?.ok) notifier(`Impossible de conclure : ${data?.raison ?? ''}`, 'erreur');
-  else {
-    notifier(a.type === 'vente' ? `« ${data.carte} » rejoint ton grimoire !` : `Vendue ! +${nombre(data.prix)} or dans ta bourse.`);
-    await Promise.all([etat.surEchange(), chargerBourse()]);
-  }
-  await chargerGuilde();
 }

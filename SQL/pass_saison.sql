@@ -283,6 +283,8 @@ declare
   v_moi     text := my_discord_id();
   v_partie  pass_parties%rowtype;
   v_adverse pass_parties%rowtype;
+  v_vict_salon int;
+  v_joueurs_salon int;
   v_saison  saisons%rowtype;
   v_prog    pass_progression%rowtype;
   v_jour    date := (now() at time zone 'Europe/Paris')::date;
@@ -327,8 +329,16 @@ begin
       update pass_parties set termine_le = now(), victoire = v_vict where id = p_ticket;
       return json_build_object('xp', 0, 'raison', 'adversaire');
     end if;
-    -- Une seule victoire par partie : si l'adversaire l'a déjà déclarée, c'est une défaite
-    if v_vict and v_adverse.victoire is true then v_vict := false; end if;
+    -- Autant de victoires que de joueurs dans l'équipe gagnante (la moitié du salon : 1 en 1v1, 2 en 2v2) :
+    -- si elles sont déjà toutes déclarées, c'est une défaite
+    if v_vict then
+      select count(*) filter (where victoire is true and id <> p_ticket), count(*)
+      into v_vict_salon, v_joueurs_salon
+      from pass_parties
+      where salon = v_partie.salon and mode = 'ami'
+        and abs(extract(epoch from (commence_le - v_partie.commence_le))) < 600;
+      if v_vict_salon >= greatest(1, v_joueurs_salon / 2) then v_vict := false; end if;
+    end if;
     v_xp := case when v_vict then 150 else 50 end;
     v_plafond := 1500;
   else

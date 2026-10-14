@@ -330,6 +330,12 @@ body.glisser-actif, body.glisser-actif * { cursor: grabbing !important; }
   pointer-events: none;
   transform-origin: 50% 120%;
   transition: transform .45s cubic-bezier(.25,.8,.3,1);
+  /* pas de fond noir ni de bordure derrière la carte (son image a déjà son cadre, coins transparents) :
+     l'ombre suit la forme de la carte */
+  background-color: transparent;
+  border: 0;
+  box-shadow: none;
+  filter: drop-shadow(0 8px 12px rgba(0,0,0,.45));
 }
 .duel__eventail .carte-jeu:nth-child(1) { transform: rotate(-14deg) translateX(-18px); }
 .duel__eventail .carte-jeu:nth-child(2) { transform: translateY(-10px); z-index: 1; }

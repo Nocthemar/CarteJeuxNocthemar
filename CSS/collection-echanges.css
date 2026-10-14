@@ -630,7 +630,7 @@
   background: radial-gradient(circle at 35% 30%, #d24b53, var(--cire) 55%, #4f0d10);
   box-shadow: 0 4px 8px rgba(0,0,0,.45), inset 0 0 0 5px rgba(0,0,0,.14), inset 0 0 0 7px rgba(255,190,170,.12);
   rotate: -10deg;
-  animation: sceau-appose .45s cubic-bezier(.2,1.6,.4,1) both;
+  animation: sceau-appose .3s cubic-bezier(.2,1.5,.4,1) both;
 }
 /* coulures de cire */
 .sceau__cire::before, .sceau__cire::after {

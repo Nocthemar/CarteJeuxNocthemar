@@ -1,0 +1,85 @@
+/* =====================================================================
+   Paramètres (parametres.html, JS/parametres.js) : des blocs sobres par catégorie
+   Utilise les variables de CSS/compte.css (à charger APRÈS compte.css).
+   ===================================================================== */
+.page-parametres .reglages { max-width: 760px; }
+.reglages-entete { text-align: center; margin: 10px 0 22px; }
+.reglages-entete h1 {
+  margin: 0 0 6px;
+  font-family: "Cinzel Decorative","Cinzel Decorative Repli", serif;
+  font-size: clamp(1.6rem, 3.4vw, 2.3rem);
+  color: var(--texte);
+}
+.reglages-entete p { margin: 0 auto; color: var(--texte-doux); font-style: italic; }
+
+.reglages-bloc {
+  margin: 0 0 18px; padding: 16px 20px 6px;
+  border: 1px solid rgba(240,236,227,.1); border-radius: 8px;
+  background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(0,0,0,.18));
+}
+.reglages-bloc h2 {
+  margin: 0 0 8px;
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: .82rem; letter-spacing: .16em; text-transform: uppercase;
+  color: #e7c46a;
+}
+.reglage {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px;
+  padding: 12px 0;
+  border-top: 1px solid rgba(240,236,227,.07);
+  color: var(--texte);
+}
+.reglages-bloc h2 + .reglage, .reglages-bloc h2 + div > .reglage:first-child { border-top: 0; }
+.reglage small { display: block; margin-top: 2px; font-size: .82rem; font-style: italic; color: var(--texte-doux); }
+.reglage label small { display: inline; margin-left: 6px; }
+
+/* curseurs */
+.reglage--curseur { display: grid; grid-template-columns: minmax(150px, 1fr) minmax(140px, 2fr) 52px; }
+.reglage--curseur output { text-align: right; font-variant-numeric: tabular-nums; color: var(--texte-doux); }
+.reglage input[type="range"] {
+  -webkit-appearance: none; appearance: none;
+  width: 100%; height: 6px; border-radius: 3px;
+  background: linear-gradient(90deg, #d9a441 var(--pct, 50%), rgba(240,236,227,.15) var(--pct, 50%));
+}
+.reglage input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: #f3cf7c; box-shadow: 0 0 0 3px rgba(0,0,0,.4); cursor: pointer; }
+.reglage input[type="range"]::-moz-range-thumb { width: 16px; height: 16px; border: 0; border-radius: 50%; background: #f3cf7c; cursor: pointer; }
+
+/* cases à cocher */
+.reglage--case { justify-content: flex-start; flex-wrap: nowrap; align-items: flex-start; cursor: pointer; }
+.reglage--case input, .reglage__case input { width: 18px; height: 18px; margin: 2px 0 0; accent-color: #d9a441; flex: none; }
+.reglage__case { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
+.reglage__boutons { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* compte */
+.reglage__compte { display: inline-flex; align-items: center; gap: 10px; }
+.reglage__compte img { width: 34px; height: 34px; border-radius: 50%; }
+.reglage--danger b { color: #f0959b; }
+
+/* boutons */
+.btn-or, .btn-sobre, .btn-danger {
+  padding: 8px 16px; border-radius: 3px;
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+  cursor: pointer;
+}
+.btn-or { border: 0; background: linear-gradient(180deg, #f3cf7c, #d9a441 60%, #b07a26); color: #1b1408; }
+.btn-sobre { border: 1px solid rgba(240,236,227,.25); background: transparent; color: var(--texte-doux); }
+.btn-sobre:hover { color: var(--texte); border-color: rgba(240,236,227,.45); }
+.btn-danger { border: 1px solid #b7444b; background: rgba(183,68,75,.15); color: #f6b4b8; }
+.btn-danger:hover:not(:disabled) { background: #b7444b; color: #fff; }
+.btn-danger:disabled { opacity: .4; cursor: not-allowed; }
+
+/* confirmation */
+.reglages-dialogue {
+  max-width: 460px; padding: 22px 24px;
+  border: 1px solid #b7444b; border-radius: 8px;
+  background: #15121a; color: var(--texte);
+}
+.reglages-dialogue::backdrop { background: rgba(0,0,0,.7); }
+.reglages-dialogue h2 { margin: 0 0 10px; font-family: "Cinzel","Cinzel Repli", serif; font-size: 1.1rem; color: #f0959b; }
+.reglages-dialogue p { margin: 0 0 14px; line-height: 1.5; }
+.reglages-dialogue input { display: block; width: 100%; margin: 6px 0 16px; padding: 8px 10px; border: 1px solid rgba(240,236,227,.25); border-radius: 4px; background: rgba(0,0,0,.4); color: var(--texte); font: inherit; letter-spacing: .1em; }
+.reglages-dialogue__boutons { display: flex; justify-content: flex-end; gap: 10px; }
+@media (max-width: 560px) {
+  .reglage--curseur { grid-template-columns: 1fr 46px; }
+  .reglage--curseur label { grid-column: 1 / -1; }
+}
+.reglage--curseur label small { display: block; margin-left: 0; }

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Marché — Nocthémar</title>
+  <link rel="icon" type="image/png" href="img/Logo/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800&family=Cinzel+Decorative:wght@700;900&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="CSS/polices.css">
+  <link rel="stylesheet" href="CSS/index.css">
+  <link rel="stylesheet" href="CSS/compte.css">
+  <link rel="stylesheet" href="CSS/cartes-jeu.css">
+  <link rel="stylesheet" href="CSS/carte-infos.css">
+  <link rel="stylesheet" href="CSS/marche.css">
+<!-- Thème clair / sombre (bouton dans la barre latérale) : appliqué avant l'affichage -->
+<script>try{if(localStorage.getItem('nocthemar-theme')==='jour')document.documentElement.dataset.theme='jour'}catch(e){}</script>
+<link rel="stylesheet" href="CSS/theme-jour.css">
+</head>
+<body class="page-profil page-marche">
+
+  <header class="topbar">
+    <a class="brand" href="index.html">Nocthémar</a>
+    <span class="brand-sub">Duel des Couronnes</span>
+    <nav class="nav-links">
+      <a href="index.html">Accueil</a>
+      <a href="index.html#categories">Le Codex</a>
+    </nav>
+    <a href="boutique.html" class="nav-boutique">Boutique</a>
+    <div id="discord-auth"></div>
+  </header>
+
+  <!-- Le marché des cartes : des cartes mises en vente par les joueurs, un prix, un bouton Acheter
+       (JS/marche.js, SQL/commerce.sql). Les échanges à sceaux restent dans la Collection. -->
+  <main class="profil-wrap marche-page">
+    <header class="marche-entete">
+      <h1>Le Marché</h1>
+      <p>Des cartes mises en vente par les joueurs. Achète d’un clic, ou vends les tiennes.</p>
+      <p class="marche-entete__bourse" id="bourse" hidden>Ta bourse : <b id="solde">0</b> or</p>
+    </header>
+
+    <p class="marche-connexion" id="marche-connexion" hidden>Connecte-toi avec Discord pour acheter et vendre des cartes.</p>
+
+    <!-- Vendre une carte -->
+    <details class="marche-vendre" id="marche-vendre" hidden>
+      <summary>Mettre une carte en vente</summary>
+      <form class="marche-vendre__form" id="form-vente">
+        <label>Carte
+          <select id="vente-carte" required></select>
+        </label>
+        <label>Prix
+          <span class="marche-vendre__prix"><input type="number" id="vente-prix" min="1" max="1000000" value="100" required inputmode="numeric"> or</span>
+        </label>
+        <p class="marche-vendre__aide" id="vente-aide"></p>
+        <button type="submit" class="btn-or">Mettre en vente</button>
+      </form>
+    </details>
+
+    <!-- Filtres -->
+    <div class="marche-filtres">
+      <input type="search" id="filtre-nom" placeholder="Chercher une carte…" aria-label="Chercher une carte">
+      <select id="filtre-rarete" aria-label="Rareté">
+        <option value="">Toutes les raretés</option>
+        <option value="commune">Commune</option>
+        <option value="eveillee">Éveillée</option>
+        <option value="mythique">Mythique</option>
+        <option value="legendaire">Légendaire</option>
+        <option value="transcendante">Transcendante</option>
+      </select>
+      <select id="filtre-veine" aria-label="Type (Veine)"></select>
+      <select id="filtre-tri" aria-label="Trier">
+        <option value="recent">Les plus récentes</option>
+        <option value="prix">Prix croissant</option>
+        <option value="prix-desc">Prix décroissant</option>
+      </select>
+      <label class="marche-filtres__miennes"><input type="checkbox" id="filtre-miennes"> Mes ventes</label>
+    </div>
+
+    <div class="marche-liste" id="marche-liste"><p class="marche-vide">Chargement…</p></div>
+  </main>
+
+  <div id="notif" class="notif" role="status" aria-live="polite"></div>
+
+  <script src="JS/lien-site.js"></script>
+  <script src="JS/barre-laterale.js"></script>
+  <script type="module" src="JS/auth.js"></script>
+  <script type="module" src="JS/marche.js"></script>
+</body>
+</html>

@@ -4,7 +4,10 @@
 //  Tout est créé à la volée dans une couche au-dessus de la page, puis retiré.
 //  Rien ne s'affiche si l'utilisateur réduit les animations ou si l'onglet est caché.
 // =====================================================================
-const reduit = matchMedia('(prefers-reduced-motion: reduce)').matches;
+import { animationsReduites, effetsLegers } from './preferences.js';
+
+const reduit = animationsReduites();
+const legers = effetsLegers();   // Paramètres > « effets légers » : deux fois moins de particules
 const actif = () => !reduit && !document.hidden;
 
 let couche = null;
@@ -38,6 +41,7 @@ export function particules(el, {
   duree = 700, rond = false, monte = 0, depuis = 'centre',
 } = {}) {
   if (!el || !actif()) return;
+  if (legers) n = Math.ceil(n / 2);
   const { x, y, r } = centre(el);
   for (let i = 0; i < n; i++) {
     const p = document.createElement('span');

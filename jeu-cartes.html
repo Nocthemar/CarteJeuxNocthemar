@@ -63,8 +63,8 @@
             <button type="button" class="mode" role="tab" aria-selected="false" data-mode="ligne">
               <span class="mode__ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 17.5L3 6V3h3l11.5 11.5"/><path d="M13 19l6-6"/><path d="M16 16l4 4"/><path d="M19 21l2-2"/><path d="M9.5 17.5L21 6V3h-3L6.5 14.5"/><path d="M11 19l-6-6"/><path d="M8 16l-4 4"/><path d="M5 21l-2-2"/></svg></span>
               <span class="mode__corps">
-                <span class="mode__titre">Contre un ami</span>
-                <span class="mode__texte">En ligne, avec ton grimoire</span>
+                <span class="mode__titre">En ligne</span>
+                <span class="mode__texte">Classé 1v1 ou 2v2, ou partie privée entre amis</span>
               </span>
               <span class="mode__fleche" aria-hidden="true">›</span>
             </button>
@@ -93,7 +93,7 @@
           <!-- Duel en ligne : connexion, création / entrée dans un salon, salle d'attente -->
           <section class="ligne" id="panneau-ligne" hidden>
             <div class="ligne__bloc ligne__bloc--centre" id="ligne-connexion" hidden>
-              <p>Le duel en ligne se joue avec les cartes de ton grimoire : connecte-toi avec Discord pour défier un ami.</p>
+              <p>Le duel en ligne se joue avec les cartes de ton grimoire : connecte-toi avec Discord pour jouer en classé ou défier un ami.</p>
               <button id="btn-connexion" type="button" class="btn-discord">
                 <span class="btn-discord__logo" aria-hidden="true"></span>
                 Connecter Discord
@@ -101,20 +101,36 @@
             </div>
 
             <div class="ligne__accueil" id="ligne-accueil" hidden>
-              <div class="ligne__bloc">
-                <h3>Ouvrir un salon</h3>
-                <p>Crée un salon, puis envoie le lien à ton ami (sur Discord, par exemple).</p>
-                <button type="button" class="btn-dc btn-dc--ambre" id="btn-creer">Créer un salon</button>
-              </div>
-              <form class="ligne__bloc" id="form-rejoindre">
-                <h3>Rejoindre un salon</h3>
-                <p>Ton ami t'a donné un code de cinq lettres ?</p>
-                <div class="ligne__rejoindre">
-                  <input type="text" id="code-salon" maxlength="5" autocomplete="off" spellcheck="false"
-                    placeholder="CODE" aria-label="Code du salon" required>
-                  <button type="submit" class="btn-dc">Rejoindre</button>
+              <h3 class="ligne__sous-titre">Partie privée</h3>
+              <!-- Partie privée : créer un salon, ou ouvrir le champ du code pour en rejoindre un -->
+              <div class="ligne__bloc prive">
+                <h3>Jouer avec un ami</h3>
+                <p>Crée un salon (1 contre 1, ou 2 contre 2 à quatre) et envoie le lien à tes amis, ou rejoins le leur avec son code.</p>
+                <div class="prive__boutons">
+                  <button type="button" class="btn-dc btn-dc--ambre" id="btn-creer">Créer un salon</button>
+                  <button type="button" class="btn-dc btn-dc--ambre" id="btn-ouvrir-code" aria-expanded="false" aria-controls="form-rejoindre">Rejoindre un salon</button>
                 </div>
-              </form>
+                <form class="prive__code" id="form-rejoindre" hidden>
+                  <label for="code-salon">Code du salon (cinq lettres)</label>
+                  <div class="ligne__rejoindre">
+                    <input type="text" id="code-salon" maxlength="5" autocomplete="off" spellcheck="false"
+                      placeholder="CODE" required>
+                    <button type="submit" class="btn-dc">Rejoindre</button>
+                  </div>
+                </form>
+              </div>
+              <h3 class="ligne__sous-titre">Partie classée</h3>
+              <!-- Classé : choisir son mode, lancer la recherche (JS/jeu-cartes.js, SQL/classe.sql) -->
+              <div class="ligne__bloc classe" id="bloc-classe">
+                <h3>Affronter un joueur de ton niveau</h3>
+                <p class="classe__rang" id="classe-rang">Ton rang…</p>
+                <div class="classe__modes" role="radiogroup" aria-label="Mode classé">
+                  <button type="button" class="classe__mode" role="radio" aria-checked="true" data-classe-mode="1v1">1v1 classé</button>
+                  <button type="button" class="classe__mode" role="radio" aria-checked="false" data-classe-mode="2v2" title="Deux équipes de deux : un héros et une rangée partagés par équipe">2v2 classé</button>
+                </div>
+                <button type="button" class="btn-dc btn-dc--ambre classe__chercher" id="btn-chercher">Rechercher une partie</button>
+                <p class="classe__etat" id="classe-etat" aria-live="polite"></p>
+              </div>
             </div>
 
             <div class="salon" id="ligne-salon" hidden>
@@ -128,7 +144,13 @@
                   <button type="button" class="btn-dc" id="btn-quitter">Quitter</button>
                 </div>
               </div>
+              <!-- Format du salon : choisi par l'hôte (JS/jeu-cartes.js, majFormatSalon) -->
+              <div class="salon__format" id="salon-format" role="radiogroup" aria-label="Format du duel">
+                <button type="button" class="salon__format-btn" role="radio" aria-checked="true" data-format="1v1">1 contre 1</button>
+                <button type="button" class="salon__format-btn" role="radio" aria-checked="false" data-format="2v2">2 contre 2 <small>camp partagé</small></button>
+              </div>
               <div class="salon__joueurs" id="salon-joueurs"></div>
+              <button type="button" class="btn-dc salon__equipe-btn" id="btn-equipe" hidden>Changer d’équipe</button>
               <p class="salon__etat" id="salon-etat" aria-live="polite"></p>
               <button type="button" class="btn-dc btn-dc--ambre salon__pret-btn" id="btn-pret">Je suis prêt</button>
             </div>
@@ -171,6 +193,8 @@
           <div class="tg-heros" id="heros-adverse"></div>
           <div class="tg-infos tg-infos--adverse">
             <span class="tg-infos__contenu" id="infos-adverse"></span>
+            <!-- 2 contre 2 : les deux joueurs adverses (celui qui joue est éclairé) -->
+            <span class="equipe-duel equipe-duel--adverse" id="equipe-adverse" hidden></span>
           </div>
         </div>
 
@@ -231,6 +255,8 @@
             <div class="actions" id="actions" aria-label="Actions du tour"></div>
           </div>
           <div class="tg-heros" id="heros-joueur"></div>
+          <!-- 2 contre 2 : ton allié (il partage ton héros et ta rangée), au-dessus de ta plaque -->
+          <div class="equipe-duel equipe-duel--allie" id="equipe-allie" hidden></div>
           <div class="tg-pile">
 
           </div>
@@ -246,6 +272,7 @@
         <ol class="historique__liste" id="historique"></ol>
         <div class="historique__outils">
           <button type="button" class="btn-outil" data-ouvrir-regles title="Règles du duel" aria-label="Règles du duel">?</button>
+          <button type="button" class="btn-outil" id="btn-conseils" aria-pressed="false" title="Afficher les conseils (que faire maintenant ?)" aria-label="Conseils">💡</button>
           <button type="button" class="btn-outil" id="btn-son" aria-label="Couper le son" aria-pressed="false">
             <svg class="ico-son" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z"/><path class="ico-son__ondes" d="M16 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11"/><path class="ico-son__barre" d="M16 9l6 6M22 9l-6 6"/></svg>
           </button>
@@ -325,6 +352,7 @@
       <li><strong>Jet du Destin</strong> : pour 2 énergie (sans action), une fois par tour, un second d20 déclenche un événement, du pire (1) au meilleur (20) :
         <ul class="regles__table" id="regles-destin"></ul>
       </li>
+      <li><strong>2 contre 2</strong> (en ligne : salon à quatre ou classé) : chaque équipe partage <strong>un héros de 30 PV</strong> et <strong>une rangée de 5 places</strong> ; chaque joueur garde sa main, son Grimoire, son énergie et ses actions. Les tours alternent : un joueur de l'équipe A, un de l'équipe B, l'autre joueur de A, l'autre de B… Pendant ton tour, tu commandes toutes les unités de ton équipe.</li>
       <li><strong>Raccourcis</strong> : Espace pour finir le tour, D pour le Destin, G pour défendre, Échap pour annuler. Clic droit (ou appui long) sur une carte : tout ce qu'elle fait.</li>
     </ul>
     <button type="button" class="btn-dc btn-dc--ambre" id="regles-fermer">Compris</button>
@@ -337,6 +365,7 @@
       <h2 class="fin__titre" id="fin-titre"></h2>
       <p class="fin__texte" id="fin-texte"></p>
       <a class="fin__pass" id="fin-pass" href="pass.html" hidden></a>
+      <p class="fin__classe" id="fin-classe" hidden></p>
       <dl class="fin__stats" id="fin-stats"></dl>
       <div class="fin__actions">
         <button type="button" class="btn-dc btn-dc--ambre" id="btn-rejouer">Rejouer</button>

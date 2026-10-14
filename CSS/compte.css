@@ -703,3 +703,13 @@
   .perso__bourse { min-height: 200px; }
 }
 
+
+
+/* Paramètres (parametres.html) : animations réduites et effets légers, sur toutes les pages
+   (classes posées sur <html> par JS/barre-laterale.js et JS/preferences.js) */
+html.anim-reduites *, html.anim-reduites *::before, html.anim-reduites *::after {
+  animation-duration: .01ms !important; animation-iteration-count: 1 !important;
+  transition-duration: .01ms !important; scroll-behavior: auto !important;
+}
+html.effets-legers .fx-couche, html.effets-legers #embers { display: none !important; }
+html.effets-legers * { backdrop-filter: none !important; }

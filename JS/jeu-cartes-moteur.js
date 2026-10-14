@@ -441,6 +441,66 @@ export function renvoyerMain(p, qui, indices = []) {
   return { type: 'renvoi', qui, n: renvoyees.length, pioche };
 }
 
+// ---------------------------------------------------------------------
+//  2 contre 2 : le camp partagé (classé 2v2, salons à quatre)
+//  Chaque équipe a UN héros (PV_EQUIPE) et UNE rangée de 5 places, commune aux deux joueurs ;
+//  chaque joueur garde sa main, son Grimoire, son énergie, ses actions et ses statistiques.
+//  Ordre des tours : A1, B1, A2, B2, puis de nouveau A1…
+//  Le camp porte toujours les affaires du joueur qui a la main (camp.main, camp.energie…) : toutes
+//  les règles restent celles du 1 contre 1. Les affaires des autres attendent dans camp.membres[i]
+//  (celles du joueur actif y sont périmées : lire membreDe()). Au début du tour d'une équipe, son
+//  joueur suivant prend la main (debutTour).
+// ---------------------------------------------------------------------
+export const PV_EQUIPE = 30;
+const PERSONNEL = ['nom', 'deck', 'main', 'energie', 'energieMax', 'energieBonus', 'actions', 'actionsMax', 'destinUtilise',
+  'defausseUtilisee', 'mediterUtilise', 'meditation', 'epuisement', 'stats'];
+const extraire = (camp) => Object.fromEntries(PERSONNEL.map((k) => [k, camp[k]]));
+const charger = (camp, m) => PERSONNEL.forEach((k) => { camp[k] = m[k]; });
+
+// Les affaires du joueur i d'une équipe (à jour, qu'il ait la main ou non)
+export const membreDe = (camp, i) => (!camp.membres || i === camp.membreActif ? extraire(camp) : camp.membres[i]);
+
+// Le joueur suivant de l'équipe prend la main (ses affaires reviennent dans le camp)
+function passerLaMain(camp, i) {
+  if (!camp.membres || i === camp.membreActif) return;
+  camp.membres[camp.membreActif] = extraire(camp);
+  camp.membreActif = i;
+  charger(camp, camp.membres[i]);
+}
+
+// equipes : { joueur: [{ nom, deck }, { nom, deck }], adverse: [...] } ; premier : l'équipe qui commence
+export function creerPartieEquipes(equipes, premier, options = {}) {
+  const [a, b] = [equipes.joueur, equipes.adverse];
+  const p = creerPartie(a[0].deck, b[0].deck, a[0].nom, b[0].nom, premier, options);
+  for (const qui of ['joueur', 'adverse']) {
+    const camp = p.camps[qui];
+    camp.pv = camp.pvMax = PV_EQUIPE;
+    const second = creerCamp(equipes[qui][1].nom, melanger(equipes[qui][1].deck));
+    piocher(second, qui === premier ? MAIN_DEPART : MAIN_DEPART + 1);
+    camp.membres = [extraire(camp), extraire(second)];
+    camp.membreActif = 0;
+    camp.aJoue = false;
+    camp.nomEquipe = `${equipes[qui][0].nom} & ${equipes[qui][1].nom}`;
+  }
+  p.equipes = true;
+  p.renvoiSieges = { joueur: [false, false], adverse: [false, false] };
+  return p;
+}
+
+// Renvoi de main du joueur i d'une équipe ; le renvoi de l'équipe est fait quand ses deux joueurs ont choisi
+export function renvoyerMainMembre(p, qui, i, indices = []) {
+  const camp = p.camps[qui];
+  if (!camp.membres || !p.renvoiSieges || p.renvoiSieges[qui][i] !== false || p.fini) return null;
+  const actif = camp.membreActif;
+  passerLaMain(camp, i);
+  p.renvoi[qui] = false;
+  const ev = renvoyerMain(p, qui, indices);
+  passerLaMain(camp, actif);
+  p.renvoiSieges[qui][i] = true;
+  p.renvoi[qui] = p.renvoiSieges[qui].every(Boolean);
+  return ev && { ...ev, membre: i };
+}
+
 // Pioche n cartes sur le dessus du Grimoire.
 // - main pleine (MAIN_MAX) : la carte est brûlée et va au Tombeau
 // - Grimoire vide : épuisement, le héros perd 1 PV, puis 2, puis 3… à chaque carte manquante
@@ -478,6 +538,11 @@ export function ramenerDuTombeau(p, qui, index, vers = 'main') {
 export function debutTour(p) {
   const qui = p.actif;
   const camp = p.camps[qui];
+  // 2 contre 2 : à chaque tour de l'équipe (sauf son premier), son autre joueur prend la main
+  if (camp.membres) {
+    if (camp.aJoue) passerLaMain(camp, (camp.membreActif + 1) % camp.membres.length);
+    camp.aJoue = true;
+  }
   if (qui === 'joueur' || p.tour === 0) p.tour += 1;
   camp.energieMax = Math.min(ENERGIE_MAX, camp.energieMax + 1);
   camp.energie = Math.min(ENERGIE_MAX, camp.energieMax + (camp.energieBonus ?? 0));
