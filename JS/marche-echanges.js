@@ -1,15 +1,14 @@
 // =====================================================================
-//  Le marché du grimoire : le commerce entre joueurs (SQL/commerce.sql)
-//  Le signet « Échanges » du grimoire ouvre le marché sous le livre :
-//  - Rédiger : un CONTRAT avec un joueur. Les cartes qu'on donne se touchent DANS LES PAGES DU
-//    GRIMOIRE (JS/collection.js demande basculerDonnee), celles qu'on demande dans « Son grimoire » ;
-//    on ajoute de l'or et des objets / cosmétiques de chaque côté. « Rédiger et apposer mon sceau ».
+//  Les échanges entre joueurs : l'onglet « Échanges » du Marché (marche.html, SQL/commerce.sql)
+//  - Rédiger : un CONTRAT avec un joueur. On touche dans « Ton grimoire » les cartes qu'on donne
+//    (elles se posent sur la table), dans le sien celles qu'on demande ; on ajoute de l'or et des
+//    objets / cosmétiques de chaque côté. « Rédiger et apposer mon sceau ».
 //  - Contrats : les contrats ouverts, sur parchemin. Chacun appose son sceau de cire ; le second
 //    sceau ratifie le contrat. Le modifier brise les sceaux (il faut revalider), le rompre l'annule.
 //  - Souhaits : les cartes qu'on recherche (vues par les autres joueurs).
-//  - Registre : contrats ratifiés ou rompus, ventes du Marché (marche.html) conclues.
+//  - Registre : contrats ratifiés ou rompus, ventes du Marché conclues.
 //  Les favorites (dernier exemplaire d'une carte du deck du profil) sont protégées.
-//  Tout est vérifié par le serveur ; un contrat ratifié met le grimoire à jour (surEchange).
+//  Tout est vérifié par le serveur ; un contrat ratifié met à jour les cartes et la bourse (surEchange).
 // =====================================================================
 import { supabase } from './supabase.js';
 import { $, esc, notifier } from './commun.js';
@@ -25,11 +24,12 @@ const TYPES_OBJET = { title: 'Titre', banner: 'Bannière', theme: 'Thème' };
 
 const etat = {
   moi: null,
-  mesCartes: () => [],     // mes cartes (fourni par collection.js)
-  protegee: () => false,   // dernier exemplaire d'une favorite ? (fourni par collection.js)
-  surDonnees: () => {},    // redessine le grimoire (cartes sur la table)
+  mesCartes: () => [],     // mes cartes, avec leur nombre d'exemplaires (fourni par marche.js)
+  protegee: () => false,   // dernier exemplaire d'une favorite ? (fourni par marche.js)
+  surDonnees: () => {},    // redessine mon grimoire (cartes sur la table)
+  surBourse: async () => {},
   surEchange: async () => {},
-  ouvert: false,
+  ouvert: true,
   ami: null,
   sesCartes: [],
   sesObjets: [],
@@ -54,14 +54,8 @@ const valeurObjet = (o) => Number(o?.price ?? o?.prix ?? 100) || 100;
 const nombre = (n) => Number(n ?? 0).toLocaleString('fr-FR');
 const absent = (error) => /schema cache|does not exist|PGRST20[25]|42P01/.test(`${error?.code} ${error?.message}`);
 
-// --- Ce que le grimoire doit savoir --------------------------------------
-// Le mode échange est actif quand le marché est ouvert sur « Rédiger » avec un joueur choisi
-export const modeEchange = () => etat.ouvert && !!etat.ami && !$('proposer-cartes').hidden
-  && !document.querySelector('[data-panneau="proposer"]').hidden;
-export const estSurLaTable = (id) => etat.donnees.has(id);
-
-// Une carte du grimoire touchée en mode échange : posée sur la table, ou reprise
-export function basculerDonnee(id) {
+// Une carte de mon grimoire touchée : posée sur la table, ou reprise
+function basculerDonnee(id) {
   if (!etat.ami) { notifier('Choisis d’abord avec qui échanger.', 'erreur'); return; }
   if (etat.donnees.has(id)) etat.donnees.delete(id);
   else if (etat.protegee(id)) { notifier('C’est une de tes favorites (dernier exemplaire) : retire-la d’abord des favorites.', 'erreur'); return; }
@@ -71,43 +65,31 @@ export function basculerDonnee(id) {
   etat.surDonnees();
 }
 
-export async function initEchanges({ moi: joueur, mesCartes, protegee, surDonnees, surEchange }) {
-  Object.assign(etat, { moi: joueur, mesCartes, surDonnees, surEchange });
+export async function initEchanges({ moi: joueur, mesCartes, protegee, surBourse, surEchange }) {
+  Object.assign(etat, { moi: joueur, mesCartes, surEchange, surDonnees: afficherMesCartes });
   if (protegee) etat.protegee = protegee;
+  if (surBourse) etat.surBourse = surBourse;
   etat.joueurs.set(joueur.discord_id, joueur);
-  $('btn-marche').addEventListener('click', () => (etat.ouvert ? fermerMarche() : ouvrirMarche()));
   $('marche').addEventListener('click', clicMarche);
   $('marche').addEventListener('input', saisieMarche);
   $('marche').addEventListener('change', saisieMarche);
   $('recherche-ami').addEventListener('input', saisieAmi);
   $('btn-proposer').addEventListener('click', proposer);
   $('btn-annuler-edition').addEventListener('click', () => { quitterEdition(); afficherTable(); });
-  // Les contrats se mettent à jour pendant que le marché est ouvert (le sceau de l'autre, une ratification)
-  setInterval(() => { if (etat.ouvert && !document.hidden) afficherContrats(); }, 15000);
-  await Promise.all([chargerBourse(), chargerSouhaits()]);
+  // Les contrats se mettent à jour pendant qu'on les regarde (le sceau de l'autre, une ratification)
+  setInterval(() => { if (!document.hidden && !$('section-echanges')?.hidden) afficherContrats(); }, 15000);
+  await chargerSouhaits();
+  afficherMesCartes();
   await afficherContrats();
 }
 
-export async function ouvrirMarche(avec = null, onglet = null) {
-  etat.ouvert = true;
-  $('marche').hidden = false;
-  $('btn-marche').setAttribute('aria-expanded', 'true');
-  $('btn-marche').classList.add('est-ouvert');
+// Ouvre les échanges sur un onglet, éventuellement avec un joueur (lien « Proposer un échange » du profil)
+export async function ouvrirEchanges(avec = null, onglet = null) {
   if (onglet) choisirOnglet(onglet);
   if (avec && avec !== moi()) {
     const { data: j } = await supabase.from('players').select('discord_id, username, avatar_url').eq('discord_id', avec).maybeSingle();
     if (j) { choisirOnglet('proposer'); await choisirAmi(j); }
   }
-  etat.surDonnees();
-  $('marche').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
-}
-
-function fermerMarche() {
-  etat.ouvert = false;
-  $('marche').hidden = true;
-  $('btn-marche').setAttribute('aria-expanded', 'false');
-  $('btn-marche').classList.remove('est-ouvert');
-  etat.surDonnees();
 }
 
 function choisirOnglet(nom) {
@@ -118,10 +100,8 @@ function choisirOnglet(nom) {
   etat.surDonnees();
 }
 
-async function chargerBourse() {
-  const { data } = await supabase.from('wallets').select('balance').eq('discord_id', moi()).maybeSingle();
-  $('marche-bourse').textContent = nombre(data?.balance ?? 0);
-}
+// La bourse est affichée par la page (marche.js)
+const chargerBourse = () => etat.surBourse();
 
 // Cartes, objets et joueurs à connaître pour afficher des contrats et des annonces
 async function precharger({ cartes = [], objets = [], joueurs = [] }) {
@@ -185,7 +165,7 @@ function texteEquilibre(donne, recoit) {
 async function afficherContrats() {
   const { data, error } = await supabase.from('contrats').select('*').order('maj_le', { ascending: false }).limit(80);
   if (error) {
-    $('contrats').innerHTML = `<p class="echanges__vide">${absent(error) ? 'Le marché n’est pas encore installé (SQL/commerce.sql).' : 'Impossible de charger les contrats.'}</p>`;
+    $('contrats').innerHTML = `<p class="echanges__vide">${absent(error) ? 'Les échanges ne sont pas encore installés (SQL/commerce.sql).' : 'Impossible de charger les contrats.'}</p>`;
     return;
   }
   const liste = data ?? [];
@@ -210,9 +190,9 @@ async function afficherContrats() {
 
   const ouverts = liste.filter((c) => c.statut === 'ouvert');
   const aSigner = ouverts.filter((c) => !(c.de === moi() ? c.sceau_de : c.sceau_pour));
-  for (const id of ['badge-echanges', 'badge-hub']) {
-    $(id).textContent = aSigner.length;
-    $(id).hidden = !aSigner.length;
+  if ($('badge-echanges')) {
+    $('badge-echanges').textContent = aSigner.length;
+    $('badge-echanges').hidden = !aSigner.length;
   }
   $('compte-recus').textContent = aSigner.length ? `(${aSigner.length})` : '';
   $('contrats').innerHTML = ouverts.length ? ouverts.map((c) => htmlContrat(c)).join('')
@@ -416,7 +396,7 @@ async function choisirAmi(j, garder = false) {
     $('or-donne').value = 0; $('or-demande').value = 0;
   }
   $('proposer-cartes').hidden = false;
-  $('marche-aide').textContent = 'Touche dans ton grimoire les cartes que tu donnes (elles se posent sur la table), et dans le sien celles que tu demandes. Ajoute de l’or ou des objets de chaque côté.';
+  $('marche-aide').textContent = 'Touche dans « Ton grimoire » les cartes que tu donnes (elles se posent sur la table), et dans le sien celles que tu demandes. Ajoute de l’or ou des objets de chaque côté.';
   afficherSesCartes();
   afficherTable();
   etat.surDonnees();
@@ -429,7 +409,7 @@ function oublierAmi() {
   etat.donnees.clear(); etat.demandees.clear(); etat.objetsDonnes.clear(); etat.objetsDemandes.clear();
   $('ami-choisi').hidden = true;
   $('proposer-cartes').hidden = true;
-  $('marche-aide').textContent = 'Choisis un joueur, puis touche dans ton grimoire les cartes que tu lui donnes.';
+  $('marche-aide').textContent = 'Choisis un joueur : tu composes ensuite le contrat avec les cartes de ton grimoire et du sien.';
   $('recherche-ami').focus();
   etat.surDonnees();
 }
@@ -451,7 +431,7 @@ async function chargerEdition(id) {
   $('message-echange').value = c.message ?? '';
   choisirOnglet('proposer');
   await choisirAmi(etat.joueurs.get(autre) ?? { discord_id: autre, username: nomDe(autre) }, true);
-  $('marche').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  $('marche').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
 }
 
 function quitterEdition() {
@@ -462,8 +442,31 @@ function quitterEdition() {
 
 
 // ---------------------------------------------------------------------
-//  Rédiger : son grimoire, la table, les objets, la valeur
+//  Rédiger : mon grimoire, le sien, la table, les objets, la valeur
 // ---------------------------------------------------------------------
+// Mon grimoire : les cartes que je peux donner (le dernier exemplaire d'une favorite est verrouillé)
+function afficherMesCartes() {
+  const el = $('mes-cartes-echange');
+  if (!el) return;
+  const cartes = etat.mesCartes();
+  cartes.forEach((c) => etat.cartes.set(c.id, c));
+  el.innerHTML = cartes.length
+    ? cartes.map((c) => {
+      const choisie = etat.donnees.has(c.id);
+      const bloquee = !choisie && etat.protegee(c.id);
+      const souhaitee = etat.souhaitsAmi.has(c.id);
+      return `<span class="proposer__tuile${choisie ? ' est-choisie' : ''}${bloquee ? ' est-bloquee' : ''}${souhaitee ? ' est-souhaitee' : ''}">
+        <button type="button" class="proposer__carte" data-cote="donne" data-id="${c.id}" aria-pressed="${choisie}"
+          ${bloquee ? 'disabled title="Favorite (dernier exemplaire) : retire-la d’abord des favorites"' : ''}>${htmlCarte(c)}</button>
+        ${souhaitee ? `<span class="proposer__souhait" title="${esc(etat.ami?.username ?? 'Ce joueur')} la recherche">♥</span>` : ''}
+        ${c.quantite > 1 ? `<span class="proposer__deja">×${c.quantite}</span>` : ''}
+        ${bloquee ? '<span class="proposer__deja">favorite</span>' : ''}
+        ${loupe(c.id)}
+      </span>`;
+    }).join('')
+    : '<p class="echanges__vide">Ton grimoire est vide.</p>';
+}
+
 function afficherSesCartes() {
   const miennes = new Set(etat.mesCartes().map((c) => c.id));
   $('ses-cartes').innerHTML = etat.sesCartes.length

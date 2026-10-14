@@ -15,7 +15,6 @@
   <link rel="stylesheet" href="CSS/carte-infos.css">
   <link rel="stylesheet" href="CSS/collection.css">
   <link rel="stylesheet" href="CSS/collection-roue.css">
-  <link rel="stylesheet" href="CSS/collection-echanges.css">
 <!-- Thème clair / sombre (bouton dans la barre latérale) : appliqué avant l'affichage -->
 <script>try{if(localStorage.getItem('nocthemar-theme')==='jour')document.documentElement.dataset.theme='jour'}catch(e){}</script>
 <link rel="stylesheet" href="CSS/theme-jour.css">
@@ -87,7 +86,8 @@
         </button>
 
       </div>
-      <button type="button" class="choix__echanges" id="btn-hub-echanges">⇄ Échanger avec un joueur <span class="choix__echanges-nb" id="badge-hub" hidden></span></button>
+      <!-- Les échanges entre joueurs (contrats à sceaux) sont sur la page Marché -->
+      <a class="choix__echanges" href="marche.html#echanges">⇄ Échanger avec un joueur</a>
     </section>
 
     <!-- La roue ouverte, en grand au centre de la page (JS/collection-roue.js) -->
@@ -121,11 +121,6 @@
           <span class="grimoire__coin grimoire__coin--bg" aria-hidden="true"></span>
           <span class="grimoire__coin grimoire__coin--bd" aria-hidden="true"></span>
           <span class="grimoire__signet" aria-hidden="true"></span>
-          <!-- Signet « Échanges » : ouvre le marché sous le livre (JS/collection-echanges.js) -->
-          <button type="button" class="grimoire__marque" id="btn-marche" aria-expanded="false" aria-controls="marche">
-            <span>Échanges</span><span class="grimoire__marque-nb" id="badge-echanges" hidden></span>
-          </button>
-
           <h1 class="grimoire__titre" id="grimoire-titre">Grimoire des cartes</h1>
 
           <div class="grimoire__double" id="double">
@@ -161,88 +156,6 @@
         <p class="deck-aide">Glisse une carte du grimoire sur un emplacement, ou touche l'étoile ★ d'une carte. 5 cartes au maximum.</p>
       </section>
 
-      <!-- Les échanges : contrats à sceaux entre joueurs, souhaits (JS/collection-echanges.js, SQL/commerce.sql).
-           Les ventes publiques sont sur la page Marché (marche.html). -->
-      <section id="marche" class="marche" aria-labelledby="marche-titre" hidden>
-        <header class="marche__tete">
-          <h2 id="marche-titre" class="marche__titre"><span aria-hidden="true">❦</span> Le marché <span aria-hidden="true">❦</span></h2>
-          <p class="marche__bourse">Ta bourse : <b id="marche-bourse">…</b> or · <a href="marche.html">Le Marché des cartes →</a></p>
-          <div class="marche__onglets" role="tablist" aria-label="Le marché">
-            <button type="button" role="tab" class="marche__onglet" data-onglet="proposer" aria-selected="true">Rédiger</button>
-            <button type="button" role="tab" class="marche__onglet" data-onglet="courrier" aria-selected="false">Contrats <span id="compte-recus"></span></button>
-            <button type="button" role="tab" class="marche__onglet" data-onglet="souhaits" aria-selected="false">Souhaits</button>
-            <button type="button" role="tab" class="marche__onglet" data-onglet="registre" aria-selected="false">Registre</button>
-          </div>
-        </header>
-
-        <!-- Rédiger un contrat (ou le modifier) -->
-        <div class="marche__panneau" data-panneau="proposer">
-          <div class="table-echange__ami">
-            <label for="recherche-ami">Avec qui ?</label>
-            <div class="proposer__recherche">
-              <input type="search" id="recherche-ami" placeholder="Pseudo du joueur…" autocomplete="off">
-              <ul id="resultats-ami" class="proposer__resultats" hidden></ul>
-            </div>
-            <div id="ami-choisi" class="proposer__choisi" hidden></div>
-          </div>
-          <p class="marche__aide" id="marche-aide">Choisis un joueur, puis touche dans ton grimoire les cartes que tu lui donnes.</p>
-
-          <div id="proposer-cartes" class="marche__plan" hidden>
-            <p class="contrat-edition" id="contrat-edition" hidden></p>
-            <!-- La table : ce qui part, ce qui arrive -->
-            <div class="plateau-echange">
-              <div class="plateau-echange__cote">
-                <h3>Tu donnes <span id="compte-donnees">0 / 6</span></h3>
-                <div id="table-donnees" class="plateau-echange__eventail"></div>
-                <label class="plateau-echange__or">Or <input type="number" id="or-donne" min="0" max="1000000" step="1" value="0" inputmode="numeric"></label>
-                <div class="plateau-echange__objets" id="objets-donnes"></div>
-                <p class="plateau-echange__valeur" id="valeur-donne"></p>
-              </div>
-              <div class="plateau-echange__balance" aria-hidden="true">⚖</div>
-              <div class="plateau-echange__cote">
-                <h3>Tu reçois <span id="compte-demandees">0 / 6</span></h3>
-                <div id="table-demandees" class="plateau-echange__eventail"></div>
-                <label class="plateau-echange__or">Or <input type="number" id="or-demande" min="0" max="1000000" step="1" value="0" inputmode="numeric"></label>
-                <div class="plateau-echange__objets" id="objets-demandes"></div>
-                <p class="plateau-echange__valeur" id="valeur-demande"></p>
-              </div>
-              <p class="plateau-echange__equilibre" id="equilibre"></p>
-              <div class="plateau-echange__envoi">
-                <input type="text" id="message-echange" maxlength="200" placeholder="Une clause ou un petit mot (facultatif)">
-                <button type="button" class="btn-petit" id="btn-annuler-edition" hidden>Annuler la modification</button>
-                <button type="button" class="btn-dc-or" id="btn-proposer" disabled>Rédiger et apposer mon sceau</button>
-              </div>
-            </div>
-            <p class="souhaits-ami" id="souhaits-ami" hidden></p>
-            <!-- Le grimoire de l'autre joueur -->
-            <div class="coffre">
-              <h3 class="coffre__titre" id="titre-ses-cartes">Son grimoire</h3>
-              <p class="coffre__aide">Touche une carte pour la demander. Une carte que tu as déjà te donnera un exemplaire de plus. ♥ = sur ta liste de souhaits.</p>
-              <div id="ses-cartes" class="coffre__grille"></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Contrats ouverts : apposer son sceau, modifier, rompre -->
-        <div class="marche__panneau" data-panneau="courrier" hidden>
-          <p class="marche__aide">Un contrat est ratifié quand les deux joueurs y ont apposé leur sceau. Toute modification brise les sceaux : chacun doit revalider.</p>
-          <div id="contrats" class="contrats"></div>
-        </div>
-
-        <!-- Liste de souhaits -->
-        <div class="marche__panneau" data-panneau="souhaits" hidden>
-          <p class="marche__aide">Les cartes que tu recherches : les autres joueurs les voient quand ils rédigent un contrat avec toi.</p>
-          <div id="mes-souhaits" class="souhaits"></div>
-          <h3 class="marche__rubrique">Toutes les cartes</h3>
-          <input type="search" id="souhait-recherche" class="souhaits__recherche" placeholder="Chercher une carte…" aria-label="Chercher une carte">
-          <div id="catalogue-souhaits" class="souhaits souhaits--catalogue"></div>
-        </div>
-
-        <!-- Registre : contrats ratifiés ou rompus, ventes conclues sur le Marché -->
-        <div class="marche__panneau" data-panneau="registre" hidden>
-          <div id="historique-echanges" class="contrats"></div>
-        </div>
-      </section>
 
     </div>
   </main>

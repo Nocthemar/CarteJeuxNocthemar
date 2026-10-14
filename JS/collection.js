@@ -7,9 +7,8 @@
 //  - 9 pochettes par page, rangement libre par glisser-déposer
 //    (ou : toucher une carte, puis la pochette où la poser)
 //  - Deck du profil en haut de page (5 cartes max)
-//  - Le signet « Échanges » ouvre le marché sous le livre (JS/collection-echanges.js) : en mode échange,
-//    toucher une carte du grimoire la pose sur la table d'échange (ruban doré) au lieu de la ranger ;
-//    collection.html?avec=<discord_id> ouvre le marché avec cet ami (lien « Proposer un échange » du profil)
+//  - Les échanges entre joueurs sont sur la page Marché (marche.html#echanges, JS/marche-echanges.js) ;
+//    l'ancien lien collection.html?avec=<discord_id> y mène
 //  - Doublons (SQL/doublons.sql) : une carte peut avoir plusieurs exemplaires (« ×N » sur sa pochette) ;
 //    ♻ recycle les exemplaires en trop d'une carte, « Recycler tous les doublons » les recycle tous,
 //    contre de l'or et de l'XP de pass (le dernier exemplaire est toujours gardé)
@@ -20,7 +19,10 @@ import { supabase, connexionDiscord, getMonJoueur } from './supabase.js';
 import { $, notifier } from './commun.js';
 import { htmlCarte, chargerDeck, Deck, activerGlisser, boutonLoupe, ouvrirApercu } from './cartes.js';
 import { initRoue } from './collection-roue.js';
-import { initEchanges, ouvrirMarche, modeEchange, estSurLaTable, basculerDonnee } from './collection-echanges.js';
+
+// Ancien lien d'échange (collection.html?avec=…) : les échanges sont maintenant sur la page Marché
+const ancienEchange = new URLSearchParams(location.search).get('avec');
+if (ancienEchange) location.replace(`marche.html?avec=${encodeURIComponent(ancienEchange)}#echanges`);
 
 const PAR_PAGE = 9;
 const PAGES_MAX = 100;
@@ -80,18 +82,9 @@ async function init() {
   const n = etat.cartes.size;
   $('livre-compte').textContent = `${n} carte${n > 1 ? 's' : ''}`;
   $('chargement').hidden = true;
-  const avec = new URLSearchParams(location.search).get('avec');
-  const vue = avec ? 'grimoire' : VUES[location.hash.slice(1)] ? location.hash.slice(1) : null;
+  const vue = VUES[location.hash.slice(1)] ? location.hash.slice(1) : null;
   if (vue) ouvrir(vue, false);
   else $('choix').hidden = false;
-  initEchanges({
-    moi,
-    mesCartes: () => [...etat.cartes.values()].map((c) => c.carte),
-    // Favorites protégées : le dernier exemplaire d'une carte du deck du profil ne s'échange pas
-    protegee: (id) => !!deck?.contient(id) && (etat.cartes.get(id)?.quantite ?? 1) <= 1,
-    surDonnees: afficher,
-    surEchange: recharger,
-  }).then(() => { if (avec) ouvrirMarche(avec, 'proposer'); }).catch(console.error);
   initRoue(moi).then((n) => {
     $('roue-compte').textContent = `${n} objet${n > 1 ? 's' : ''}`;
   }).catch((e) => {
@@ -152,10 +145,6 @@ function fermer(nom) {
 $('btn-ouvrir-livre').addEventListener('click', () => ouvrir('grimoire'));
 $('btn-fermer').addEventListener('click', () => { if (vueOuverte) fermer(vueOuverte); });
 $('btn-ouvrir-roue').addEventListener('click', () => ouvrir('roue'));
-$('btn-hub-echanges').addEventListener('click', () => {
-  ouvrir('grimoire');
-  ouvrirMarche(null, $('badge-hub').hidden ? 'proposer' : 'courrier');
-});
 
 
 // ---------------------------------------------------------------------
@@ -195,11 +184,9 @@ function htmlPage(num, cote) {
     }
     const auDeck = deck.contient(id);
     const selection = etat.selection === id ? ' pochette--selection' : '';
-    const echange = estSurLaTable(id) ? ' pochette--echange' : '';
     pochettes += `
-      <div class="pochette pochette--pleine${selection}${echange}" data-page="${num}" data-slot="${slot}">
+      <div class="pochette pochette--pleine${selection}" data-page="${num}" data-slot="${slot}">
         ${htmlCarte(etat.cartes.get(id).carte)}
-        ${estSurLaTable(id) ? '<span class="pochette__ruban" aria-hidden="true">À échanger</span>' : ''}
         ${etat.cartes.get(id).quantite > 1 ? `<span class="pochette__nb" title="${etat.cartes.get(id).quantite} exemplaires">×${etat.cartes.get(id).quantite}</span>
         <button type="button" class="carte-recycler" data-recycler="${id}" title="Recycler les doublons" aria-label="Recycler les doublons">♻</button>` : ''}
         <button type="button" class="carte-etoile${auDeck ? ' carte-etoile--active' : ''}" data-etoile="${id}"
@@ -209,7 +196,7 @@ function htmlPage(num, cote) {
   }
 
   return `
-    <div class="page page--${cote}${modeEchange() ? ' page--echange' : ''}" data-page="${num}">
+    <div class="page page--${cote}" data-page="${num}">
       <div class="page__grille">${pochettes}</div>
       <span class="page__num">${romain(num)}</span>
     </div>`;
@@ -382,12 +369,6 @@ $('collection').addEventListener('click', (e) => {
     const id = Number(etoile.dataset.etoile);
     deck.basculer(id, etat.cartes.get(id).carte);
     return;
-  }
-
-  // Mode échange (marché ouvert, ami choisi) : la carte touchée se pose sur la table, ou en est reprise
-  if (modeEchange()) {
-    const aEchanger = e.target.closest('#double .pochette .carte-jeu');
-    if (aEchanger) { basculerDonnee(Number(aEchanger.dataset.carte)); return; }
   }
 
   const pochette = e.target.closest('#double .pochette');

@@ -1,5 +1,5 @@
 -- =====================================================================
---  Le commerce entre joueurs (collection.html > signet « Échanges », JS/collection-echanges.js)
+--  Le commerce entre joueurs (marche.html > onglet « Échanges », JS/marche-echanges.js ; ventes : JS/marche.js)
 --
 --  1. Les CONTRATS (remplacent les lettres de SQL/echanges.sql) : un contrat entre deux joueurs,
 --     chaque côté peut mettre des cartes (6 au plus), de l'or et des objets / cosmétiques (4 au plus).

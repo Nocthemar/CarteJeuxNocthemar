@@ -15,8 +15,8 @@ mêmes cartes, mêmes pièces, même progression.
 | `jeu-cartes.html` | Le menu et le plateau du Duel des Couronnes |
 | `histoire.html` | Le mode Histoire (carte des chapitres et des niveaux) |
 | `pass.html` | Le Pass de saison : 30 paliers, piste gratuite et piste premium (payée en or du jeu) |
-| `collection.html` | La collection de cartes (le grimoire), les favorites et les échanges à sceaux |
-| `marche.html` | Le Marché : les cartes mises en vente par les joueurs (acheter, vendre) |
+| `collection.html` | La collection de cartes (le grimoire), les favorites et la roue des apparences |
+| `marche.html` | Le Marché : onglet Ventes (acheter, vendre des cartes) et onglet Échanges (contrats à sceaux, souhaits, registre ; `JS/marche-echanges.js`) |
 | `parametres.html` | Paramètres : volumes (général, musique, effets), animations, effets, conseils, compte |
 
 ## Les fichiers
@@ -65,10 +65,10 @@ mêmes cartes, mêmes pièces, même progression.
    lancer `boosters.sql`, puis `pass_saison.sql`.
    Pour les plateaux en boutique : lancer `plateaux.sql` (après `boosters.sql`).
    Pour les thèmes Bleu, Violet et Orange en boutique : lancer `themes_couleurs.sql`.
-   Pour les échanges de cartes entre joueurs (le marché du grimoire, signet « Échanges ») : lancer `echanges.sql`.
+   Pour les échanges de cartes entre joueurs (page Marché, onglet « Échanges ») : lancer `echanges.sql`.
    Pour les doublons (plusieurs exemplaires d'une carte, recyclage contre de l'or) : lancer `doublons.sql`,
    puis relancer `boosters.sql` et `echanges.sql`.
-   Pour le commerce (contrats à sceaux avec or et objets, tableau de guilde, liste de souhaits) : lancer `commerce.sql`
+   Pour le commerce (ventes du Marché, contrats à sceaux avec or et objets, liste de souhaits) : lancer `commerce.sql`
    (après `echanges.sql` et `doublons.sql`).
    Pour le mode en ligne classé (recherche de partie 1v1 et 2v2, cote et paliers) : lancer `classe.sql`
    (à relancer pour le 2v2), puis relancer `pass_saison.sql` (deux gagnants par salon en 2v2).

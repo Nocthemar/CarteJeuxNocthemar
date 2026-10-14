@@ -1,5 +1,5 @@
 -- =====================================================================
---  Échanges de cartes entre joueurs : le marché du grimoire (collection.html, JS/collection-echanges.js)
+--  Échanges de cartes entre joueurs (anciens échanges ; les contrats sont dans commerce.sql, marche.html > Échanges)
 --
 --  Un joueur propose un échange à un autre : les cartes qu'il donne et celles qu'il demande
 --  (5 au plus de chaque côté, au moins une carte en tout). L'autre accepte ou refuse ;

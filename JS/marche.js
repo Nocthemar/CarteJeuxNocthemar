@@ -1,5 +1,9 @@
 // =====================================================================
-//  Le Marché (marche.html) : les cartes mises en vente par les joueurs (SQL/commerce.sql, table annonces)
+//  Le Marché (marche.html), deux onglets :
+//  - Ventes : les cartes mises en vente par les joueurs (SQL/commerce.sql, table annonces)
+//  - Échanges : les contrats à sceaux entre deux joueurs, les souhaits, le registre (JS/marche-echanges.js) ;
+//    marche.html#echanges les ouvre, marche.html?avec=<discord_id>#echanges ouvre un contrat avec ce joueur
+//  Les ventes :
 //  - la liste des ventes ouvertes (14 jours), avec filtres : nom, rareté, Veine, prix, mes ventes
 //  - Acheter : conclure_annonce (le serveur vérifie la carte du vendeur et l'or de l'acheteur)
 //  - Mettre en vente : publier_annonce('vente', carte, prix) ; Retirer : retirer_annonce
@@ -8,6 +12,7 @@
 import { supabase, getMonJoueur } from './supabase.js';
 import { $, esc, notifier } from './commun.js';
 import { htmlCarte, ouvrirApercu, RARETES, VEINES } from './cartes.js';
+import { initEchanges, ouvrirEchanges } from './marche-echanges.js';
 
 const JOURS = 14;
 // Prix conseillé d'une carte selon sa rareté (repère pour le vendeur)
@@ -21,12 +26,39 @@ async function init() {
   // La Veine sert de « type » de carte
   $('filtre-veine').innerHTML = `<option value="">Toutes les Veines</option>${Object.entries(VEINES)
     .map(([k, [nom, ico]]) => `<option value="${k}">${ico} ${esc(nom)}</option>`).join('')}`;
+  const avec = new URLSearchParams(location.search).get('avec');
+  montrerSection(avec || location.hash === '#echanges' ? 'echanges' : 'ventes', false);
   etat.moi = await getMonJoueur().catch(() => null);
   $('marche-connexion').hidden = !!etat.moi;
   $('marche-vendre').hidden = !etat.moi;
-  if (etat.moi) await Promise.all([chargerBourse(), chargerMesCartes()]);
+  $('echanges-connexion').hidden = !!etat.moi;
+  $('marche').hidden = !etat.moi;
+  if (etat.moi) {
+    await Promise.all([chargerBourse(), chargerMesCartes()]);
+    initEchanges({
+      moi: etat.moi,
+      mesCartes: () => etat.mesCartes.map((x) => ({ ...x.carte, quantite: x.quantite })),
+      // Favorites protégées : le dernier exemplaire d'une carte du deck du profil ne s'échange pas
+      protegee: (id) => { const x = etat.mesCartes.find((y) => y.carte.id === id); return !!x && x.quantite <= 1 && etat.favorites.has(id); },
+      surBourse: chargerBourse,
+      surEchange: async () => { await Promise.all([chargerBourse(), chargerMesCartes()]); await chargerVentes(); },
+    }).then(() => { if (avec) ouvrirEchanges(avec, 'proposer'); }).catch(console.error);
+  }
   await chargerVentes();
 }
+
+// Les deux onglets de la page : Ventes / Échanges (retenu dans l'adresse : marche.html#echanges)
+function montrerSection(nom, retenir = true) {
+  document.querySelectorAll('[data-section]').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.section === nom)));
+  $('section-ventes').hidden = nom !== 'ventes';
+  $('section-echanges').hidden = nom !== 'echanges';
+  if (retenir) history.replaceState(null, '', `${location.pathname}${location.search}${nom === 'echanges' ? '#echanges' : ''}`);
+}
+document.querySelector('.marche-sections').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-section]');
+  if (b) montrerSection(b.dataset.section);
+});
+addEventListener('hashchange', () => montrerSection(location.hash === '#echanges' ? 'echanges' : 'ventes', false));
 
 async function chargerBourse() {
   const { data } = await supabase.from('wallets').select('balance').eq('discord_id', etat.moi.discord_id).maybeSingle();

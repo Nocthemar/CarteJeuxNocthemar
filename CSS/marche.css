@@ -93,3 +93,21 @@
 .marche-connexion { max-width: none; margin: 0 auto 18px; }
 .marche-liste:has(> .marche-vide) { display: block; }
 .marche-vide { max-width: none; }
+
+/* Les deux onglets du Marché : Ventes / Échanges */
+.marche-sections { display: flex; justify-content: center; gap: 6px; margin: 0 0 20px; }
+.marche-sections__onglet {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 9px 22px; border: 1px solid rgba(240,236,227,.18); border-radius: 3px;
+  background: rgba(0,0,0,.2); color: var(--texte-doux); cursor: pointer;
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: .8rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+}
+.marche-sections__onglet:hover { color: var(--texte); border-color: rgba(240,236,227,.35); }
+.marche-sections__onglet[aria-selected="true"] { border-color: transparent; background: linear-gradient(180deg, #f3cf7c, #d9a441 60%, #b07a26); color: #1b1408; }
+.marche-sections__nb {
+  display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px;
+  background: #a3242d; color: #fff; font-size: .7rem; letter-spacing: 0;
+}
+.marche-sections__nb[hidden] { display: none; }
+.marche-section[hidden] { display: none; }
+#section-echanges .marche { margin-top: 0; }

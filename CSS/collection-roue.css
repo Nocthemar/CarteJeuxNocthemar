@@ -385,3 +385,6 @@
   transition: border-color .2s ease, color .2s ease;
 }
 .choix__echanges:hover, .choix__echanges:focus-visible { border-color: var(--accent); color: var(--accent); }
+
+/* « Échanger avec un joueur » : un lien vers les échanges du Marché */
+a.choix__echanges { display: flex; align-items: center; gap: 8px; text-decoration: none; }

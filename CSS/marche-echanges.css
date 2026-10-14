@@ -1,12 +1,11 @@
 /* =====================================================================
-   Le marché du grimoire : échanger des cartes avec un ami
-   (collection.html : signet « Échanges » et volet #marche ; JS/collection-echanges.js)
-   - le signet, sur le bord du livre, avec le nombre de lettres reçues
-   - dans les pages : les cartes posées sur la table (ruban doré), celles que l'ami a déjà (grisées)
-   - le marché : onglets Proposer / Courrier / Registre ; la table de velours et le grimoire de l'ami ;
-     les propositions comme des lettres scellées
+   Les échanges entre joueurs : l'onglet « Échanges » du Marché
+   (marche.html : volet #marche ; JS/marche-echanges.js)
+   - le volet : onglets Rédiger / Contrats / Souhaits / Registre
+   - la table de velours, ton grimoire et celui de l'autre joueur
+   - les contrats comme des parchemins scellés de cire
    ===================================================================== */
-.page-collection {
+.page-marche {
   --lettre-papier: #e9dcbd;
   --lettre-ombre: #c9b48a;
   --lettre-encre: #3b2715;
@@ -273,61 +272,7 @@
 .plateau-echange__envoi .btn-dc-or { align-self: center; }
 
 
-/* ---------- Le signet « Échanges », sur le bord droit du livre ---------- */
-.grimoire__marque {
-  position: absolute; top: 96px; right: -40px; z-index: 5;
-  display: flex; flex-direction: column; align-items: center; gap: 8px;
-  width: 40px; padding: 14px 0 18px;
-  border: 0;
-  background: linear-gradient(90deg, var(--blood-dim, #6e1c22), var(--blood, #a3242d) 55%, var(--blood-dim, #6e1c22));
-  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 92%, 0 100%);
-  box-shadow: 4px 4px 10px rgba(0,0,0,.5);
-  color: #f6e3c0;
-  font-family: "Cinzel","Cinzel Repli", serif; font-weight: 700; font-size: .72rem; letter-spacing: .16em; text-transform: uppercase;
-  cursor: pointer;
-  transition: right .25s ease, filter .2s ease;
-}
-.grimoire__marque > span:first-child { writing-mode: vertical-rl; }
-.grimoire__marque:hover, .grimoire__marque:focus-visible, .grimoire__marque.est-ouvert { right: -46px; filter: brightness(1.12); }
-.grimoire__marque:focus-visible { outline: 2px solid var(--or); outline-offset: 2px; }
-.grimoire__marque-nb, .choix__echanges-nb {
-  display: inline-grid; place-items: center;
-  min-width: 20px; height: 20px; padding: 0 5px;
-  border-radius: 10px;
-  background: #f6d995; color: #3b0d10;
-  font-size: .7rem; letter-spacing: 0;
-}
-.grimoire__marque-nb[hidden], .choix__echanges-nb[hidden] { display: none; }
-/* écran moyen : le livre prend presque toute la largeur, le signet dépasse moins (pas de défilement de côté) */
-@media (max-width: 1320px) and (min-width: 801px) {
-  .grimoire__marque { right: -16px; }
-  .grimoire__marque:hover, .grimoire__marque:focus-visible, .grimoire__marque.est-ouvert { right: -20px; }
-}
-@media (max-width: 800px) {
-  /* téléphone : le signet pend du haut du livre, à gauche */
-  .grimoire__marque { top: -12px; right: auto; left: 8%; width: auto; flex-direction: row; padding: 10px 12px 16px; clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 86%, 0 100%); }
-  .grimoire__marque > span:first-child { writing-mode: horizontal-tb; }
-  .grimoire__marque:hover, .grimoire__marque:focus-visible, .grimoire__marque.est-ouvert { right: auto; top: -8px; }
-}
-
-/* ---------- Dans les pages : cartes à échanger ---------- */
-.page--echange .pochette--pleine .carte-jeu { cursor: pointer; }
-.pochette--echange .carte-jeu { filter: drop-shadow(0 0 3px #f6d995) drop-shadow(0 0 8px rgba(217,180,106,.7)); }
-.pochette__ruban {
-  position: absolute; left: -6%; right: -6%; top: 44%; z-index: 3;
-  padding: 4px 0;
-  background: linear-gradient(180deg, #f6d995, #c8902f);
-  box-shadow: 0 3px 6px rgba(0,0,0,.45);
-  clip-path: polygon(0 0, 100% 0, 96% 50%, 100% 100%, 0 100%, 4% 50%);
-  color: #3a2208; text-align: center;
-  font-family: "Cinzel","Cinzel Repli", serif; font-weight: 800; font-size: clamp(.45rem, .9vw, .62rem); letter-spacing: .08em; text-transform: uppercase;
-  rotate: -8deg;
-  pointer-events: none;
-}
-.pochette--bloquee .carte-jeu { filter: grayscale(.9) brightness(.5); }
-.page--echange .pochette--bloquee .carte-jeu { cursor: not-allowed; }
-
-/* ---------- Le marché ---------- */
+/* ---------- Le volet des échanges ---------- */
 .marche {
   margin-top: 26px;
   padding: 20px clamp(14px, 3vw, 28px) 24px;
@@ -372,8 +317,10 @@
 .marche .echanges__vide { color: rgba(240,217,160,.7); border-color: rgba(214,172,108,.35); }
 .marche__plan { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 18px; align-items: stretch; }
 
-/* Accueil de la collection : le lien est un bouton, avec le nombre de lettres reçues */
-.choix__echanges { display: flex; align-items: center; gap: 8px; background: none; font: inherit; cursor: pointer; }
+/* Les deux grimoires, l'un sous l'autre à côté de la table */
+.coffres { display: grid; gap: 16px; align-content: start; min-width: 0; }
+.proposer__tuile.est-bloquee .carte-jeu { filter: grayscale(.85) brightness(.55); }
+.proposer__tuile.est-bloquee .proposer__carte { cursor: not-allowed; }
 
 @media (max-width: 900px) {
   .marche__plan { grid-template-columns: minmax(0, 1fr); }
@@ -501,7 +448,7 @@
 
 
 /* =====================================================================
-   Le commerce : contrats à sceaux, or et objets, tableau de guilde, souhaits (SQL/commerce.sql)
+   Le commerce : contrats à sceaux, or et objets, souhaits (SQL/commerce.sql)
    ===================================================================== */
 .marche__onglets { flex-wrap: wrap; }
 .marche__bourse { margin: 0; color: rgba(240,217,160,.8); font-family: "Cinzel","Cinzel Repli", serif; font-size: .8rem; letter-spacing: .08em; }
@@ -646,81 +593,6 @@
 }
 .sceau--pose .sceau__nom { color: #6b1a1e; }
 @keyframes sceau-appose { from { scale: 1.8; opacity: 0; } }
-.affiche .sceau__cire { width: 34px; height: 34px; animation: none; }
-.affiche .sceau__cire b { font-size: .7rem; }
-.affiche .sceau__cire::before, .affiche .sceau__cire::after { display: none; }
-.affiche .sceau { flex-direction: row; gap: 6px; }
-
-/* ---------- Le tableau de guilde : un panneau de bois, des affiches clouées ---------- */
-.guilde__placarder {
-  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
-  margin-bottom: 14px; padding: 12px 14px;
-  background: rgba(0,0,0,.28); border: 1px solid rgba(214,172,108,.3);
-}
-.guilde__placarder .marche__rubrique { flex-basis: 100%; margin: 0 0 4px; }
-.guilde__placarder select, .guilde__placarder input, .guilde__filtres select, .guilde__filtres input, .souhaits__recherche {
-  padding: 6px 9px;
-  border: 1px solid rgba(214,172,108,.4); border-radius: 2px;
-  background: rgba(10,8,6,.6); color: #f0e6d0; font: inherit; font-size: .9rem;
-}
-.guilde__placarder #annonce-carte { min-width: 200px; flex: 1; }
-.guilde__placarder #annonce-message { flex: 2; min-width: 180px; }
-.guilde__prix { display: inline-flex; align-items: center; gap: 6px; color: #f0d9a0; }
-.guilde__prix input { width: 96px; text-align: right; }
-.guilde__filtres { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
-.guilde__filtres input { flex: 1; min-width: 160px; }
-.guilde__tableau {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 22px 18px;
-  padding: 26px 20px;
-  background:
-    repeating-linear-gradient(90deg, rgba(0,0,0,.18) 0 2px, transparent 2px 120px),
-    repeating-linear-gradient(0deg, rgba(255,255,255,.03) 0 1px, transparent 1px 7px),
-    linear-gradient(180deg, #5a3a20, #3f2814 60%, #2e1d0f);
-  border: 10px solid #24170c;
-  box-shadow: inset 0 0 30px rgba(0,0,0,.6), 0 14px 28px rgba(0,0,0,.5);
-}
-.affiche {
-  position: relative;
-  display: flex; flex-direction: column; align-items: center; gap: 4px;
-  padding: 18px 12px 12px;
-  color: var(--lettre-encre);
-  background:
-    radial-gradient(ellipse 120% 90% at 50% 40%, transparent 55%, rgba(120,80,30,.32) 100%),
-    linear-gradient(170deg, #f1e6c9, var(--lettre-papier) 55%, #d6c094);
-  box-shadow: 0 8px 14px rgba(0,0,0,.5);
-  rotate: var(--penche, -1.2deg);
-  transition: rotate .2s ease, translate .2s ease;
-}
-.affiche:nth-child(3n) { --penche: 1.4deg; }
-.affiche:nth-child(4n+1) { --penche: -.4deg; }
-.affiche:hover { rotate: 0deg; translate: 0 -3px; }
-.affiche__clou {
-  position: absolute; top: 6px; left: 50%; translate: -50% 0;
-  width: 12px; height: 12px; border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #d8d2c4, #6f6a60 60%, #2f2b25);
-  box-shadow: 0 2px 3px rgba(0,0,0,.6);
-}
-.affiche__type {
-  margin: 0;
-  font-family: "Cinzel Decorative","Cinzel Decorative Repli", serif; font-size: .9rem; letter-spacing: .08em;
-  color: #6b1a1e;
-}
-.affiche--recherche .affiche__type { color: #24456b; }
-.affiche__carte { position: relative; width: 104px; }
-.affiche__carte > * { width: 100%; }
-.affiche__nom { margin: 2px 0 0; text-align: center; font-family: "Cinzel","Cinzel Repli", serif; font-size: .82rem; color: #2a1a0c; }
-.affiche__prix { margin: 0; font-family: "Cinzel","Cinzel Repli", serif; font-weight: 800; font-size: 1rem; color: #7a4f10; }
-.affiche__mot { margin: 0; text-align: center; font-size: .82rem; font-style: italic; color: var(--lettre-encre-douce); }
-.affiche__souhait { margin: 0; font-size: .78rem; font-weight: 700; color: #a8344a; }
-.affiche.est-souhaitee { box-shadow: 0 0 0 2px rgba(214,90,110,.75), 0 8px 14px rgba(0,0,0,.5); }
-.affiche.est-mienne { box-shadow: 0 0 0 2px rgba(216,180,106,.8), 0 8px 14px rgba(0,0,0,.5); }
-.affiche__pied { display: flex; align-items: center; justify-content: space-between; gap: 6px; width: 100%; margin-top: 4px; }
-.affiche__date { font-size: .74rem; font-style: italic; color: var(--lettre-encre-douce); }
-.affiche__actions { display: flex; flex-direction: column; align-items: stretch; gap: 6px; width: 100%; margin-top: 6px; }
-.affiche__actions .btn-dc-or { padding: 7px 10px; font-size: .68rem; }
-.affiche .btn-petit { border-color: rgba(90,58,25,.6); color: var(--lettre-encre); background: transparent; font-size: .75rem; }
-.affiche .btn-petit--retirer { border-color: var(--cire); color: var(--cire); }
-.affiche:hover .echange__loupe { opacity: 1; }
 
 /* ---------- Souhaits ---------- */
 .souhaits { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 14px; margin-bottom: 18px; }
@@ -742,11 +614,8 @@
   .contrat { padding: 22px 14px 16px; }
   .contrat__termes { grid-template-columns: 1fr; }
   .contrat__balance { justify-self: center; }
-  .guilde__tableau { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); padding: 18px 10px; border-width: 6px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .sceau__cire { animation: none; }
-  .affiche, .affiche:hover { rotate: 0deg; translate: none; transition: none; }
 }
 .contrat__cote { display: flex; flex-direction: column; align-items: center; }
-.affiche__date { white-space: nowrap; }

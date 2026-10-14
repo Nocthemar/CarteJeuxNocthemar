@@ -14,6 +14,7 @@
   <link rel="stylesheet" href="CSS/cartes-jeu.css">
   <link rel="stylesheet" href="CSS/carte-infos.css">
   <link rel="stylesheet" href="CSS/marche.css">
+  <link rel="stylesheet" href="CSS/marche-echanges.css">
 <!-- Thème clair / sombre (bouton dans la barre latérale) : appliqué avant l'affichage -->
 <script>try{if(localStorage.getItem('nocthemar-theme')==='jour')document.documentElement.dataset.theme='jour'}catch(e){}</script>
 <link rel="stylesheet" href="CSS/theme-jour.css">
@@ -31,53 +32,157 @@
     <div id="discord-auth"></div>
   </header>
 
-  <!-- Le marché des cartes : des cartes mises en vente par les joueurs, un prix, un bouton Acheter
-       (JS/marche.js, SQL/commerce.sql). Les échanges à sceaux restent dans la Collection. -->
+  <!-- Le Marché (JS/marche.js, SQL/commerce.sql), deux onglets :
+       - Ventes : des cartes mises en vente par les joueurs, un prix, un bouton Acheter
+       - Échanges : les contrats à sceaux entre deux joueurs, les souhaits, le registre (JS/marche-echanges.js)
+       marche.html#echanges ouvre les échanges ; marche.html?avec=<discord_id>#echanges, un contrat avec ce joueur -->
   <main class="profil-wrap marche-page">
     <header class="marche-entete">
       <h1>Le Marché</h1>
-      <p>Des cartes mises en vente par les joueurs. Achète d’un clic, ou vends les tiennes.</p>
+      <p>Achète et vends des cartes, ou échange directement avec un joueur sous contrat scellé.</p>
       <p class="marche-entete__bourse" id="bourse" hidden>Ta bourse : <b id="solde">0</b> or</p>
     </header>
 
-    <p class="marche-connexion" id="marche-connexion" hidden>Connecte-toi avec Discord pour acheter et vendre des cartes.</p>
+    <p class="marche-connexion" id="marche-connexion" hidden>Connecte-toi avec Discord pour acheter, vendre et échanger des cartes.</p>
 
-    <!-- Vendre une carte -->
-    <details class="marche-vendre" id="marche-vendre" hidden>
-      <summary>Mettre une carte en vente</summary>
-      <form class="marche-vendre__form" id="form-vente">
-        <label>Carte
-          <select id="vente-carte" required></select>
-        </label>
-        <label>Prix
-          <span class="marche-vendre__prix"><input type="number" id="vente-prix" min="1" max="1000000" value="100" required inputmode="numeric"> or</span>
-        </label>
-        <p class="marche-vendre__aide" id="vente-aide"></p>
-        <button type="submit" class="btn-or">Mettre en vente</button>
-      </form>
-    </details>
-
-    <!-- Filtres -->
-    <div class="marche-filtres">
-      <input type="search" id="filtre-nom" placeholder="Chercher une carte…" aria-label="Chercher une carte">
-      <select id="filtre-rarete" aria-label="Rareté">
-        <option value="">Toutes les raretés</option>
-        <option value="commune">Commune</option>
-        <option value="eveillee">Éveillée</option>
-        <option value="mythique">Mythique</option>
-        <option value="legendaire">Légendaire</option>
-        <option value="transcendante">Transcendante</option>
-      </select>
-      <select id="filtre-veine" aria-label="Type (Veine)"></select>
-      <select id="filtre-tri" aria-label="Trier">
-        <option value="recent">Les plus récentes</option>
-        <option value="prix">Prix croissant</option>
-        <option value="prix-desc">Prix décroissant</option>
-      </select>
-      <label class="marche-filtres__miennes"><input type="checkbox" id="filtre-miennes"> Mes ventes</label>
+    <div class="marche-sections" role="tablist" aria-label="Le Marché">
+      <button type="button" role="tab" class="marche-sections__onglet" id="onglet-ventes" data-section="ventes" aria-selected="true" aria-controls="section-ventes">Ventes</button>
+      <button type="button" role="tab" class="marche-sections__onglet" id="onglet-echanges" data-section="echanges" aria-selected="false" aria-controls="section-echanges">
+        ⇄ Échanges <span class="marche-sections__nb" id="badge-echanges" title="Contrats qui attendent ton sceau" hidden></span>
+      </button>
     </div>
 
-    <div class="marche-liste" id="marche-liste"><p class="marche-vide">Chargement…</p></div>
+    <div class="marche-section" id="section-ventes" role="tabpanel" aria-labelledby="onglet-ventes">
+
+      <!-- Vendre une carte -->
+      <details class="marche-vendre" id="marche-vendre" hidden>
+        <summary>Mettre une carte en vente</summary>
+        <form class="marche-vendre__form" id="form-vente">
+          <label>Carte
+            <select id="vente-carte" required></select>
+          </label>
+          <label>Prix
+            <span class="marche-vendre__prix"><input type="number" id="vente-prix" min="1" max="1000000" value="100" required inputmode="numeric"> or</span>
+          </label>
+          <p class="marche-vendre__aide" id="vente-aide"></p>
+          <button type="submit" class="btn-or">Mettre en vente</button>
+        </form>
+      </details>
+
+      <!-- Filtres -->
+      <div class="marche-filtres">
+        <input type="search" id="filtre-nom" placeholder="Chercher une carte…" aria-label="Chercher une carte">
+        <select id="filtre-rarete" aria-label="Rareté">
+          <option value="">Toutes les raretés</option>
+          <option value="commune">Commune</option>
+          <option value="eveillee">Éveillée</option>
+          <option value="mythique">Mythique</option>
+          <option value="legendaire">Légendaire</option>
+          <option value="transcendante">Transcendante</option>
+        </select>
+        <select id="filtre-veine" aria-label="Type (Veine)"></select>
+        <select id="filtre-tri" aria-label="Trier">
+          <option value="recent">Les plus récentes</option>
+          <option value="prix">Prix croissant</option>
+          <option value="prix-desc">Prix décroissant</option>
+        </select>
+        <label class="marche-filtres__miennes"><input type="checkbox" id="filtre-miennes"> Mes ventes</label>
+      </div>
+
+      <div class="marche-liste" id="marche-liste"><p class="marche-vide">Chargement…</p></div>
+    </div>
+
+    <div class="marche-section" id="section-echanges" role="tabpanel" aria-labelledby="onglet-echanges" hidden>
+      <p class="marche-vide" id="echanges-connexion" hidden>Connecte-toi avec Discord pour échanger avec les autres joueurs.</p>
+        <!-- Les échanges : contrats à sceaux entre joueurs, souhaits, registre (JS/marche-echanges.js, SQL/commerce.sql) -->
+        <section id="marche" class="marche" aria-labelledby="marche-titre">
+          <header class="marche__tete">
+            <h2 id="marche-titre" class="marche__titre"><span aria-hidden="true">❦</span> Échanges scellés <span aria-hidden="true">❦</span></h2>
+            <div class="marche__onglets" role="tablist" aria-label="Les échanges">
+              <button type="button" role="tab" class="marche__onglet" data-onglet="proposer" aria-selected="true">Rédiger</button>
+              <button type="button" role="tab" class="marche__onglet" data-onglet="courrier" aria-selected="false">Contrats <span id="compte-recus"></span></button>
+              <button type="button" role="tab" class="marche__onglet" data-onglet="souhaits" aria-selected="false">Souhaits</button>
+              <button type="button" role="tab" class="marche__onglet" data-onglet="registre" aria-selected="false">Registre</button>
+            </div>
+          </header>
+
+          <!-- Rédiger un contrat (ou le modifier) -->
+          <div class="marche__panneau" data-panneau="proposer">
+            <div class="table-echange__ami">
+              <label for="recherche-ami">Avec qui ?</label>
+              <div class="proposer__recherche">
+                <input type="search" id="recherche-ami" placeholder="Pseudo du joueur…" autocomplete="off">
+                <ul id="resultats-ami" class="proposer__resultats" hidden></ul>
+              </div>
+              <div id="ami-choisi" class="proposer__choisi" hidden></div>
+            </div>
+            <p class="marche__aide" id="marche-aide">Choisis un joueur : tu composes ensuite le contrat avec les cartes de ton grimoire et du sien.</p>
+
+            <div id="proposer-cartes" class="marche__plan" hidden>
+              <p class="contrat-edition" id="contrat-edition" hidden></p>
+              <!-- La table : ce qui part, ce qui arrive -->
+              <div class="plateau-echange">
+                <div class="plateau-echange__cote">
+                  <h3>Tu donnes <span id="compte-donnees">0 / 6</span></h3>
+                  <div id="table-donnees" class="plateau-echange__eventail"></div>
+                  <label class="plateau-echange__or">Or <input type="number" id="or-donne" min="0" max="1000000" step="1" value="0" inputmode="numeric"></label>
+                  <div class="plateau-echange__objets" id="objets-donnes"></div>
+                  <p class="plateau-echange__valeur" id="valeur-donne"></p>
+                </div>
+                <div class="plateau-echange__balance" aria-hidden="true">⚖</div>
+                <div class="plateau-echange__cote">
+                  <h3>Tu reçois <span id="compte-demandees">0 / 6</span></h3>
+                  <div id="table-demandees" class="plateau-echange__eventail"></div>
+                  <label class="plateau-echange__or">Or <input type="number" id="or-demande" min="0" max="1000000" step="1" value="0" inputmode="numeric"></label>
+                  <div class="plateau-echange__objets" id="objets-demandes"></div>
+                  <p class="plateau-echange__valeur" id="valeur-demande"></p>
+                </div>
+                <p class="plateau-echange__equilibre" id="equilibre"></p>
+                <div class="plateau-echange__envoi">
+                  <input type="text" id="message-echange" maxlength="200" placeholder="Une clause ou un petit mot (facultatif)">
+                  <button type="button" class="btn-petit" id="btn-annuler-edition" hidden>Annuler la modification</button>
+                  <button type="button" class="btn-dc-or" id="btn-proposer" disabled>Rédiger et apposer mon sceau</button>
+                </div>
+              </div>
+              <p class="souhaits-ami" id="souhaits-ami" hidden></p>
+              <div class="coffres">
+              <!-- Mon grimoire : les cartes que je donne -->
+              <div class="coffre">
+                <h3 class="coffre__titre">Ton grimoire</h3>
+                <p class="coffre__aide">Touche une carte pour la donner (elle se pose sur la table). ♥ = il la recherche. Le dernier exemplaire d’une favorite ne s’échange pas.</p>
+                <div id="mes-cartes-echange" class="coffre__grille"></div>
+              </div>
+              <!-- Le grimoire de l'autre joueur -->
+              <div class="coffre">
+                <h3 class="coffre__titre" id="titre-ses-cartes">Son grimoire</h3>
+                <p class="coffre__aide">Touche une carte pour la demander. Une carte que tu as déjà te donnera un exemplaire de plus. ♥ = sur ta liste de souhaits.</p>
+                <div id="ses-cartes" class="coffre__grille"></div>
+              </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Contrats ouverts : apposer son sceau, modifier, rompre -->
+          <div class="marche__panneau" data-panneau="courrier" hidden>
+            <p class="marche__aide">Un contrat est ratifié quand les deux joueurs y ont apposé leur sceau. Toute modification brise les sceaux : chacun doit revalider.</p>
+            <div id="contrats" class="contrats"></div>
+          </div>
+
+          <!-- Liste de souhaits -->
+          <div class="marche__panneau" data-panneau="souhaits" hidden>
+            <p class="marche__aide">Les cartes que tu recherches : les autres joueurs les voient quand ils rédigent un contrat avec toi.</p>
+            <div id="mes-souhaits" class="souhaits"></div>
+            <h3 class="marche__rubrique">Toutes les cartes</h3>
+            <input type="search" id="souhait-recherche" class="souhaits__recherche" placeholder="Chercher une carte…" aria-label="Chercher une carte">
+            <div id="catalogue-souhaits" class="souhaits souhaits--catalogue"></div>
+          </div>
+
+          <!-- Registre : contrats ratifiés ou rompus, ventes conclues sur le Marché -->
+          <div class="marche__panneau" data-panneau="registre" hidden>
+            <div id="historique-echanges" class="contrats"></div>
+          </div>
+        </section>
+    </div>
   </main>
 
   <div id="notif" class="notif" role="status" aria-live="polite"></div>
