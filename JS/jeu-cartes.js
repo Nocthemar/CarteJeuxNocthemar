@@ -1542,7 +1542,7 @@ function ficheLoupe({ def, u, camp, main }) {
   if (unite) {
     const a = u ? attaqueDe(p, camp, u) : def.a;
     const besoinHeros = Math.min(20, Math.max(2, SEUIL_BASE + DEFENSE_HEROS - a));
-    const degats = { echec: 0, faible: 0, normal: a, solide: a + 1, critique: a * 2 };
+    const degats = { echec: 0, faible: 0, eraflure: Math.min(1, a), normal: a, solide: a + 1, critique: a * 2 };
     const jets = JETS.map((j) => `
       <li class="jet--${j.q}"><span>${esc(j.jet)}</span><b>${degats[j.q]}</b><small>${esc(j.label)} · ${esc(j.texte)}</small></li>`).join('');
     html += `<h3 class="loupe__titre">En attaquant (d20 + ${a} contre 8 + Défense)</h3>

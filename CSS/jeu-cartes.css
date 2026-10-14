@@ -2728,3 +2728,18 @@ body.en-duel { overflow: hidden; padding: 0 !important; }
 .dc-caps { overflow: visible; }
 .dc-k { overflow: visible; }
 
+
+
+/* Le dé posé sur le médaillon « N », son résultat à droite le long de la barre : le N et le dé restent lisibles */
+.page-jeu .tg-bord .centre { display: block; }
+.page-jeu .tg-bord .centre__resultat {
+  position: absolute; left: calc(100% + 2.6cqw); top: 50%;
+  translate: 0 -50%;
+  min-width: 0; width: max-content; max-width: 30cqw;
+  white-space: nowrap;
+  font-size: clamp(.8rem, 1.3cqw, 1.15rem);
+}
+
+/* Éraflure : le coup passe de justesse (1 dégât) */
+.centre__resultat--eraflure { color: #e6c78a; }
+.d20--eraflure polygon { stroke: #c9a45e; }

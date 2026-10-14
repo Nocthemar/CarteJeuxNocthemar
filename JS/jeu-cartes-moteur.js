@@ -11,7 +11,7 @@
 //  Sans action : le Jet du Destin (2 énergie), Défausser et Méditer (1 énergie chacun), une fois par tour chacun.
 //
 //  Les unités ont Attaque / Défense / PV. Attaquer : d20 + Attaque contre 8 + Défense de la cible
-//  (héros : Défense 2). 20 naturel = critique (touche toujours, dégâts doublés) ; 1 naturel = échec
+//  (héros : Défense 2). Sous le seuil, un dé de 5 ou plus fait une Éraflure (1 dégât). 20 naturel = critique (touche toujours, dégâts doublés) ; 1 naturel = échec
 //  critique (raté, l'attaquant est exposé : -2 Défense jusqu'à son prochain tour).
 //  Capacités (CAPACITES) : Garde, Provocation, Charge, Riposte, Interception, Esquive, Bouclier,
 //  Soin, Inspiration, Percée, Drain. Certaines agissent pendant le tour adverse (réactions).
@@ -349,7 +349,8 @@ export const d20 = () => 1 + Math.floor(Math.random() * 20);
 // Résultats d'un jet d'attaque (d20 + Attaque contre le seuil : 8 + Défense de la cible)
 export const JETS = [
   { q: 'echec',    jet: '1 naturel',        label: 'Échec critique', texte: 'Raté, et l’attaquant est exposé : -2 Défense jusqu’à son prochain tour.' },
-  { q: 'faible',   jet: 'sous le seuil',    label: 'Raté',           texte: 'Aucun dégât.' },
+  { q: 'faible',   jet: '2 à 4, sous le seuil', label: 'Raté',        texte: 'Aucun dégât.' },
+  { q: 'eraflure', jet: '5 ou plus, sous le seuil', label: 'Éraflure', texte: 'Le coup passe de justesse : 1 dégât.' },
   { q: 'normal',   jet: 'seuil atteint',    label: 'Touché',         texte: 'Dégâts = Attaque.' },
   { q: 'solide',   jet: 'seuil + 5',        label: 'Coup solide',    texte: '+1 dégât.' },
   { q: 'critique', jet: '20 naturel',       label: 'Critique !',     texte: 'Touche toujours, dégâts doublés.' },
@@ -885,14 +886,15 @@ export function attaquer(p, qui, uid, cible) {
   const seuil = seuilDe(p, cible);
   const total = de + atk + bonus;
   const echec = de === 1 || (de === 2 && p.terrainId === 'erynedhal');
-  const q = echec ? 'echec' : de === 20 ? 'critique' : total >= seuil + 5 ? 'solide' : total >= seuil ? 'normal' : 'faible';
+  // Sous le seuil : un dé de 5 ou plus fait quand même une Éraflure (1 dégât) ; de 2 à 4, c'est raté
+  const q = echec ? 'echec' : de === 20 ? 'critique' : total >= seuil + 5 ? 'solide' : total >= seuil ? 'normal' : de >= 5 ? 'eraflure' : 'faible';
   const info = rollInfo(q);
   Object.assign(ev, { de, des, bonus, atk, total, seuil, info, attaque: attaqueJouee(u.def, de) });
   camp.stats.jets += 1;
   if (q === 'critique') camp.stats.critiques += 1;
   if (q === 'echec') camp.stats.echecs += 1;
 
-  let degats = q === 'critique' ? atk * 2 : q === 'solide' ? atk + 1 : q === 'normal' ? atk : 0;
+  let degats = q === 'critique' ? atk * 2 : q === 'solide' ? atk + 1 : q === 'normal' ? atk : q === 'eraflure' ? Math.min(1, atk) : 0;
   if (q === 'echec') { u.expose = true; ev.expose = true; }
 
   if (degats > 0) {
@@ -922,7 +924,9 @@ export function attaquer(p, qui, uid, cible) {
     else { u.h -= coup; ev.riposte = coup; }
   }
 
-  p.jets.unshift({ qui, de, q, label: info.label, quoi: `${u.n} attaque`, detail: `${total} contre ${seuil}` });
+  // Esquive : les deux dés sont gardés dans l'historique (le plus bas compte)
+  const esquive = des.length > 1 ? `Esquive : ${des.join(' et ')} · ` : '';
+  p.jets.unshift({ qui, de, q, label: info.label, quoi: `${u.n} attaque`, detail: `${esquive}${total} contre ${seuil}` });
   p.jets.length = Math.min(p.jets.length, 8);
   ev.morts = nettoyer(p);
   return ev;

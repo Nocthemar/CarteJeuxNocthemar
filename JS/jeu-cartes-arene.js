@@ -595,8 +595,8 @@ export async function animer(ev) {
       att?.classList.add('fx-prepare');
       cib?.classList.add('fx-visee');
       style.charge?.(att);
-      if (ev.esquive && cib) flotter(cib, 'Esquive : deux dés, le plus bas', 'buff');
-      const calcul = ev.total != null ? ` · ${ev.de}${ev.atk ? ` + ${ev.atk}` : ''}${ev.bonus ? ` + ${ev.bonus}` : ''} = ${ev.total} / ${ev.seuil}` : '';
+      if (ev.esquive && cib) flotter(cib, `Esquive : ${ev.des.join(' et ')}, le plus bas compte`, 'buff');
+      const calcul = ev.total != null ? `${ev.esquive ? ` · Esquive (${ev.des.join(' / ')})` : ''} · ${ev.de}${ev.atk ? ` + ${ev.atk}` : ''}${ev.bonus ? ` + ${ev.bonus}` : ''} = ${ev.total} / ${ev.seuil}` : '';
       await lancerDe(ev.de, `${ev.info.label}${calcul}`, ev.info.q);
       att?.classList.remove('fx-prepare');
       cib?.classList.remove('fx-visee');

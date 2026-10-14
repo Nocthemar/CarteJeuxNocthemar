@@ -312,15 +312,21 @@ export function annonce(el, texte, icone = '', couleur = '#f0c873') {
   a.innerHTML = `${icone ? '<i></i>' : ''}<b></b>`;
   if (icone) a.querySelector('i').textContent = icone;
   a.querySelector('b').textContent = texte;
-  Object.assign(a.style, { left: `${x}px`, top: `${Math.max(40, r.top - 8)}px` });
+  // Au-dessus de l'élément, ou dessous s'il est dans la moitié basse de l'écran (tes troupes) :
+  // le nom ne passe jamais sur le dé, au centre du plateau
+  const dessous = r.top + r.height / 2 > innerHeight * 0.5;
+  const [depart, pose, fin] = dessous
+    ? ['translate(-50%, -40%) scale(.7)', 'translate(-50%, 0) scale(1)', 'translate(-50%, 40%) scale(.9)']
+    : ['translate(-50%, -60%) scale(.7)', 'translate(-50%, -100%) scale(1)', 'translate(-50%, -140%) scale(.9)'];
+  Object.assign(a.style, { left: `${x}px`, top: dessous ? `${Math.min(innerHeight - 40, r.bottom + 8)}px` : `${Math.max(40, r.top - 8)}px` });
   calque().appendChild(a);
   if (actif()) {
-    a.animate([{ opacity: 0, transform: 'translate(-50%, -60%) scale(.7)' }, { opacity: 1, transform: 'translate(-50%, -100%) scale(1)' }],
+    a.animate([{ opacity: 0, transform: depart }, { opacity: 1, transform: pose }],
       { duration: 260, easing: 'cubic-bezier(.2,1.4,.4,1)', fill: 'forwards' });
-  } else a.style.transform = 'translate(-50%, -100%)';
+  } else a.style.transform = pose;
   return () => {
     if (!actif()) { a.remove(); return; }
-    const s = a.animate([{ opacity: 1, transform: 'translate(-50%, -100%)' }, { opacity: 0, transform: 'translate(-50%, -140%) scale(.9)' }], { duration: 300, fill: 'forwards' });
+    const s = a.animate([{ opacity: 1, transform: pose }, { opacity: 0, transform: fin }], { duration: 300, fill: 'forwards' });
     s.onfinish = () => a.remove();
   };
 }
