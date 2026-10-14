@@ -13,7 +13,7 @@
 --
 --  Les joueurs LISENT leurs données ; ils n'écrivent jamais directement : tout passe par
 --  les fonctions SECURITY DEFINER, qui vérifient tout côté serveur :
---    pass_commencer_partie(mode, salon) -> ticket     au début d'un duel (IA ou ami)
+--    pass_commencer_partie(mode, salon, difficulte) -> ticket   au début d'un duel (IA ou ami)
 --    pass_fin_partie(ticket, victoire)   -> XP         à la fin du duel
 --    pass_reclamer(numero, piste)        -> récompense
 --    pass_debloquer_premium()            -> paie la piste premium en or
@@ -25,7 +25,8 @@
 --      en demander un nouveau annule le précédent ;
 --    - au plus 3 heures entre le ticket et la fin (pas de durée minimale : le plafond du jour suffit) ;
 --    - contre l'IA : 100 (victoire) / 30 (défaite), 1000 XP par jour au plus ;
---      une victoire rapporte aussi 5 or (jusqu'au plafond d'XP du jour : 50 or au plus) ;
+--      une victoire rapporte aussi de l'or selon la difficulté : 2 (facile), 5 (normal), 10 (difficile),
+--      jusqu'au plafond d'XP du jour (10 victoires au plus) ;
 --    - contre un ami : 150 / 50, 1500 XP par jour au plus ; l'adversaire doit être un autre
 --      compte, avec son propre ticket dans le même salon ; une seule victoire par partie ;
 --    - un abandon ne rapporte rien (le jeu ne déclare pas la fin de la partie).
@@ -100,6 +101,9 @@ create table if not exists public.pass_parties (
   victoire    boolean,
   xp          int not null default 0
 );
+-- Difficulté du duel contre l'IA (l'or d'une victoire en dépend)
+alter table public.pass_parties add column if not exists difficulte text not null default 'normal'
+  check (difficulte in ('facile', 'normal', 'difficile'));
 create index if not exists pass_parties_joueur on public.pass_parties (discord_id, commence_le desc);
 create index if not exists pass_parties_salon on public.pass_parties (salon, commence_le desc) where salon is not null;
 
@@ -237,8 +241,10 @@ $$;
 --  5. Fonctions des joueurs
 -- ---------------------------------------------------------------------
 
--- Début d'un duel : renvoie un ticket (uuid), ou null s'il n'y a pas de saison en cours
-create or replace function public.pass_commencer_partie(p_mode text, p_salon text default null)
+-- Début d'un duel : renvoie un ticket (uuid), ou null s'il n'y a pas de saison en cours.
+-- p_difficulte : la difficulté choisie contre l'IA (facile, normal, difficile)
+drop function if exists public.pass_commencer_partie(text, text);
+create or replace function public.pass_commencer_partie(p_mode text, p_salon text default null, p_difficulte text default 'normal')
 returns uuid
 language plpgsql
 security definer
@@ -257,8 +263,9 @@ begin
   update pass_parties set termine_le = now(), victoire = null, xp = 0
   where discord_id = v_moi and termine_le is null;
 
-  insert into pass_parties (discord_id, mode, salon)
-  values (v_moi, p_mode, case when p_mode = 'ami' then p_salon end)
+  insert into pass_parties (discord_id, mode, salon, difficulte)
+  values (v_moi, p_mode, case when p_mode = 'ami' then p_salon end,
+          case when p_difficulte in ('facile', 'normal', 'difficile') then p_difficulte else 'normal' end)
   returning id into v_id;
   return v_id;
 end;
@@ -354,9 +361,9 @@ begin
   update pass_parties set termine_le = now(), victoire = v_vict, xp = v_xp where id = p_ticket;
   v_total := coalesce(pass_ajouter_xp(v_moi, v_xp), v_prog.xp);
 
-  -- Victoire contre l'Ombre : 5 or, tant que le plafond d'XP du jour n'est pas atteint (50 or par jour au plus)
+  -- Victoire contre l'Ombre : de l'or selon la difficulté (2 / 5 / 10), tant que le plafond d'XP du jour n'est pas atteint
   if v_partie.mode = 'ia' and v_vict and v_xp > 0 then
-    v_or := 5;
+    v_or := case v_partie.difficulte when 'facile' then 2 when 'difficile' then 10 else 5 end;
     perform pass_donner_or(v_moi, v_or, 'Victoire contre l''Ombre');
   end if;
 
@@ -535,11 +542,11 @@ $$;
 revoke all on function public.pass_saison_en_cours()            from public, anon, authenticated;
 revoke all on function public.pass_ajouter_xp(text, int)        from public, anon, authenticated;
 revoke all on function public.pass_donner_or(text, int, text)   from public, anon, authenticated;
-revoke all on function public.pass_commencer_partie(text, text) from public, anon;
+revoke all on function public.pass_commencer_partie(text, text, text) from public, anon;
 revoke all on function public.pass_fin_partie(uuid, boolean)    from public, anon;
 revoke all on function public.pass_reclamer(int, text)          from public, anon;
 revoke all on function public.pass_debloquer_premium()          from public, anon;
-grant execute on function public.pass_commencer_partie(text, text) to authenticated;
+grant execute on function public.pass_commencer_partie(text, text, text) to authenticated;
 grant execute on function public.pass_fin_partie(uuid, boolean)    to authenticated;
 grant execute on function public.pass_reclamer(int, text)          to authenticated;
 grant execute on function public.pass_debloquer_premium()          to authenticated;

@@ -746,9 +746,16 @@ async function terminer(raison = '') {
 // ---------------------------------------------------------------------
 function demanderTicketPass() {
   if (!moi || histoire) return null;
-  const params = role ? { p_mode: 'ami', p_salon: salon?.code ?? null } : { p_mode: 'ia' };
+  const params = role ? { p_mode: 'ami', p_salon: salon?.code ?? null } : { p_mode: 'ia', p_difficulte: difficulte };   // l'or d'une victoire dépend de la difficulté
   return supabase.rpc('pass_commencer_partie', params)
-    .then(({ data, error }) => (error ? null : data))
+    .then(({ data, error }) => {
+      if (!error) return data;
+      // SQL/pass_saison.sql pas encore relancé : la fonction ne connaît pas la difficulté, on la redemande sans
+      if (error.code === 'PGRST202' && params.p_difficulte) {
+        return supabase.rpc('pass_commencer_partie', { p_mode: 'ia' }).then((r) => (r.error ? null : r.data));
+      }
+      return null;
+    })
     .catch(() => null);
 }
 
