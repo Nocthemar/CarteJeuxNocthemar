@@ -28,13 +28,20 @@
   /* Grain du papier */
   --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .24 0 0 0 0 .1 0 0 0 .18 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
 
-  /* Paysage de Nocthémar (img/Fond/profiljoueur.jpg), fixe derrière les affiches,
-     avec un léger assombrissement des bords pour que les affiches ressortent */
+  background: #2b4a63;
+}
+
+/* Paysage de Nocthémar (img/Fond/profiljoueur.jpg), fixe derrière les affiches,
+   avec un léger assombrissement des bords pour que les affiches ressortent.
+   Calque fixe plutôt que background-attachment: fixed (qui redessine tout le fond à chaque
+   défilement et saccade, surtout sur téléphone) ; il remplace le vignettage commun de body::before. */
+body.page-fiche::before,
+:root[data-theme="jour"] body.page-fiche::before {   /* le thème de jour garde ce paysage */
+  z-index: -1;
   background:
     radial-gradient(ellipse 110% 90% at 50% 40%, transparent 55%, rgba(8,12,20,.45) 100%),
     url("../img/Fond/profiljoueur.jpg") center / cover no-repeat,
     #2b4a63;
-  background-attachment: fixed;
 }
 
 /* Sur le papier, l'encre remplace le texte clair du reste du site */
@@ -223,147 +230,6 @@
 
 
 /* ---------- Personnage ---------- */
-.page-fiche .perso__entete {
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0;
-  margin-bottom: 24px;
-  padding-bottom: 0;
-  border-bottom: 0;
-}
-.page-fiche .perso__nom {
-  font-family: "Cinzel Decorative","Cinzel","Cinzel Repli", serif;
-  font-size: clamp(1.6rem, 4vw, 2.2rem);
-  font-weight: 900;
-  color: var(--encre);
-}
-.page-fiche .perso__sous-titre { font-family: "IM Fell English","EB Garamond", serif; font-size: 1.15rem; color: var(--encre-douce); }
-
-/* CA : sceau de cire */
-.page-fiche .perso__jauges { align-items: center; gap: 22px; margin-bottom: 28px; }
-.page-fiche .jauge--badge {
-  width: 66px;
-  height: 66px;
-  min-width: 0;
-  padding: 0;
-  border: 0;
-  border-radius: 46% 54% 50% 50% / 52% 46% 54% 48%;
-  background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--vif) 60%, #fff), var(--vif) 45%, color-mix(in srgb, var(--vif) 60%, #000) 100%);
-  box-shadow: 0 3px 5px rgba(0,0,0,.35), inset 0 0 0 5px rgba(0,0,0,.12);
-}
-.page-fiche .jauge--badge .jauge__label { font-size: .62rem; color: rgba(255,245,225,.85); }
-.page-fiche .jauge--badge .jauge__valeur { font-size: 1.35rem; line-height: 1; color: #fff7e6; text-shadow: 0 1px 1px rgba(0,0,0,.5); }
-
-/* PV / XP : traits d'encre, remplis au lavis */
-.page-fiche .jauge__tete .jauge__label {
-  font-family: "Cinzel","Cinzel Repli", serif;
-  font-size: .78rem;
-  font-weight: 700;
-  letter-spacing: .14em;
-  color: var(--encre);
-}
-.page-fiche .jauge__tete .jauge__valeur { font-family: "IM Fell English", serif; font-size: 1.05rem; font-weight: 400; }
-.page-fiche .jauge__piste {
-  height: 14px;
-  padding: 2px;
-  border: 2px solid var(--encre);
-  border-radius: 2px;
-  background: rgba(255,250,235,.25);
-  box-shadow: none;
-}
-.page-fiche .jauge--pv .jauge__remplissage { background: linear-gradient(180deg, #a83a32, #7c241f); }
-.page-fiche .jauge--xp .jauge__remplissage { background: linear-gradient(180deg, color-mix(in srgb, var(--vif2) 80%, #fff), var(--vif2)); }
-
-/* Attributs : jetons de bois, chiffres gravés au fer */
-.page-fiche .perso__attributs {
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 14px;
-  margin-bottom: 28px;
-  border: 0;
-}
-.page-fiche .attribut {
-  justify-content: center;
-  aspect-ratio: 1;
-  width: 100%;
-  max-width: 86px;
-  margin: 0 auto;
-  padding: 0;
-  border: 0 !important;
-  border-radius: 50%;
-  background:
-    radial-gradient(circle at 50% 50%, transparent 0 58%, rgba(0,0,0,.25) 59% 61%, transparent 62%),          /* cerne */
-    radial-gradient(circle at 35% 28%, rgba(255,235,200,.35), transparent 55%),
-    repeating-radial-gradient(circle at 70% 120%, rgba(90,50,20,.18) 0 2px, transparent 2px 7px),   /* cernes du bois */
-    linear-gradient(160deg, #d2a46c, #b07b45);
-  box-shadow: inset 0 0 0 3px #5a361a, inset 0 -4px 6px rgba(60,30,10,.35), 0 4px 6px rgba(0,0,0,.4);
-  transition: transform .2s ease;
-}
-.page-fiche .attribut:hover { transform: rotate(-6deg) translateY(-2px); }
-.page-fiche .attribut__valeur {
-  font-family: "Cinzel","Cinzel Repli", serif;
-  font-size: 1.45rem;
-  font-weight: 800;
-  line-height: 1;
-  color: #22140a;
-  text-shadow: 0 1px 0 rgba(255,220,170,.35);
-}
-.page-fiche .attribut__label {
-  font-family: "Cinzel","Cinzel Repli", serif;
-  font-size: .64rem;
-  font-weight: 700;
-  letter-spacing: .14em;
-  color: #2c1a0d;
-  text-shadow: 0 1px 0 rgba(255,220,170,.3);
-}
-.page-fiche .attribut--pos .attribut__valeur,
-.page-fiche .attribut--neg .attribut__valeur { color: #22140a; }
-
-/* Veine : étiquette nouée par une ficelle */
-.page-fiche .chip {
-  gap: 10px;
-  padding: 5px 16px 5px 26px;
-  border: 1px solid rgba(60,40,20,.45);
-  border-radius: 0;
-  background: rgba(255,250,235,.35);
-  clip-path: polygon(12px 0, 100% 0, 100% 100%, 12px 100%, 0 50%);
-  font-size: 1rem;
-}
-.page-fiche .chip::before {
-  content: "";
-  position: absolute;
-  margin-left: -16px;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--encre);
-}
-.page-fiche .chip__label { font-family: "Cinzel","Cinzel Repli", serif; font-weight: 700; color: var(--vif-encre); }
-.page-fiche .chip__valeur { font-family: "IM Fell English", serif; font-weight: 400; font-style: italic; color: var(--encre); }
-
-/* Champs divers */
-.page-fiche .stats--autres { border-top-color: var(--trait); }
-.page-fiche .stat dt { font-family: "Cinzel","Cinzel Repli", serif; font-weight: 700; color: var(--vif-encre); }
-
-/* Inventaire : posé sur une étagère */
-.page-fiche .perso__inventaire {
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-  background: none;
-}
-.page-fiche .perso__inventaire > dt {
-  font-family: "Cinzel","Cinzel Repli", serif;
-  font-weight: 700;
-  letter-spacing: .14em;
-  color: var(--encre);
-}
-.page-fiche .perso__inventaire .stat__liste--images {
-  padding-bottom: 14px;
-  background:
-    linear-gradient(180deg, transparent calc(100% - 14px), #6b4528 calc(100% - 14px), #4a2e19 calc(100% - 4px), rgba(0,0,0,.3) calc(100% - 4px)),
-    linear-gradient(transparent, transparent);
-  box-shadow: 0 6px 6px -4px rgba(0,0,0,.35);
-}
 .page-fiche .objet-image {
   aspect-ratio: 1;
   align-items: end;
@@ -376,17 +242,6 @@
 .page-fiche .objet-image--choisi { background: rgba(255,250,235,.3); box-shadow: inset 0 0 0 2px var(--vif-encre); }
 .page-fiche .objet-fiche { border-top-color: var(--trait); }
 .page-fiche .objet-fiche__nom { font-family: "Cinzel","Cinzel Repli", serif; color: var(--vif-encre); }
-.page-fiche .perso__inventaire .perso__inventaire-suite,
-.page-fiche .perso__inventaire .perso__inventaire-suite:hover { color: var(--encre); }
-
-/* Bourse */
-.page-fiche .perso__bourse-label {
-  font-family: "Cinzel","Cinzel Repli", serif;
-  font-weight: 700;
-  letter-spacing: .14em;
-  color: var(--encre);
-}
-.page-fiche .perso__bourse-valeur #solde { color: var(--encre); text-shadow: none; }
 
 
 /* ---------- Deck ---------- */
@@ -440,8 +295,6 @@
 .page-fiche .duel__sur { font-family: "IM Fell English SC", serif; font-size: .95rem; letter-spacing: .08em; text-transform: none; color: var(--encre-douce); }
 .page-fiche .duel__accroche { font-size: 1.05rem; color: var(--encre); }
 .page-fiche .duel__accroche strong { color: var(--vif-encre); }
-.page-fiche .duel__regles li { border: 1px solid rgba(60,40,20,.4); color: var(--encre); background: rgba(255,250,235,.25); }
-.page-fiche .duel__regles span { color: var(--vif-encre); }
 
 
 /* ---------- Collection / Historique : l'ardoise du tavernier ---------- */
@@ -466,8 +319,6 @@
 .page-fiche #prive .objet__type,
 .page-fiche #prive .transac small { font-family: "Cinzel","Cinzel Repli", serif; font-size: .66rem; letter-spacing: .12em; color: #b8b2a6; }
 .page-fiche #prive .objet__qte { color: #b8b2a6; }
-.page-fiche #prive .btn-petit--equiper { border-color: #ece6da; color: #ece6da; }
-.page-fiche #prive .btn-petit--equiper:hover { background: #ece6da; color: #2b2e2c; }
 .page-fiche #prive .btn-petit--retirer { border-color: #f0a19a; color: #f0a19a; }
 .page-fiche #prive .btn-petit--retirer:hover { background: #f0a19a; color: #2b2e2c; }
 .page-fiche #prive .gain { color: #a8d8a8; }
@@ -489,44 +340,16 @@
   .page-fiche .entete::after { width: 44px; height: 44px; right: 18px; bottom: 18px; }
   .page-fiche .grille .carte:first-child,
   .page-fiche .grille .carte:last-child { transform: none; }
-  .page-fiche .perso__attributs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .page-fiche .perso__bourse-contenu { margin-top: 0; }
   /* colonnes de la collection empilées : trait de craie horizontal */
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .page-fiche .attribut { transition: none; }
 }
 
 
 /* ---------- Le duelliste : cartes et objets de pouvoir ---------- */
-.duelliste__stats {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px 28px;
-  margin: 0 0 6px;
-}
-.duelliste__stats div { display: flex; align-items: baseline; gap: 8px; }
-.duelliste__stats dt {
-  font-family: "Cinzel","Cinzel Repli", serif;
-  font-size: .78rem;
-  font-weight: 700;
-  letter-spacing: .12em;
-  text-transform: uppercase;
-  color: var(--encre-douce);
-}
-.duelliste__stats dd {
-  margin: 0;
-  font-family: "IM Fell English","EB Garamond", serif;
-  font-size: 1.3rem;
-  color: var(--vif-encre, var(--encre));
-}
 /* Objet pas encore possédé : grisé, il reprend ses couleurs au survol */
 .objet-image--manque img { filter: grayscale(1) opacity(.4); }
 .objet-image--manque:hover img { filter: grayscale(.4) opacity(.8); }
 .page-fiche .objet-image--manque img { filter: grayscale(1) opacity(.4); }
 .page-fiche .objet-image--manque:hover img { filter: grayscale(.4) opacity(.8) drop-shadow(0 4px 3px rgba(40,20,5,.5)); }
-.duelliste__compte { margin-left: 6px; font-family: "IM Fell English", serif; letter-spacing: 0; color: var(--vif-encre, var(--encre)); }
 
 
 /* ---------- Encart Duel des Couronnes ---------- */
@@ -684,9 +507,6 @@
 @media (prefers-reduced-motion: reduce) {
   .page-fiche .vitrine .deck-emplacement--plein .deck-flip { transition: none; }
 }
-
-/* Bourse du duelliste : sous le titre, alignée avec la ligne « Objets de pouvoir » */
-.page-fiche .duelliste .perso__bourse-contenu { margin-top: 0; }
 
 
 /* ---------- Fiche d'un objet de pouvoir : une feuille de parchemin ----------

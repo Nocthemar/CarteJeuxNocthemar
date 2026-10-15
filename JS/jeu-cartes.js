@@ -27,10 +27,10 @@ import {
   PV_HEROS, TAILLE_DECK, JETS, DESTIN,
   uniteDepuisCarte, grimoire, construireDeck, melanger, OBJETS, OBJETS_MAX, COPIES_MAX, TRANSCENDANTES_MAX, estObjet, estTranscendante,
   peutAjouter, copiesMax, objetDepuisNom, creerPartie, debutTour, finTour,
-  defendre, peutDefendre, activer, peutActiver, ciblesCapacite, capaciteActive, raisonInjouable,
+  defendre, peutDefendre, activer, peutActiver, ciblesCapacite, raisonInjouable,
   CAPACITES, UNIQUES, SEUIL_BASE, DEFENSE_HEROS, attaqueDe, defenseDe, capsDe, actionsDe,
   TERRAINS, terrainDe,
-  renvoyerMain, renvoiFini, choixRenvoiIA, peutDefausser, defausser, peutMediter, mediter, placerSous, COUT_DEFAUSSE, COUT_MEDITER,
+  renvoyerMain, renvoiFini, choixRenvoiIA, peutDefausser, defausser, peutMediter, mediter, placerSous,
   peutJouer, jouer, ciblesSort, peutAttaquer, ciblesAttaque, attaquer, peutDestin, destin,
   trouver, ai, TROUPES, SORTS, coutDe,
 } from './jeu-cartes-moteur.js';
@@ -430,14 +430,21 @@ $('choix-deck').addEventListener('input', (e) => {
 // Ce que l'adversaire reçoit en ligne : les clés des cartes choisies (l'hôte refait les limites)
 const idsGrimoire = () => grimoireJoueur.map(cleCarte);
 
-// Grimoire d'un joueur à partir de clés (en ligne) : cartes du catalogue relues par l'hôte,
-// troupes du Codex et objets connus seulement
-async function grimoireDepuisCles(cles) {
+// Grimoire d'un joueur à partir de clés (en ligne) : cartes et objets relus par l'hôte dans la
+// collection et l'inventaire de CE joueur (cartes_du_joueur, objets_du_joueur : impossible de jouer
+// une carte qu'on n'a pas), plus les troupes et sorts du Codex, ouverts à tous
+async function grimoireDepuisCles(cles, discordId) {
   const liste = (Array.isArray(cles) ? cles : []).slice(0, TAILLE_DECK).map(String);
-  const ids = [...new Set(liste.filter((k) => /^u\d+$/.test(k)).map((k) => Number(k.slice(1))))];
-  const { data } = ids.length ? await supabase.from('cards').select('*').in('id', ids) : { data: [] };
-  const unites = new Map((data ?? []).filter(jouable).map((c) => [`u${c.id}`, uniteDepuisCarte(c)]));
-  return liste.map((k) => unites.get(k) ?? TROUPES.find((t) => t.id === k) ?? SORTS.find((s) => s.id === k) ?? OBJETS.find((o) => o.id === k)).filter(Boolean);
+  const [{ data: cartes }, { data: items }] = discordId
+    ? await Promise.all([
+      supabase.rpc('cartes_du_joueur', { p_discord_id: discordId }),
+      supabase.rpc('objets_du_joueur', { p_discord_id: discordId }),
+    ])
+    : [{ data: [] }, { data: [] }];
+  const unites = new Map((cartes ?? []).filter(jouable).map((c) => [`u${c.id}`, uniteDepuisCarte(c)]));
+  const objets = new Set(objetsPossedes((items ?? []).map((item) => ({ item }))).map((o) => o.id));
+  return liste.map((k) => unites.get(k) ?? TROUPES.find((t) => t.id === k) ?? SORTS.find((s) => s.id === k)
+    ?? (objets.has(k) ? OBJETS.find((o) => o.id === k) : null)).filter(Boolean);
 }
 
 document.querySelector('.modes').addEventListener('click', (e) => {
@@ -483,6 +490,7 @@ function deckHistoire(noms) {
 async function finHistoire(gagne) {
   const resultat = { niveau: histoire.niveau.id, gagne, recompenses: null, erreur: null };
   if (gagne) {
+    await ticketPass;   // le début du niveau doit être enregistré avant la validation
     const { data, error } = await supabase.rpc('valider_niveau_histoire', { p_niveau_id: histoire.niveau.id });
     // Fonction absente : le SQL du mode Histoire n'a pas encore été lancé dans Supabase
     if (error) resultat.erreur = /schema cache|PGRST20[25]/.test(`${error.code} ${error.message}`)
@@ -773,7 +781,9 @@ async function terminer(raison = '') {
 //  Mode Histoire : l'XP vient de valider_niveau_histoire (premières victoires seulement).
 // ---------------------------------------------------------------------
 function demanderTicketPass() {
-  if (!moi || histoire) return null;
+  if (!moi) return null;
+  // Mode Histoire : le serveur note le début du niveau (une victoire sans partie jouée est refusée)
+  if (histoire) return supabase.rpc('histoire_commencer', { p_niveau_id: histoire.niveau.id }).then(() => null, () => null);
   const params = role ? { p_mode: 'ami', p_salon: salon?.code ?? null } : { p_mode: 'ia', p_difficulte: difficulte };   // l'or d'une victoire dépend de la difficulté
   return supabase.rpc('pass_commencer_partie', params)
     .then(({ data, error }) => {
@@ -789,6 +799,7 @@ function demanderTicketPass() {
 
 const RAISONS_PASS = {
   plafond: 'Plafond d\'XP de pass du jour atteint',
+  court: 'Duel trop court pour rapporter de l’XP de pass',
 };
 
 // Petit message « +X XP de pass » sur l'écran de fin (lien vers la page du pass)
@@ -1164,6 +1175,11 @@ async function afficherResultatClasse(gagne) {
   for (let essai = 0; essai < 8; essai++) {
     const { data, error } = await supabase.rpc('resultat_classe', { p_salon: code, p_victoire: gagne });
     if (error) { el.textContent = `Partie classée : ${error.message}`; return; }
+    if (data?.ok && data.litige) {
+      el.innerHTML = `Partie classée : résultats contradictoires, la partie compte comme une défaite pour les deux camps (<b>${data.ecart}</b> points · ta cote : <b>${data.cote}</b>).`;
+      el.classList.remove('fin__classe--gain');
+      return;
+    }
     if (data?.ok) {
       el.innerHTML = data.deja ? `Partie classée : ta cote est de <b>${data.cote}</b> points (${palierDe(data.cote)}).`
         : `Partie classée : <b>${data.ecart > 0 ? '+' : ''}${data.ecart}</b> points · ta cote : <b>${data.cote}</b> (${palierDe(data.cote)})`;
@@ -1173,7 +1189,7 @@ async function afficherResultatClasse(gagne) {
     if (data && data.ok === false) { el.textContent = `Partie classée : ${data.raison}`; return; }
     await new Promise((r) => setTimeout(r, 2500));
   }
-  el.textContent = 'Partie classée : ton adversaire n’a pas déclaré son résultat ; la partie sera comptée s’il le fait.';
+  el.textContent = 'Partie classée : ton adversaire n’a pas déclaré son résultat ; sans réponse de sa part d’ici 10 minutes, ton résultat sera compté.';
 }
 
 $('btn-connexion').addEventListener('click', () => connexionDiscord());
@@ -1527,7 +1543,7 @@ async function commencerEquipes(dedans) {
     ...ordre(monEq).map((x, i) => ({ ...x, camp: 'joueur', index: i })),
     ...ordre(monEq === 'A' ? 'B' : 'A').map((x, i) => ({ ...x, camp: 'adverse', index: i })),
   ];
-  const decks = await Promise.all(sieges.map(async (x) => construireDeck(x.cle === salon.cle ? grimoireJoueur : await grimoireDepuisCles(x.grimoire))));
+  const decks = await Promise.all(sieges.map(async (x) => construireDeck(x.cle === salon.cle ? grimoireJoueur : await grimoireDepuisCles(x.grimoire, x.discord_id))));
   await salon.annoncer({ pret: false });
   majBoutonPret();
   equipe = {
@@ -1628,7 +1644,7 @@ function diffuser(ev) {
 async function commencerEnLigne(adversaire) {
   role = 'hote';   // réserve la place tout de suite (pas de double lancement)
   // Le Grimoire de l'invité : ses cartes relues dans le catalogue public (limites refaites par le moteur)
-  const sonGrimoire = await grimoireDepuisCles(adversaire.grimoire);
+  const sonGrimoire = await grimoireDepuisCles(adversaire.grimoire, adversaire.discord_id);
 
   await salon.annoncer({ pret: false });
   majBoutonPret();

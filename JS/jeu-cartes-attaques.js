@@ -422,6 +422,58 @@ const ATTAQUES = {
       particules(cib, { n: 34, couleurs: ['#ffffff', '#dff4ff', '#f6d995'], vitesse: 230, gravite: 40, taille: [3, 9] });
     },
   },
+  // Garde de Pravorn
+  'Écu levé': {
+    charge: aura(ACIER, false),
+    async coup(att, cib) {
+      symbole(att, '🛡', { couleur: '#e6eaf1', taille: 50, duree: 700, monte: 10 });
+      const retour = await elan(att, cib, 0.6);
+      jouerSon('acier');
+      // un coup de bouclier : choc sourd, éclats de métal
+      onde(cib, '#c5cad3', 2, 500);
+      particules(cib, { n: 16, couleurs: ACIER, vitesse: 140, gravite: 110, taille: [2, 5] });
+      secousseEcran(6);
+      return retour;
+    },
+  },
+  'Estocade du Serment': {
+    charge: aura([...ACIER, '#f6d995'], false),
+    async coup(att, cib) {
+      const retour = await elan(att, cib, 0.9);
+      jouerSon('acier');
+      // une seule estocade, droite et dorée : le serment à la Couronne
+      griffes(cib, { n: 1, couleur: '#f6d995', angle: -15, epaisseur: 7 });
+      flash(cib, 'rgba(246,217,149,.85)', 2);
+      particules(cib, { n: 18, couleurs: [...ACIER, '#f6d995'], vitesse: 180, gravite: 90, taille: [2, 5] });
+      return retour;
+    },
+  },
+  // Gardes de Pravorn
+  'Mur de Boucliers': {
+    charge: (att) => { aura(ACIER, false)(att); symbole(att, '🛡', { couleur: '#c5cad3', taille: 44, duree: 900, monte: 0 }); },
+    async coup(att, cib) {
+      jouerSon('chaine');
+      // les boucliers avancent en ligne et percutent la cible
+      await salve(att, cib, 3, { forme: '🛡', couleur: '#c5cad3', taille: 30, duree: 420, arc: 0 }, 70);
+      jouerSon('acier');
+      griffes(cib, { n: 3, couleur: '#c5cad3', angle: 90, ecart: 18, epaisseur: 5 });
+      onde(cib, '#8a919c', 2.2, 600);
+      secousseEcran(8);
+    },
+  },
+  'Charge de la Garde': {
+    charge: aura([...ACIER, '#4f7a5a'], false),
+    async coup(att, cib) {
+      const retour = await elan(att, cib, 0.95);
+      jouerSon('choc');
+      // trois lances baissées frappent ensemble ; les capes vertes dans la poussière
+      griffes(cib, { n: 3, couleur: '#e6eaf1', angle: -10, ecart: 14, epaisseur: 4 });
+      flash(cib, 'rgba(230,234,241,.8)', 2.2);
+      particules(cib, { n: 22, couleurs: ['#c5cad3', '#4f7a5a', '#8a7a5c'], vitesse: 170, gravite: 120, taille: [3, 7] });
+      secousseEcran(10);
+      return retour;
+    },
+  },
   // Veilleuse Écarlate
   'Saignée Pourpre': {
     async coup(att, cib) {
@@ -448,7 +500,8 @@ const ATTAQUES = {
 // Chorégraphie d'une attaque (ev.attaque : { nom, veine } ou null)
 export function styleAttaque(attaque) {
   const veine = VEINES_FX[attaque?.veine] ?? EPEE;
-  const perso = ATTAQUES[attaque?.nom] ?? {};
+  // (en ligne, l'invité reçoit les apostrophes droites changées en ’ : JS/jeu-cartes-ligne.js, nettoyer)
+  const perso = ATTAQUES[attaque?.nom] ?? ATTAQUES[String(attaque?.nom ?? '').replace(/’/g, "'")] ?? {};
   return {
     couleur: perso.couleur ?? veine.couleur,
     icone: VEINES[attaque?.veine]?.[1] ?? '⚔',

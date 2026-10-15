@@ -387,8 +387,9 @@ async function choisirAmi(j, garder = false) {
   if (cartes.error) { notifier(cartes.error.message || 'Impossible de voir ses cartes.', 'erreur'); return; }
   etat.sesCartes = cartes.data ?? [];
   etat.sesCartes.forEach((c) => etat.cartes.set(c.id, c));
-  etat.sesObjets = sesObjets.data ?? [];
-  etat.mesObjets = mesObjets.data ?? [];
+  // Seulement les objets échangeables (items.echangeable, SQL/commerce.sql)
+  etat.sesObjets = (sesObjets.data ?? []).filter((o) => o.echangeable !== false);
+  etat.mesObjets = (mesObjets.data ?? []).filter((o) => o.echangeable !== false);
   [...etat.sesObjets, ...etat.mesObjets].forEach((o) => etat.objets.set(String(o.id), o));
   etat.souhaitsAmi = new Set((souhaits.data ?? []).map((s) => s.card_id));
   if (change && !garder) {

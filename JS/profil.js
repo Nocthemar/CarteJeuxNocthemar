@@ -287,7 +287,7 @@ const PALIERS_OR = [
   [1500, 'tas-4-enorme', 12],
 ];
 const SANS_ETINCELLES_JUSQUA = 10;   // de 0 à 10 pièces : pas d'étincelles
-const imageOr = (nom) => new URL(`img/OR/pieces/${nom}.png`, SITE_ROOT).href;
+const imageOr = (nom) => new URL(`img/OR/pieces/${nom}.webp`, SITE_ROOT).href;
 
 // Un tour complet : face -> profil, puis les mêmes images en miroir (le revers de la pièce)
 const TOUR_PIECE = [

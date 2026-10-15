@@ -10,7 +10,7 @@ import { htmlInfos } from './cartes.js';
 import {
   ENERGIE_MAX, COUT_DESTIN, COUT_DEFAUSSE, COUT_MEDITER, CAPACITES, UNIQUES,
   peutJouer, peutAttaquer, peutDefendre, peutActiver, capaciteActive, peutDestin, peutDefausser, peutMediter,
-  rollInfo, coutDe, actionsDe, capsDe, attaqueDe, defenseDe, trouver,
+  coutDe, actionsDe, capsDe, attaqueDe, defenseDe, trouver,
   terrainDe,
 } from './jeu-cartes-moteur.js';
 import { jouerSon, SM } from './jeu-cartes-son.js';
@@ -209,15 +209,6 @@ function htmlHeros(camp, qui, avatar, sel) {
       <span class="dc-heros__pv"><span>${Math.max(0, camp.pv)}</span></span>
       <span class="dc-heros__nom">${esc(camp.nom)}</span>
     </button>`;
-}
-
-// Pioche : une pile de dos de cartes (plus ou moins haute) et le nombre de cartes restantes
-function pileDeck(n) {
-  const epaisseur = n > 12 ? 3 : n > 4 ? 2 : n > 0 ? 1 : 0;
-  return `
-    <span class="pile-deck" title="Grimoire : ${n} carte${n > 1 ? 's' : ''} restante${n > 1 ? 's' : ''}">
-      ${'<i></i>'.repeat(epaisseur)}<b>${n}</b>
-    </span>`;
 }
 
 // Le Tombeau, posé sur le grand cadre du tapis : la dernière carte arrivée, face visible,
@@ -768,8 +759,6 @@ async function mourir(uids = []) {
   await pause(650);
 }
 
-// Valeur d'un jet pour l'aide (« 15 à 19 : coup solide »)
-export const libelleJet = (q) => rollInfo(q)?.label ?? '';
 
 
 // ---------------------------------------------------------------------

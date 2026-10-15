@@ -14,7 +14,6 @@
   gap:1em;
 }
 .has-rail .topbar .crumb{ display:inline; white-space:nowrap; }
-.has-rail .side-rail{ display:none; }   /* ancien rail de l'accueil, remplacé */
 
 /* ---------- Barre latérale ---------- */
 .rail{
@@ -79,14 +78,6 @@
 .rail .search-wrap{ margin:0; position:relative; }
 .rail .nav-search.rail-item{ height:40px; width:100%; justify-content:flex-start; }
 .rail .nav-search.active{ background:rgba(255,248,235,0.12); color:var(--parchment, #f2eee6); }
-.rail .search-panel{
-  font-family:"EB Garamond","EB Garamond Repli", serif; letter-spacing:normal;
-  position:absolute;
-  top:50%; left:calc(100% + 22px); right:auto;
-  width:340px; max-width:none;
-  transform:translate(-8px, -50%);
-}
-.rail .search-panel.open{ transform:translate(0, -50%); }
 
 /* ---------- Compte Discord dans la barre ---------- */
 .rail #discord-auth{
@@ -150,11 +141,6 @@
   .rail .auth-actions{ flex-direction:row; margin:0; gap:10px; padding-left:0; }
   /* le panneau de recherche s'ouvre au-dessus de la barre, sur toute sa largeur */
   .rail .search-wrap{ position:static; }
-  .rail .search-panel,
-  .rail .search-panel.open{
-    position:absolute; top:auto; bottom:calc(100% + 10px); left:0; right:0;
-    width:auto; transform:none;
-  }
   body.has-rail{ padding-bottom:76px; }
 }
 

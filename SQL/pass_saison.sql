@@ -23,7 +23,7 @@
 --  Anti-triche des duels (le serveur ne voit pas la partie, qui se joue dans le navigateur) :
 --    - un ticket par partie, demandé au début, utilisable une seule fois ;
 --      en demander un nouveau annule le précédent ;
---    - au plus 3 heures entre le ticket et la fin (pas de durée minimale : le plafond du jour suffit) ;
+--    - entre 45 secondes et 3 heures entre le ticket et la fin (60 tickets par heure au plus) ;
 --    - contre l'IA : 100 (victoire) / 30 (défaite), 1000 XP par jour au plus ;
 --      une victoire rapporte aussi de l'or selon la difficulté : 2 (facile), 5 (normal), 10 (difficile),
 --      jusqu'au plafond d'XP du jour (10 victoires au plus) ;
@@ -259,6 +259,15 @@ begin
   if p_mode = 'ami' and coalesce(p_salon, '') !~ '^[A-Z0-9]{5}$' then raise exception 'Salon invalide.'; end if;
   if pass_saison_en_cours() is null then return null; end if;
 
+  perform pg_advisory_xact_lock(hashtext('pass:' || v_moi));
+  -- Pas plus de 60 tickets par heure (un duel en demande un), et les tickets annulés de plus
+  -- d'un jour sont effacés : la table ne grossit pas sans fin
+  if (select count(*) from pass_parties where discord_id = v_moi and commence_le > now() - interval '1 hour') >= 60 then
+    raise exception 'Trop de duels commencés en une heure : réessaie un peu plus tard.';
+  end if;
+  delete from pass_parties
+  where discord_id = v_moi and victoire is null and termine_le < now() - interval '1 day';
+
   -- Un seul ticket ouvert par joueur : le précédent est annulé (sans XP)
   update pass_parties set termine_le = now(), victoire = null, xp = 0
   where discord_id = v_moi and termine_le is null;
@@ -311,10 +320,15 @@ begin
     return json_build_object('xp', 0, 'raison', 'saison');
   end if;
 
-  -- Durée : pas de minimum (une partie peut être courte), au plus 3 heures
+  -- Durée : au plus 3 heures, et au moins 45 secondes (sinon la « partie » n'a pas été jouée :
+  -- un appel direct à cette fonction ne rapporte rien)
   if now() - v_partie.commence_le > interval '3 hours' then
     update pass_parties set termine_le = now(), victoire = v_vict where id = p_ticket;
     return json_build_object('xp', 0, 'raison', 'ticket');
+  end if;
+  if now() - v_partie.commence_le < interval '45 seconds' then
+    update pass_parties set termine_le = now(), victoire = null, xp = 0 where id = p_ticket;
+    return json_build_object('xp', 0, 'raison', 'court');
   end if;
 
   if v_partie.mode = 'ami' then

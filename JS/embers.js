@@ -5,6 +5,8 @@
 
   // Animation désactivée si l'utilisateur préfère moins de mouvement.
   if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  // … ou s'il a choisi « effets légers » dans les Paramètres (JS/preferences.js)
+  try { if(localStorage.getItem('duel-effets-legers') === '1') return; } catch(e) { /* stockage indisponible */ }
 
   const ctx = canvas.getContext('2d');
   let w, h, dpr;

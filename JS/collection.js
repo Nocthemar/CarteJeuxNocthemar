@@ -94,24 +94,6 @@ async function init() {
 }
 
 
-// Après un échange accepté : les cartes et le deck relus (des cartes sont parties, d'autres arrivées)
-async function recharger() {
-  const moi = await getMonJoueur();
-  if (!moi) return;
-  const [{ data }, deckJoueur] = await Promise.all([
-    lireCartes(moi.discord_id),
-    chargerDeck(moi.discord_id),
-  ]);
-  remplir(data);
-  etat.selection = null;
-  deck = new Deck($('deck'), { ...deckJoueur, editable: true, surChangement: afficher });
-  const n = etat.cartes.size;
-  $('livre-compte').textContent = `${n} carte${n > 1 ? 's' : ''}`;
-  $('collection-vide').hidden = n > 0;
-  afficher();
-}
-
-
 // ---------------------------------------------------------------------
 //  Les deux choix : le grimoire ou la roue s'ouvre (et se referme) à la place de l'écran de choix
 // ---------------------------------------------------------------------

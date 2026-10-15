@@ -24,8 +24,11 @@
 --
 --  Cote : système Elo (K = 32). Paliers affichés : Bronze < 1 100 ≤ Argent < 1 250 ≤ Or < 1 400
 --  ≤ Platine < 1 550 ≤ Diamant < 1 700 ≤ Couronne.
---  Le duel se joue dans le navigateur de l'hôte : un joueur qui ment sur son résultat ne gagne rien
---  (les deux déclarations doivent concorder), mais il peut faire annuler la partie.
+--  Le duel se joue dans le navigateur de l'hôte ; contre la triche sur les résultats :
+--    - deux victoires déclarées = LITIGE : défaite pour les deux camps (mentir ne sauve pas une défaite) ;
+--    - un camp qui ne déclare rien (onglet fermé…) : au bout de 10 minutes, la déclaration de l'autre
+--      camp est comptée (classe_regler_en_suspens, lancée à chaque recherche de partie).
+--  Le 1v1 utilise aussi salons_classes (équipe A = l'hôte, B = l'invité) : on sait qui jouait contre qui.
 --
 --  À exécuter dans Supabase > SQL Editor, APRÈS cartes_collection.sql. Relançable.
 -- =====================================================================
@@ -132,6 +135,9 @@ begin
   delete from file_classee where (salon is null and vu_le < now() - interval '20 seconds')
     or (salon is not null and vu_le < now() - interval '3 hours');
   delete from salons_classes where cree_le < now() - interval '7 days';
+  delete from parties_classees where cree_le < now() - interval '30 days';
+  -- Les parties dont un seul camp a déclaré son résultat depuis 10 minutes sont comptées
+  perform classe_regler_en_suspens();
 
   insert into rangs (discord_id) values (v_moi) on conflict do nothing;
   select cote into v_cote from rangs where discord_id = v_moi;
@@ -195,15 +201,18 @@ begin
     return json_build_object('attente', true, 'ecart', v_ecart);
   end if;
 
-  -- Un salon pour les deux : le plus ancien dans la file est l'hôte
+  -- Un salon pour les deux : le plus ancien dans la file est l'hôte (équipe A), l'autre l'équipe B
   loop
     v_code := '';
     for i in 1..5 loop v_code := v_code || substr(v_lettres, 1 + floor(random() * length(v_lettres))::int, 1); end loop;
     exit when not exists (select 1 from file_classee where salon = v_code)
-      and not exists (select 1 from parties_classees where salon = v_code);
+      and not exists (select 1 from parties_classees where salon = v_code)
+      and not exists (select 1 from salons_classes where salon = v_code);
   end loop;
   update file_classee set salon = v_code, role = case when discord_id = v_adv.discord_id then 'hote' else 'invite' end
   where discord_id in (v_moi, v_adv.discord_id);
+  insert into salons_classes (salon, discord_id, mode, equipe) values
+    (v_code, v_adv.discord_id, '1v1', 'A'), (v_code, v_moi, '1v1', 'B');
   return json_build_object('salon', v_code, 'role', 'invite');
 end;
 $$;
@@ -217,77 +226,93 @@ as $$
   delete from file_classee where discord_id = my_discord_id();
 $$;
 
--- Fin d'une partie classée en 2v2 (appelée par resultat_classe) : comptée dès qu'un joueur de chaque
--- équipe a déclaré son résultat et que les deux concordent ; les deux joueurs d'une équipe gagnent
--- (ou perdent) les mêmes points, selon la cote moyenne des deux équipes
-create or replace function public.resultat_classe_2v2(p_salon text, p_moi text, p_victoire boolean)
-returns json
+-- Compte une partie (1v1 ou 2v2 : les équipes A et B de salons_classes, une seule personne par équipe
+-- en 1v1). Elo par équipe (K = 32, 4 points au moins), sur la cote moyenne de chaque équipe :
+-- l'équipe gagnante prend d'autant plus de points que l'autre était mieux classée.
+-- p_gagnante null = LITIGE (les deux camps ont déclaré une victoire) : les deux équipes perdent, chacune
+-- comme si l'autre avait gagné. Mentir sur une défaite ne rapporte donc jamais rien.
+-- Les points de chaque joueur sont notés dans salons_classes.ecart.
+create or replace function public.classe_compter(p_salon text, p_gagnante text)
+returns void
 language plpgsql
 security definer
 set search_path = public
 as $$
 declare
-  v_vict     boolean := coalesce(p_victoire, false);
-  v_equipe   text;
-  v_adv_vict boolean;
-  v_gagnante text;
-  v_cote_g   numeric;
-  v_cote_p   numeric;
-  v_attendu  numeric;
-  v_delta    int;
-  v_cote     int;
-  v_ecart    int;
+  v_cote_a  numeric;
+  v_cote_b  numeric;
+  v_gain_a  int;   -- points de l'équipe A si elle gagne
+  v_gain_b  int;
 begin
-  select equipe into v_equipe from salons_classes where salon = p_salon and discord_id = p_moi;
-  if v_equipe is null then raise exception 'Cette partie n''est pas une partie classée.'; end if;
-
-  perform pg_advisory_xact_lock(hashtext('classe:' || p_salon));
-  insert into parties_classees (salon, discord_id, victoire) values (p_salon, p_moi, v_vict)
-  on conflict (salon, discord_id) do nothing;
-  delete from file_classee where discord_id = p_moi;
-
-  -- Déjà comptée (par un autre joueur de la partie)
-  if exists (select 1 from parties_classees where salon = p_salon and compte) then
-    select cote into v_cote from rangs where discord_id = p_moi;
-    select ecart into v_ecart from salons_classes where salon = p_salon and discord_id = p_moi;
-    return json_build_object('ok', true, 'cote', v_cote, 'ecart', v_ecart, 'deja', v_ecart is null);
-  end if;
-
-  -- La déclaration d'un joueur de l'autre équipe
-  select pc.victoire into v_adv_vict
-  from parties_classees pc
-  join salons_classes sc on sc.salon = pc.salon and sc.discord_id = pc.discord_id
-  where pc.salon = p_salon and sc.equipe <> v_equipe
-  order by pc.cree_le limit 1;
-  if not found then return json_build_object('attente', true); end if;
-  if v_adv_vict = v_vict then
-    update parties_classees set compte = true where salon = p_salon;
-    return json_build_object('ok', false, 'raison', 'Résultats contradictoires : la partie n''est pas comptée.');
-  end if;
-
-  v_gagnante := case when v_vict then v_equipe when v_equipe = 'A' then 'B' else 'A' end;
   insert into rangs (discord_id) select discord_id from salons_classes where salon = p_salon on conflict do nothing;
-  perform 1 from rangs where discord_id in (select discord_id from salons_classes where salon = p_salon) for update;
-  select avg(r.cote) into v_cote_g from rangs r join salons_classes s on s.discord_id = r.discord_id
-  where s.salon = p_salon and s.equipe = v_gagnante;
-  select avg(r.cote) into v_cote_p from rangs r join salons_classes s on s.discord_id = r.discord_id
-  where s.salon = p_salon and s.equipe <> v_gagnante;
-  -- Elo par équipe : l'équipe gagnante prend d'autant plus de points que l'autre était mieux classée
-  v_attendu := 1 / (1 + power(10, (v_cote_p - v_cote_g) / 400.0));
-  v_delta := greatest(4, round(32 * (1 - v_attendu))::int);
-  update rangs set cote = cote + v_delta, victoires = victoires + 1, maj_le = now()
-  where discord_id in (select discord_id from salons_classes where salon = p_salon and equipe = v_gagnante);
-  update rangs set cote = greatest(0, cote - v_delta), defaites = defaites + 1, maj_le = now()
-  where discord_id in (select discord_id from salons_classes where salon = p_salon and equipe <> v_gagnante);
-  update salons_classes set ecart = case when equipe = v_gagnante then v_delta else -v_delta end where salon = p_salon;
-  update parties_classees set compte = true where salon = p_salon;
+  perform 1 from rangs where discord_id in (select discord_id from salons_classes where salon = p_salon)
+  order by discord_id for update;
+  select avg(r.cote) into v_cote_a from rangs r join salons_classes s on s.discord_id = r.discord_id
+  where s.salon = p_salon and s.equipe = 'A';
+  select avg(r.cote) into v_cote_b from rangs r join salons_classes s on s.discord_id = r.discord_id
+  where s.salon = p_salon and s.equipe = 'B';
+  v_gain_a := greatest(4, round(32 * (1 - 1 / (1 + power(10, (v_cote_b - v_cote_a) / 400.0))))::int);
+  v_gain_b := greatest(4, round(32 * (1 - 1 / (1 + power(10, (v_cote_a - v_cote_b) / 400.0))))::int);
 
-  select cote into v_cote from rangs where discord_id = p_moi;
-  return json_build_object('ok', true, 'cote', v_cote, 'ecart', case when v_vict then v_delta else -v_delta end);
+  update salons_classes set ecart = case
+      when p_gagnante is null then -(case when equipe = 'A' then v_gain_b else v_gain_a end)
+      when equipe = p_gagnante then (case when equipe = 'A' then v_gain_a else v_gain_b end)
+      else -(case when p_gagnante = 'A' then v_gain_a else v_gain_b end)
+    end
+  where salon = p_salon;
+  update rangs r set cote = greatest(0, r.cote + s.ecart),
+    victoires = r.victoires + (s.ecart > 0)::int,
+    defaites  = r.defaites + (s.ecart < 0)::int,
+    maj_le = now()
+  from salons_classes s where s.salon = p_salon and s.discord_id = r.discord_id;
+  update parties_classees set compte = true where salon = p_salon;
 end;
 $$;
 
--- Fin d'une partie classée : chacun déclare son résultat ; la cote bouge quand les deux concordent
+-- Les parties où un seul camp a déclaré son résultat depuis plus de 10 minutes (l'autre a fermé
+-- l'onglet, perdu la connexion ou refuse de déclarer sa défaite) : la déclaration reçue est comptée.
+-- Appelée par chercher_classee (sous le verrou de la file : une seule à la fois).
+create or replace function public.classe_regler_en_suspens()
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  r        record;
+  v_vict   boolean;
+  v_equipe text;
+begin
+  for r in
+    select s.salon from salons_classes s
+    group by s.salon
+    having not exists (select 1 from parties_classees pc where pc.salon = s.salon and pc.compte)
+       and (select min(pc.cree_le) from parties_classees pc where pc.salon = s.salon) < now() - interval '10 minutes'
+    order by s.salon
+  loop
+    perform pg_advisory_xact_lock(hashtext('classe:' || r.salon));
+    continue when exists (select 1 from parties_classees where salon = r.salon and compte);
+    v_equipe := null;
+    select pc.victoire, sc.equipe into v_vict, v_equipe
+    from parties_classees pc join salons_classes sc on sc.salon = pc.salon and sc.discord_id = pc.discord_id
+    where pc.salon = r.salon order by pc.cree_le limit 1;
+    continue when v_equipe is null;
+    -- Les deux camps ont déclaré : c'est resultat_classe qui tranche
+    continue when exists (
+      select 1 from parties_classees pc join salons_classes sc on sc.salon = pc.salon and sc.discord_id = pc.discord_id
+      where pc.salon = r.salon and sc.equipe <> v_equipe);
+    perform classe_compter(r.salon, case when v_vict then v_equipe when v_equipe = 'A' then 'B' else 'A' end);
+  end loop;
+end;
+$$;
+
+-- L'ancienne fonction du 2v2 est remplacée par le décompte commun ci-dessus
+drop function if exists public.resultat_classe_2v2(text, text, boolean);
+
+-- Fin d'une partie classée : chacun déclare son résultat. La partie est comptée dès qu'un joueur de
+-- chaque équipe a déclaré : une victoire et une défaite -> la cote bouge ; deux victoires -> litige,
+-- défaite pour les deux camps ; deux défaites -> partie non comptée.
+-- Sans déclaration de l'autre camp, elle est comptée au bout de 10 minutes (classe_regler_en_suspens).
 create or replace function public.resultat_classe(p_salon text, p_victoire boolean)
 returns json
 language plpgsql
@@ -295,63 +320,56 @@ security definer
 set search_path = public
 as $$
 declare
-  v_moi   text := my_discord_id();
-  v_adv   parties_classees%rowtype;
-  v_moi_r rangs%rowtype;
-  v_adv_r rangs%rowtype;
-  v_attendu numeric;
-  v_delta int;
-  v_gagnant text;
-  v_perdant text;
+  v_moi      text := my_discord_id();
+  v_vict     boolean := coalesce(p_victoire, false);
+  v_equipe   text;
+  v_adv_vict boolean;
+  v_cote     int;
+  v_ecart    int;
 begin
   if v_moi is null then raise exception 'Connecte-toi d''abord.'; end if;
   if coalesce(p_salon, '') !~ '^[A-Z0-9]{5}$' then raise exception 'Salon invalide.'; end if;
-  -- 2v2 : le résultat se compte par équipe
-  if exists (select 1 from salons_classes where salon = p_salon and discord_id = v_moi and mode = '2v2') then
-    return resultat_classe_2v2(p_salon, v_moi, p_victoire);
-  end if;
   -- La partie doit venir de la file classée (le salon attribué par chercher_classee)
-  if not exists (select 1 from file_classee where discord_id = v_moi and salon = p_salon)
-     and not exists (select 1 from parties_classees where salon = p_salon and discord_id = v_moi) then
-    raise exception 'Cette partie n''est pas une partie classée.';
-  end if;
+  select equipe into v_equipe from salons_classes where salon = p_salon and discord_id = v_moi;
+  if v_equipe is null then raise exception 'Cette partie n''est pas une partie classée.'; end if;
 
   perform pg_advisory_xact_lock(hashtext('classe:' || p_salon));
-  insert into parties_classees (salon, discord_id, victoire) values (p_salon, v_moi, coalesce(p_victoire, false))
+  insert into parties_classees (salon, discord_id, victoire) values (p_salon, v_moi, v_vict)
   on conflict (salon, discord_id) do nothing;
   delete from file_classee where discord_id = v_moi;
 
-  select * into v_adv from parties_classees where salon = p_salon and discord_id <> v_moi limit 1;
-  if not found then return json_build_object('attente', true); end if;
+  -- Déjà comptée (par un autre joueur de la partie, ou au bout des 10 minutes)
   if exists (select 1 from parties_classees where salon = p_salon and compte) then
-    select * into v_moi_r from rangs where discord_id = v_moi;
-    return json_build_object('ok', true, 'cote', v_moi_r.cote, 'deja', true);
+    select cote into v_cote from rangs where discord_id = v_moi;
+    select ecart into v_ecart from salons_classes where salon = p_salon and discord_id = v_moi;
+    return json_build_object('ok', true, 'cote', coalesce(v_cote, 1000), 'ecart', v_ecart, 'deja', true);
   end if;
-  -- Les deux déclarations doivent concorder : une victoire, une défaite
-  if v_adv.victoire = coalesce(p_victoire, false) then
+
+  -- La déclaration d'un joueur de l'autre équipe (la première arrivée)
+  select pc.victoire into v_adv_vict
+  from parties_classees pc
+  join salons_classes sc on sc.salon = pc.salon and sc.discord_id = pc.discord_id
+  where pc.salon = p_salon and sc.equipe <> v_equipe
+  order by pc.cree_le limit 1;
+  if not found then return json_build_object('attente', true); end if;
+
+  if v_adv_vict = v_vict and not v_vict then
     update parties_classees set compte = true where salon = p_salon;
-    return json_build_object('ok', false, 'raison', 'Résultats contradictoires : la partie n''est pas comptée.');
+    return json_build_object('ok', false, 'raison', 'Les deux camps ont déclaré une défaite : la partie n''est pas comptée.');
   end if;
 
-  v_gagnant := case when p_victoire then v_moi else v_adv.discord_id end;
-  v_perdant := case when p_victoire then v_adv.discord_id else v_moi end;
-  insert into rangs (discord_id) values (v_gagnant), (v_perdant) on conflict do nothing;
-  select * into v_moi_r from rangs where discord_id = v_gagnant for update;
-  select * into v_adv_r from rangs where discord_id = v_perdant for update;
-  -- Elo : le gagnant prend d'autant plus de points que son adversaire était mieux classé
-  v_attendu := 1 / (1 + power(10, (v_adv_r.cote - v_moi_r.cote) / 400.0));
-  v_delta := greatest(4, round(32 * (1 - v_attendu))::int);
-  update rangs set cote = cote + v_delta, victoires = victoires + 1, maj_le = now() where discord_id = v_gagnant;
-  update rangs set cote = greatest(0, cote - v_delta), defaites = defaites + 1, maj_le = now() where discord_id = v_perdant;
-  update parties_classees set compte = true where salon = p_salon;
-
-  select * into v_moi_r from rangs where discord_id = v_moi;
-  return json_build_object('ok', true, 'cote', v_moi_r.cote, 'ecart', case when p_victoire then v_delta else -v_delta end);
+  perform classe_compter(p_salon,
+    case when v_adv_vict = v_vict then null              -- deux victoires : litige
+         when v_vict then v_equipe
+         when v_equipe = 'A' then 'B' else 'A' end);
+  select cote into v_cote from rangs where discord_id = v_moi;
+  select ecart into v_ecart from salons_classes where salon = p_salon and discord_id = v_moi;
+  return json_build_object('ok', true, 'cote', v_cote, 'ecart', v_ecart, 'litige', v_adv_vict = v_vict);
 end;
 $$;
 
 revoke all on function public.chercher_classee(text), public.quitter_classee(), public.resultat_classe(text, boolean) from public, anon;
-revoke all on function public.resultat_classe_2v2(text, text, boolean) from public, anon, authenticated;
+revoke all on function public.classe_compter(text, text), public.classe_regler_en_suspens() from public, anon, authenticated;
 grant execute on function public.chercher_classee(text), public.quitter_classee(), public.resultat_classe(text, boolean) to authenticated;
 
 notify pgrst, 'reload schema';

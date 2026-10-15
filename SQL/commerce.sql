@@ -62,6 +62,12 @@ end $$;
 -- Exemplaires d'une carte (SQL/doublons.sql)
 alter table public.player_cards add column if not exists quantite int not null default 1 check (quantite >= 1);
 
+-- Objets échangeables : items.echangeable = false -> l'objet ne peut entrer dans aucun contrat.
+-- Les accès (kind = 'access') ne s'échangent jamais ; pour bloquer un autre objet (récompense de MJ…) :
+--   update public.items set echangeable = false where name = '…';
+alter table public.items add column if not exists echangeable boolean not null default true;
+update public.items set echangeable = false where kind = 'access' and echangeable;
+
 
 -- ---------------------------------------------------------------------
 --  1. Tables
@@ -167,7 +173,12 @@ begin
   if coalesce(p_or, 0) > 0 and coalesce((select balance from wallets where discord_id = p_joueur), 0) < p_or then
     return format('%s n''a pas assez d''or (%s demandés).', v_qui, p_or);
   end if;
-  -- Les objets
+  -- Les objets : échangeables, et possédés
+  select coalesce(i.name, x) into v_nom from unnest(p_objets) x left join items i on i.id::text = x
+  where i.id is null or not i.echangeable limit 1;
+  if v_nom is not null then
+    return format('L''objet « %s » ne s''échange pas.', v_nom);
+  end if;
   select x into v_nom from unnest(p_objets) x
   where not exists (select 1 from inventory where discord_id = p_joueur and item_id::text = x) limit 1;
   if v_nom is not null then
@@ -551,6 +562,13 @@ begin
     where e.statut = 'en_attente';
     update public.echanges set statut = 'annule', raison = 'Devenu un contrat du marché', traite_le = now()
     where statut = 'en_attente';
+  end if;
+  -- Les fonctions des anciennes lettres ne servent plus (le site passe par les contrats) : fermées, car
+  -- elles ne protègent pas les favorites. cartes_du_joueur, elle, sert encore (Marché, duel en ligne).
+  if to_regprocedure('public.proposer_echange(text,bigint[],bigint[],text)') is not null then
+    revoke execute on function public.proposer_echange(text, bigint[], bigint[], text),
+      public.accepter_echange(bigint), public.refuser_echange(bigint), public.annuler_echange(bigint)
+      from public, anon, authenticated;
   end if;
 end $$;
 

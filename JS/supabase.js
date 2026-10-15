@@ -1,7 +1,8 @@
 // =====================================================================
 //  Connexion à Supabase — la même base que le site Nocthémar (comptes, cartes, pièces)
 // =====================================================================
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+// Version figée : une nouvelle version de la bibliothèque ne change rien au jeu sans qu'on l'ait choisie
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.0/+esm';
 
 // ⚠️ À remplir : Project Settings > API Keys (et Data API pour l'URL)
 // La clé "anon" / "publishable" peut être publique. JAMAIS la service_role ici.

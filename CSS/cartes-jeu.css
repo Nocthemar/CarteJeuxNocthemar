@@ -285,19 +285,6 @@ body.glisser-actif, body.glisser-actif * { cursor: grabbing !important; }
 .duel__accroche { margin: 0; max-width: 46ch; color: var(--texte-doux); line-height: 1.55; }
 .duel__accroche strong { color: var(--accent); font-weight: 600; }
 
-.duel__regles {
-  display: flex; flex-wrap: wrap; gap: 8px;
-  margin: 16px 0 22px; padding: 0; list-style: none;
-}
-.duel__regles li {
-  padding: 4px 10px;
-  border: 1px solid var(--bord);
-  font-family: "Cinzel","Cinzel Repli", serif;
-  font-size: .7rem; letter-spacing: .08em;
-  color: var(--texte-doux);
-}
-.duel__regles span { color: var(--accent); margin-right: 4px; }
-
 .duel__boutons { display: flex; flex-wrap: wrap; gap: 12px; }
 .duel__btn {
   display: flex; flex-direction: column; gap: 2px;
@@ -314,7 +301,6 @@ body.glisser-actif, body.glisser-actif * { cursor: grabbing !important; }
 .duel__btn--plein { background: var(--accent); color: var(--fond); }
 .duel__btn:not(.duel__btn--plein):hover { background: color-mix(in srgb, var(--accent) 12%, transparent); }
 .duel__btn-titre { font-family: "Cinzel","Cinzel Repli", serif; font-weight: 700; font-size: .9rem; letter-spacing: .06em; }
-.duel__btn-texte { font-size: .85rem; opacity: .8; }
 
 /* Éventail des cartes du deck : s'ouvre au survol */
 .duel__eventail {

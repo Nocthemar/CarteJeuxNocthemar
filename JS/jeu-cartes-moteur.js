@@ -44,7 +44,6 @@ export const TAILLE_DECK = 20;      // le Grimoire
 export const COPIES_MAX = 2;        // exemplaires au plus d'une même carte
 export const TRANSCENDANTES_MAX = 2;   // Transcendantes au plus dans le Grimoire (1 exemplaire de chacune)
 export const OBJETS_MAX = 4;        // objets de pouvoir au plus dans le Grimoire
-export const UNITES_PAR_DECK = TAILLE_DECK;
 export const BONUS_DEFENSE = 2;     // posture défensive
 export const MALUS_EXPOSE = 2;      // après un échec critique
 
@@ -161,6 +160,8 @@ const UNIQUE_PAR_NOM = {
   'dalek': 'dalek',
   'maitre du jeu': 'maitre',
   'elfe des neiges doree': 'blizzard',
+  'garde de pravorn': 'sentinelle',
+  'gardes de pravorn': 'rangs',
 };
 
 export const UNIQUES = {
@@ -219,6 +220,23 @@ export const UNIQUES = {
       unites(p.camps[autre(qui)]).forEach((t) => { t.gele = 1; ev.touches.push({ camp: autre(qui), uid: t.uid, texte: 'Gelée', etat: true }); });
     },
   },
+  // Garde de Pravorn : il ne recule jamais
+  sentinelle: {
+    nom: 'Sentinelle de Pravorn',
+    texte: 'À son arrivée, prend la Garde : tant qu’il est en jeu, ton héros ne peut pas être attaqué.',
+    arrivee(p, qui, u, ev) {
+      if (!u.caps.includes('garde')) u.caps.push('garde');
+      ev.touches.push({ camp: qui, uid: u.uid, texte: 'Garde', buff: true });
+    },
+  },
+  // Gardes de Pravorn : l'escouade fait mur
+  rangs: {
+    nom: 'Rangs serrés',
+    texte: 'À son arrivée, tes autres unités gagnent +1 Défense pour de bon.',
+    arrivee(p, qui, u, ev) {
+      unites(p.camps[qui]).filter((x) => x !== u).forEach((x) => { x.d += 1; ev.touches.push({ camp: qui, uid: x.uid, texte: '+1 Défense', buff: true }); });
+    },
+  },
   // Légendaires sans capacité propre
   presence: {
     nom: 'Présence',
@@ -255,7 +273,6 @@ export const terrainDe = (p) => TERRAINS[p?.terrainId] ?? null;
 //  des moins chères aux plus chères)
 // ---------------------------------------------------------------------
 export const CARTES_BASE = [...TROUPES, ...SORTS].sort((a, b) => a.c - b.c);
-export const AJOUTS_CODEX = CARTES_BASE;   // (ancien nom)
 
 // ---------------------------------------------------------------------
 //  Cartes de pouvoir : les objets de l'Équipement (img/Equipement), effets tirés
@@ -273,7 +290,6 @@ export const OBJETS = [
   { id: 'o-coffre',   n: "Nécessaire d'aventurier", c: 1, t: 's', fx: 'coffre',   v: 1, image: 'img/Equipement/Nécessaire d’aventurier.webp', d: 'Ouvre un coffre : pioche 1 carte et regagne 1 énergie.' },
   { id: 'o-jeton',    n: 'Jeton du marchand',       c: 0, t: 's', fx: 'jeton',    v: 2, image: 'img/Equipement/Jeton du marchand.webp',       d: 'Ta prochaine carte coûte 2 de moins.' },
 ];
-export const OBJETS_PAR_DECK = OBJETS_MAX;   // (ancien nom)
 
 // Retrouve un objet à partir d'un nom d'inventaire (« Tonique d’endurance », « potion de soin »…)
 const cleObjet = (nom) => String(nom).normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[’']/g, "'").trim().toLowerCase();
@@ -309,12 +325,6 @@ export function grimoire(cartes = []) {
 // Un Grimoire mélangé, prêt pour une partie
 export function construireDeck(cartes = []) {
   return melanger(grimoire(cartes));
-}
-
-// (ancienne interface : les unités et les objets d'un deck)
-export function compositionDeck(unites = [], objets = []) {
-  const cartes = grimoire([...unites, ...objets]);
-  return { cartes, unites: cartes.filter((c) => c.t === 'u'), objets: cartes.filter((c) => c.t !== 'u') };
 }
 
 // Coût réel d'une carte : le Jeton du marchand réduit la suivante ; le terrain d'Aelkor fait payer 1 de moins

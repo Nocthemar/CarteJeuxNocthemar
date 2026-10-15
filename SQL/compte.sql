@@ -32,7 +32,7 @@ begin
   -- Tout ce qui appartient au joueur, table par table (si elle existe)
   foreach v_table in array array[
     'player_deck_cards', 'player_decks', 'player_cards', 'player_boosters', 'booster_ouvertures',
-    'pass_progression', 'pass_parties', 'pass_cosmetiques', 'histoire_progression', 'player_pass',
+    'pass_progression', 'pass_parties', 'pass_cosmetiques', 'histoire_progression', 'player_pass', 'histoire_tentatives',
     'joueur_plateaux', 'souhaits', 'rangs', 'file_classee', 'parties_classees', 'salons_classes',
     'inventory', 'wallets', 'transactions'
   ] loop

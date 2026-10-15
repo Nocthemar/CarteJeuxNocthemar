@@ -76,6 +76,34 @@ mêmes cartes, mêmes pièces, même progression.
    Pour le rang et les statistiques du profil (victoires, défaites, taux, cartes) : lancer `stats_profil.sql`
    (après `pass_saison.sql` et `echanges.sql` ; lecture seule, ne modifie aucune donnée).
 
+## Mise à jour de sécurité (octobre 2026)
+
+À faire une fois dans Supabase > SQL Editor, dans cet ordre (tous relançables) :
+
+1. `salons_prives.sql` : les salons du duel en ligne deviennent privés (joueurs connectés seulement).
+   **Sans lui, le mode en ligne ne se connecte plus.** Ensuite, dans Supabase > Realtime > Settings,
+   décocher « Allow public access » si le site et le bot n'utilisent pas Realtime en canal public.
+2. `classe.sql` : litige (deux victoires déclarées) = défaite pour les deux camps ; un camp qui ne déclare
+   rien voit la partie comptée au bout de 10 minutes avec la déclaration de l'autre.
+3. `pass_saison.sql` : un duel doit durer au moins 45 secondes pour rapporter de l'XP et de l'or ;
+   60 duels commencés par heure au plus.
+4. `mode_histoire.sql` : une victoire n'est validée que si le duel du niveau a été joué (45 s au moins).
+5. `commerce.sql` : colonne `items.echangeable` ; les accès (et les objets qu'on y met à `false`)
+   ne passent plus dans les contrats. Les fonctions des anciennes lettres d'échange (`proposer_echange`,
+   `accepter_echange`…) sont fermées : elles ne servaient plus et contournaient la protection des favorites.
+6. `compte.sql` : la suppression de compte efface aussi la nouvelle table `histoire_tentatives`.
+7. `carte_slime.sql` : la carte du Slime utilise son image allégée (`Slime-Carte.webp`). Après ce
+   fichier, `img/Cartes/Slime-Carte.png` ne sert plus et peut être supprimé.
+8. `carte_gardes_pravorn.sql` : les cartes « Garde de Pravorn » (commune) et « Gardes de Pravorn »
+   (éveillée), avec leurs attaques ; elles entrent dans les boosters des Cendres.
+9. `verifier_droits_site.sql` (lecture seule) : contrôle les droits des tables du site (players,
+   wallets, inventory, items, transactions) ; les repères pour lire le résultat sont en tête du fichier.
+
+Côté pages : chaque page a une politique de sécurité (balise `Content-Security-Policy`) qui n'autorise
+que les scripts du jeu et de Supabase. Un nouveau script externe ou un appel vers un autre site doit
+y être ajouté, sinon le navigateur le bloque. Les images sources (`img/**/_originaux/`) restent sur
+le disque mais ne sont plus publiées (`.gitignore`).
+
 ## Bon à savoir
 
 - **La connexion** est enregistrée par Supabase dans le navigateur, adresse par adresse.

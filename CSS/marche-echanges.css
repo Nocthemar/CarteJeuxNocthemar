@@ -18,7 +18,6 @@
 }
 
 .echanges__vide { margin: 0; padding: 18px; text-align: center; color: var(--texte-doux); font-style: italic; border: 1px dashed var(--bord); }
-.echanges__lettres { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 480px), 1fr)); gap: 20px; }
 
 /* ---------- Boutons ---------- */
 .btn-dc-or {
@@ -70,68 +69,6 @@
 .eventail__carte:hover .echange__loupe, .coffre__tuile:hover .echange__loupe, .proposer__tuile:hover .echange__loupe,
 .echange__loupe:focus-visible { opacity: 1; }
 @media (hover: none) { .echange__loupe { opacity: 1; } }
-
-/* ---------- Les lettres ---------- */
-.lettre {
-  position: relative;
-  padding: 22px 24px 18px;
-  color: var(--lettre-encre);
-  background:
-    radial-gradient(ellipse 120% 90% at 50% 40%, transparent 55%, rgba(120,80,30,.28) 100%),
-    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='p'><feTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3'/><feColorMatrix values='0 0 0 0 .45  0 0 0 0 .32  0 0 0 0 .15  0 0 0 .18 0'/></filter><rect width='100%25' height='100%25' filter='url(%23p)'/></svg>"),
-    linear-gradient(170deg, #f1e6c9, var(--lettre-papier) 50%, #dcc89f);
-  box-shadow: 0 14px 28px rgba(0,0,0,.45), inset 0 0 0 1px rgba(120,80,30,.25);
-  border-radius: 3px;
-}
-.lettre__cachet {
-  position: absolute; top: 14px; right: 18px;
-  display: grid; place-items: center;
-  width: 40px; height: 40px;
-  border-radius: 46% 54% 50% 50% / 52% 48% 52% 48%;
-  background: radial-gradient(circle at 35% 30%, #c4434a, var(--cire) 55%, #4f0d10);
-  box-shadow: 0 3px 6px rgba(0,0,0,.45), inset 0 0 0 4px rgba(0,0,0,.15);
-  color: rgba(255,220,200,.7); font-size: 1rem; font-weight: 700;
-  rotate: -12deg;
-}
-.lettre__tete { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding-right: 50px; }
-.lettre__tete .proposer__avatar { width: 34px; height: 34px; box-shadow: 0 0 0 2px var(--lettre-ombre); }
-.lettre__de { font-family: "Cinzel","Cinzel Repli", serif; font-size: .95rem; }
-.lettre__de b { color: #2a1a0c; }
-.lettre__tete time { margin-left: auto; color: var(--lettre-encre-douce); font-size: .85rem; font-style: italic; }
-.lettre__statut {
-  padding: 1px 8px;
-  border: 1px solid currentColor;
-  font-family: "Cinzel","Cinzel Repli", serif; font-size: .68rem; letter-spacing: .1em; text-transform: uppercase;
-}
-.lettre--accepte .lettre__statut { color: #2f6b3a; }
-.lettre--refuse .lettre__statut, .lettre--impossible .lettre__statut { color: var(--cire); }
-.lettre--annule .lettre__statut { color: var(--lettre-encre-douce); }
-.lettre--fait { opacity: .9; }
-.lettre__mot {
-  margin: 12px 0 0;
-  font-family: "IM Fell English", "EB Garamond", serif; font-style: italic; font-size: 1.05rem;
-  color: #4a3218;
-}
-.lettre__raison { margin: 8px 0 0; color: var(--cire); font-size: .92rem; }
-.lettre__marche {
-  display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 8px; align-items: center;
-  margin-top: 12px;
-}
-.lettre__cote h4 {
-  margin: 0 0 2px; text-align: center;
-  font-family: "Cinzel","Cinzel Repli", serif; font-size: .68rem; letter-spacing: .16em; text-transform: uppercase;
-  color: var(--lettre-encre-douce);
-}
-.lettre__cote .eventail { --w: 66px; color: var(--lettre-encre-douce); }
-.lettre__balance { font-size: 1.6rem; color: #8a6424; }
-.lettre__actions {
-  display: flex; justify-content: flex-end; align-items: center; gap: 12px; flex-wrap: wrap;
-  margin-top: 14px; padding-top: 12px;
-  border-top: 1px solid rgba(120,80,30,.3);
-}
-.lettre__attente { margin-right: auto; color: var(--lettre-encre-douce); font-style: italic; font-size: .9rem; }
-.lettre .btn-petit--retirer { border-color: var(--cire); color: var(--cire); background: transparent; }
-.lettre .btn-petit--retirer:hover { background: var(--cire); color: #fff; }
 
 /* ---------- Proposer : choix de l'ami ---------- */
 .table-echange__ami {
@@ -310,7 +247,6 @@
   color: #f0d9a0;
 }
 .marche__rubrique::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, rgba(214,172,108,.5), transparent); }
-.marche__rubrique + .echanges__lettres { margin-bottom: 22px; }
 .marche .table-echange__ami label { color: #f0d9a0; }
 .marche .proposer__recherche input { background: rgba(0,0,0,.35); border-color: rgba(214,172,108,.35); color: #f3ead7; }
 .marche .proposer__choisi { color: #f3ead7; }
@@ -326,9 +262,6 @@
   .marche__plan { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 640px) {
-  .lettre { padding: 18px 16px 14px; }
-  .lettre__marche { grid-template-columns: minmax(0, 1fr); }
-  .lettre__balance { justify-self: center; rotate: 90deg; }
   .eventail { --w: 64px; }
   .coffre__grille { max-height: 320px; }
 }
@@ -351,8 +284,6 @@
    Le commerce : contrats à sceaux, or et objets, souhaits (SQL/commerce.sql)
    ===================================================================== */
 .marche__onglets { flex-wrap: wrap; }
-.marche__bourse { margin: 0; color: rgba(240,217,160,.8); font-family: "Cinzel","Cinzel Repli", serif; font-size: .8rem; letter-spacing: .08em; }
-.marche__bourse b { color: #f6d995; }
 
 /* ---------- Rédiger : or, objets, valeur ---------- */
 .plateau-echange__or {

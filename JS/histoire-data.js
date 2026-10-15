@@ -41,7 +41,7 @@ export const CHAPITRES = [
       {
         id: 'pravorn-2', nom: 'Le pont gardé', x: 23, y: 60,
         adversaire: 'La garde du pont',
-        deck: ['Garde du Pont', 'Archer des Remparts', 'Écuyer de la Couronne', 'Chevalier errant', 'Potion de soin'],
+        deck: ['Garde de Pravorn', 'Garde du Pont', 'Archer des Remparts', 'Écuyer de la Couronne', 'Potion de soin'],
         difficulte: 'facile', est_boss: false,
         recompenses: { or: 18, xp: 200 },
       },
@@ -62,7 +62,7 @@ export const CHAPITRES = [
       {
         id: 'pravorn-5', nom: 'Les remparts de la capitale', x: 63, y: 70,
         adversaire: 'Le capitaine des remparts',
-        deck: ['Sentinelle de pierre', 'Archer des Remparts', 'Lancier des Ruines', 'Garde du Pont', 'Talisman du Dé'],
+        deck: ['Gardes de Pravorn', 'Garde de Pravorn', 'Sentinelle de pierre', 'Lancier des Ruines', 'Talisman du Dé'],
         difficulte: 'normal', est_boss: false,
         recompenses: { or: 27, xp: 200 },
       },

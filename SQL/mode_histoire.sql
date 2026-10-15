@@ -57,6 +57,14 @@ create table if not exists public.player_pass (
   maj_le     timestamptz not null default now()
 );
 
+-- Le niveau en cours de chaque joueur (anti-triche) : noté au début du duel par histoire_commencer ;
+-- une victoire n'est validée que si le duel a duré au moins 45 secondes (et moins de 3 heures)
+create table if not exists public.histoire_tentatives (
+  discord_id  text primary key,
+  niveau_id   text not null references public.histoire_niveaux(id) on delete cascade,
+  commence_le timestamptz not null default now()
+);
+
 
 -- ---------------------------------------------------------------------
 --  2. Le chapitre de test : Pravorn, 6 niveaux et un boss
@@ -87,6 +95,7 @@ alter table public.histoire_chapitres   enable row level security;
 alter table public.histoire_niveaux     enable row level security;
 alter table public.histoire_progression enable row level security;
 alter table public.player_pass          enable row level security;
+alter table public.histoire_tentatives  enable row level security;   -- aucune policy : personne ne la lit
 
 drop policy if exists "chapitres lisibles par tous" on public.histoire_chapitres;
 create policy "chapitres lisibles par tous" on public.histoire_chapitres
@@ -107,6 +116,7 @@ create policy "je lis mon xp de pass" on public.player_pass
 -- Aucune policy insert / update / delete : seules les fonctions SECURITY DEFINER écrivent.
 revoke insert, update, delete on public.histoire_chapitres, public.histoire_niveaux,
   public.histoire_progression, public.player_pass from anon, authenticated;
+revoke all on public.histoire_tentatives from anon, authenticated;
 
 
 -- ---------------------------------------------------------------------
@@ -143,7 +153,30 @@ end $$;
 
 
 -- ---------------------------------------------------------------------
---  5. valider_niveau_histoire : après une victoire en mode Histoire
+--  5. histoire_commencer : au début du duel d'un niveau (remplace le niveau en cours)
+-- ---------------------------------------------------------------------
+create or replace function public.histoire_commencer(p_niveau_id text)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_moi text := my_discord_id();
+begin
+  if v_moi is null then raise exception 'Connecte-toi d''abord.'; end if;
+  if not exists (select 1 from histoire_niveaux where id = p_niveau_id) then raise exception 'Niveau inconnu.'; end if;
+  insert into histoire_tentatives (discord_id, niveau_id) values (v_moi, p_niveau_id)
+  on conflict (discord_id) do update set niveau_id = excluded.niveau_id, commence_le = now();
+end;
+$$;
+
+revoke all on function public.histoire_commencer(text) from public, anon;
+grant execute on function public.histoire_commencer(text) to authenticated;
+
+
+-- ---------------------------------------------------------------------
+--  6. valider_niveau_histoire : après une victoire en mode Histoire
 --     Renvoie { deja, or, xp, carte, carte_image, chapitre_termine }
 --     (deja = true : niveau déjà terminé, rien n'est donné, pas d'erreur)
 -- ---------------------------------------------------------------------
@@ -177,6 +210,14 @@ begin
   if exists (select 1 from histoire_progression where discord_id = v_moi and niveau_id = p_niveau_id) then
     return json_build_object('deja', true, 'or', 0, 'xp', 0, 'carte', null, 'carte_image', null,
                              'chapitre_termine', false);
+  end if;
+
+  -- Le duel de ce niveau a-t-il vraiment été joué ? (commencé par histoire_commencer, 45 s à 3 h)
+  delete from histoire_tentatives
+  where discord_id = v_moi and niveau_id = p_niveau_id
+    and commence_le between now() - interval '3 hours' and now() - interval '45 seconds';
+  if not found then
+    raise exception 'Victoire non reconnue : le duel de ce niveau n''a pas été joué en entier.';
   end if;
 
   -- Le niveau est-il débloqué ?

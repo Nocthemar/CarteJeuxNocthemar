@@ -13,7 +13,6 @@ export const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => (
 export const couleur = (c) => (/^#[0-9a-f]{3,8}$/i.test(c ?? '') ? c : null);
 
 export const LIBELLES = { banner: 'Bannière', title: 'Titre', theme: 'Thème', rp: 'Objet', wallpaper: 'Fond', access: 'Accès', other: 'Divers' };
-export const SOURCES  = { bot: 'En jeu', mj: 'MJ', boutique_jour: 'Boutique du marchand', boutique_fun: 'Boutique fun', histoire: 'Mode Histoire', pass: 'Pass de saison' };
 
 // Bandeau de notification (#notif) qui disparaît tout seul
 let minuteurNotif;

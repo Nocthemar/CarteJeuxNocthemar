@@ -2,6 +2,8 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
+  <!-- Sécurité : seuls les scripts du jeu et de Supabase peuvent s'exécuter (aucun code glissé dans la page) -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://euurgbwgygtsqduyadmh.supabase.co wss://euurgbwgygtsqduyadmh.supabase.co https://cdn.jsdelivr.net; media-src 'self' data: blob:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Profil — Nocthémar</title>
   <link rel="icon" type="image/png" href="img/Logo/favicon.png">
@@ -15,7 +17,7 @@
   <link rel="stylesheet" href="CSS/carte-infos.css">
   <link rel="stylesheet" href="CSS/profil.css">
 <!-- Thème clair / sombre (bouton dans la barre latérale) : appliqué avant l'affichage -->
-<script>try{if(localStorage.getItem('nocthemar-theme')==='jour')document.documentElement.dataset.theme='jour'}catch(e){}</script>
+<script src="JS/theme.js"></script>
 <link rel="stylesheet" href="CSS/theme-jour.css">
 </head>
 <body class="page-profil page-fiche">

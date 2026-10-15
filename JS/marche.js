@@ -91,8 +91,18 @@ function majAideVente() {
 
 async function chargerVentes() {
   const depuis = new Date(Date.now() - JOURS * 864e5).toISOString();
-  const { data, error } = await supabase.from('annonces').select('*')
-    .eq('type', 'vente').eq('statut', 'ouverte').gte('cree_le', depuis).order('cree_le', { ascending: false }).limit(200);
+  // Toutes les ventes ouvertes, par pages de 500 (2 000 au plus)
+  const PAGE = 500;
+  let data = [];
+  let error = null;
+  for (let debut = 0; debut < 2000; debut += PAGE) {
+    const r = await supabase.from('annonces').select('*')
+      .eq('type', 'vente').eq('statut', 'ouverte').gte('cree_le', depuis)
+      .order('cree_le', { ascending: false }).order('id', { ascending: false }).range(debut, debut + PAGE - 1);
+    if (r.error) { error = r.error; break; }
+    data = data.concat(r.data ?? []);
+    if ((r.data ?? []).length < PAGE) break;
+  }
   if (error) {
     $('marche-liste').innerHTML = `<p class="marche-vide">${/schema cache|does not exist|PGRST20|42P01/.test(`${error.code} ${error.message}`)
       ? 'Le marché n’est pas encore installé (SQL/commerce.sql).' : etat.moi ? 'Impossible de charger le marché.' : 'Connecte-toi pour voir le marché.'}</p>`;
@@ -101,12 +111,14 @@ async function chargerVentes() {
   etat.ventes = data ?? [];
   const ids = [...new Set(etat.ventes.map((v) => v.card_id))].filter((id) => !etat.cartes.has(id));
   const joueurs = [...new Set(etat.ventes.map((v) => v.auteur))].filter((id) => !etat.joueurs.has(id));
-  const [{ data: cartes }, { data: profils }] = await Promise.all([
-    ids.length ? supabase.from('cards').select('*').in('id', ids) : { data: [] },
-    joueurs.length ? supabase.from('players').select('discord_id, username').in('discord_id', joueurs) : { data: [] },
+  // Par paquets de 100 : une longue liste ne tient pas dans l'adresse d'une seule requête
+  const paquets = (liste) => Array.from({ length: Math.ceil(liste.length / 100) }, (_, i) => liste.slice(i * 100, i * 100 + 100));
+  const [cartes, profils] = await Promise.all([
+    Promise.all(paquets(ids).map((p) => supabase.from('cards').select('*').in('id', p))),
+    Promise.all(paquets(joueurs).map((p) => supabase.from('players').select('discord_id, username').in('discord_id', p))),
   ]);
-  (cartes ?? []).forEach((c) => etat.cartes.set(c.id, c));
-  (profils ?? []).forEach((j) => etat.joueurs.set(j.discord_id, j));
+  cartes.flatMap((r) => r.data ?? []).forEach((c) => etat.cartes.set(c.id, c));
+  profils.flatMap((r) => r.data ?? []).forEach((j) => etat.joueurs.set(j.discord_id, j));
   afficher();
 }
 

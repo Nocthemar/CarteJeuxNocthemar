@@ -28,7 +28,7 @@ begin
     'player_deck_cards', 'player_decks', 'player_cards',      -- cartes, grimoire, deck
     'player_boosters', 'booster_ouvertures',                  -- boosters
     'pass_progression', 'pass_parties', 'pass_cosmetiques',   -- Pass de saison
-    'histoire_progression', 'player_pass',                    -- mode Histoire
+    'histoire_progression', 'player_pass', 'histoire_tentatives', -- mode Histoire
     'joueur_plateaux',                                        -- plateaux achetés
     'souhaits'                                                -- liste de souhaits
   ] loop

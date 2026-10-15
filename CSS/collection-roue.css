@@ -360,11 +360,6 @@
   overflow: hidden;
 }
 .roue__apercu .apercu-roue--titre { font-size: .95rem; }
-.apercu-roue--saison {
-  grid-template-columns: 1fr 1fr; gap: 2px;
-  font-size: calc(var(--jeton, 80px) * .2); color: #e6d6b4;
-}
-.roue__apercu .apercu-roue--saison { font-size: 1rem; }
 .apercu-roue--vide { color: rgba(214,172,108,.6); font-size: 1.4rem; }
 
 @media (prefers-reduced-motion: reduce) {
