@@ -15,14 +15,14 @@
 .page-fiche {
   --vif: #9a2b2b;                 /* couleur du thème (rouge cire par défaut) */
   --vif2: var(--vif);
-  --vif-encre: color-mix(in srgb, var(--vif) 70%, #1a0f08);   /* thème lisible sur le papier */
+  --vif-encre: color-mix(in srgb, var(--vif) 65%, #fff);   /* thème lisible sur le papier noir */
 
-  /* papier blanc cassé (changer ces deux valeurs suffit pour l'éclaircir ou le foncer) */
-  --papier: #ece8e0;
-  --papier-2: #ddd7cb;
-  --encre: #2a1d12;
-  --encre-douce: #5e4a35;
-  --trait: rgba(60,40,20,.3);
+  /* papier noir, texte blanc (changer ces valeurs suffit pour l'éclaircir ou le foncer) */
+  --papier: #1c1c1f;
+  --papier-2: #111113;
+  --encre: #f3efe8;
+  --encre-douce: #b9b2a6;
+  --trait: rgba(255,255,255,.18);
   --bois: url("../img/Fond/bois.svg");
 
   /* Grain du papier */
@@ -72,34 +72,15 @@ body.page-fiche::before,
     radial-gradient(ellipse 25% 20% at 10% 85%, rgba(120,90,50,.05), transparent 70%),
     linear-gradient(170deg, var(--papier), var(--papier-2));
   box-shadow:
-    inset 0 0 50px rgba(90,70,45,.18),           /* bords à peine jaunis */
+    inset 0 0 50px rgba(0,0,0,.5),               /* bords assombris */
     0 1px 1px rgba(0,0,0,.4),
     0 18px 30px rgba(0,0,0,.55);
 }
 .page-fiche .carte { margin-top: 46px; padding: 40px 42px 34px; }
 
-/* Punaises aux deux coins du haut, à la couleur du thème */
+/* Pas de punaises ni de décor commun aux coins des affiches */
 .page-fiche .carte::before,
-.page-fiche .entete::before {
-  content: "";
-  position: absolute;
-  top: 10px;
-  left: 14px;
-  right: 14px;
-  height: 18px;
-  z-index: 3;
-  pointer-events: none;
-  -webkit-mask-image: none;
-          mask-image: none;
-  border: 0;
-  opacity: 1;
-  background:
-    radial-gradient(circle at 6px 6px, rgba(255,255,255,.75) 0 1.5px, transparent 2.5px) 0 0 / 18px 18px no-repeat,
-    radial-gradient(circle at 9px 9px, var(--vif) 0 6px, color-mix(in srgb, var(--vif) 55%, #000) 7px 8px, transparent 8.5px) 0 0 / 18px 18px no-repeat,
-    radial-gradient(circle at 6px 6px, rgba(255,255,255,.75) 0 1.5px, transparent 2.5px) 100% 0 / 18px 18px no-repeat,
-    radial-gradient(circle at 9px 9px, var(--vif2) 0 6px, color-mix(in srgb, var(--vif2) 55%, #000) 7px 8px, transparent 8.5px) 100% 0 / 18px 18px no-repeat;
-  filter: drop-shadow(2px 3px 2px rgba(0,0,0,.45));
-}
+.page-fiche .entete::before,
 .page-fiche .carte::after { content: none; }
 
 /* Titres : capitales à l'encre, soulignées d'un double trait */
@@ -154,7 +135,7 @@ body.page-fiche::before,
   background-size: cover;
   background-position: center;
   filter: sepia(.3) saturate(.85) contrast(1.05);
-  box-shadow: 0 0 0 1px rgba(60,40,20,.5), 0 0 0 5px var(--papier), 0 0 0 6px rgba(60,40,20,.35);
+  box-shadow: 0 0 0 1px rgba(255,255,255,.3), 0 0 0 5px var(--papier), 0 0 0 6px rgba(255,255,255,.2);
   margin: 4px 0 6px;
 }
 .page-fiche .entete__banniere::after {
@@ -173,7 +154,7 @@ body.page-fiche::before,
   margin-top: -64px;
   padding: 5px;
   background: var(--papier);
-  box-shadow: 0 0 0 1px rgba(60,40,20,.5), 0 8px 16px rgba(0,0,0,.35);
+  box-shadow: 0 0 0 1px rgba(255,255,255,.3), 0 8px 16px rgba(0,0,0,.5);
   transform: rotate(2deg);
   z-index: 1;
 }
@@ -253,7 +234,7 @@ body.page-fiche::before,
   background: rgba(255,250,235,.2);
 }
 .page-fiche .deck-emplacement__ajout { color: var(--encre-douce); }
-.page-fiche .deck-renommer input { background: rgba(255,250,235,.5); color: var(--encre); }
+.page-fiche .deck-renommer input { background: rgba(255,255,255,.08); color: var(--encre); }
 .page-fiche .btn-petit { border-color: var(--vif-encre); color: var(--vif-encre); }
 .page-fiche .btn-petit:hover { background: var(--vif-encre); color: #f5ecd8; }
 
@@ -770,7 +751,7 @@ body.page-fiche::before,
     radial-gradient(circle at 50% 45%, color-mix(in srgb, var(--papier) 70%, #fff), var(--papier-2) 72%);
   box-shadow:
     inset 0 6px 14px rgba(60,40,20,.28),
-    inset 0 -2px 6px rgba(255,255,255,.5),
+    inset 0 -2px 6px rgba(255,255,255,.08),
     0 0 0 1px var(--trait),
     0 0 0 6px color-mix(in srgb, var(--papier) 60%, transparent),
     0 0 0 7px color-mix(in srgb, var(--vif-encre) 45%, transparent);
@@ -793,7 +774,7 @@ body.page-fiche::before,
   font-family: "Cinzel Decorative","Cinzel Decorative Repli", serif; font-size: clamp(2.2rem, 5vw, 3rem); font-weight: 900; line-height: 1;
   color: var(--encre);
 }
-.page-fiche .tresor__solde #solde { color: var(--encre); text-shadow: 0 1px 0 rgba(255,255,255,.5); }
+.page-fiche .tresor__solde #solde { color: var(--encre); text-shadow: none; }
 .tresor__solde small {
   font-family: "IM Fell English","EB Garamond", serif; font-size: 1rem; font-weight: 400; font-style: italic; letter-spacing: 0;
   color: var(--encre-douce);
