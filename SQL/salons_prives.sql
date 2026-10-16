@@ -13,7 +13,8 @@
 --  privés sont alors acceptés), SAUF si le site Nocthémar ou le bot utilisent eux aussi Realtime avec
 --  des canaux publics (dans ce cas, laisser coché : les salons du jeu restent privés quand même).
 -- =====================================================================
-alter table realtime.messages enable row level security;
+-- (Pas de « alter table realtime.messages enable row level security » : Supabase l'active déjà,
+--  et la table ne nous appartient pas → erreur 42501 « must be owner of table messages ».)
 
 drop policy if exists "duel : les joueurs connectés écoutent les salons" on realtime.messages;
 create policy "duel : les joueurs connectés écoutent les salons" on realtime.messages
