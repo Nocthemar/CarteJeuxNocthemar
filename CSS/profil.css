@@ -39,7 +39,7 @@ body.page-fiche::before,
 :root[data-theme="jour"] body.page-fiche::before {   /* le thème de jour garde ce paysage */
   z-index: -1;
   background:
-    linear-gradient(rgba(8,12,20,.45), rgba(8,12,20,.45)),   /* voile sombre sur tout le paysage (plus foncé : augmenter .45) */
+    linear-gradient(rgba(8,12,20,.6), rgba(8,12,20,.6)),   /* voile sombre sur tout le paysage (plus foncé : augmenter .6) */
     radial-gradient(ellipse 110% 90% at 50% 40%, transparent 55%, rgba(8,12,20,.45) 100%),
     url("../img/Fond/profiljoueur.jpg") center / cover no-repeat,
     #2b4a63;
