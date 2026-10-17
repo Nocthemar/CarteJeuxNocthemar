@@ -44,15 +44,14 @@
     <!-- ===== Accueil ===== -->
     <section class="accueil" id="ecran-accueil">
       <div class="menu">
-        <!-- Colonne de gauche : titre, modes de jeu, actions -->
-        <div class="menu__gauche">
-          <header class="menu__tete">
-            <span class="accueil__sur">Jeu de cartes de Nocthémar</span>
-            <h1 class="accueil__titre">Duel des <span>Couronnes</span></h1>
-            <p class="accueil__texte">Fais tomber les 20 PV de ton adversaire avant qu'il ne fasse tomber les tiens. Pose tes troupes, sers-toi de tes objets de pouvoir, et que chaque coup se joue au d20.</p>
-          </header>
+        <!-- Tête : titre, accroche -->
+        <header class="menu__tete">
+          <span class="accueil__sur">Jeu de cartes de Nocthémar</span>
+          <h1 class="accueil__titre">Duel des <span>Couronnes</span></h1>
+          <p class="accueil__texte">Fais tomber les 20 PV de ton adversaire avant qu'il ne fasse tomber les tiens. Pose tes troupes, sers-toi de tes objets de pouvoir, et que chaque coup se joue au d20.</p>
+        </header>
 
-          <!-- Mode de jeu -->
+          <!-- Mode de jeu : trois bannières -->
           <div class="modes" role="tablist" aria-label="Mode de jeu">
             <button type="button" class="mode est-actif" role="tab" aria-selected="true" data-mode="solo">
               <span class="mode__ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 17.5L3 6V3h3l11.5 11.5"/><path d="M13 19l6-6"/><path d="M16 16l4 4"/><path d="M19 21l2-2"/></svg></span>
@@ -80,6 +79,10 @@
               <span class="mode__fleche" aria-hidden="true">›</span>
             </a>
           </div>
+
+        <!-- La salle : réglages et lancement à gauche, le Grimoire en éventail à droite -->
+        <div class="menu__salle">
+        <div class="menu__gauche">
 
           <!-- Contre l'Ombre : la difficulté de l'IA (JS/jeu-cartes.js, retenue dans le navigateur) -->
           <div class="difficulte" id="choix-difficulte">
@@ -162,23 +165,24 @@
             <button type="button" class="btn-dc btn-dc--ambre menu__jouer" id="btn-jouer" disabled>Engager le duel</button>
             <button type="button" class="btn-dc menu__regles" data-ouvrir-regles><span class="menu__regles-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5"/></svg></span> Règles du duel</button>
           </div>
-
-          <!-- Le duel en quatre mots -->
-          <ul class="menu__atouts" aria-label="Le duel en bref">
-            <li><strong>20</strong><span>PV par héros</span></li>
-            <li><strong>10</strong><span>énergie max.</span></li>
-            <li><strong>d20</strong><span>à chaque attaque</span></li>
-            <li><strong>20</strong><span>cartes au Grimoire</span></li>
-          </ul>
         </div>
 
-        <!-- Colonne de droite : le deck en éventail sur un piédestal -->
+        <!-- Le Grimoire en éventail sur un autel -->
         <div class="menu__droite">
           <div class="menu__autel">
             <h2 class="accueil__deck-titre" id="accueil-deck-titre">Ton deck</h2>
             <div class="accueil__deck" id="accueil-deck"><p class="vide">Les cartes sortent du grimoire…</p></div>
           </div>
         </div>
+        </div>
+
+        <!-- Le duel en quatre mots -->
+        <ul class="menu__atouts" aria-label="Le duel en bref">
+          <li><strong>20</strong><span>PV par héros</span></li>
+          <li><strong>10</strong><span>énergie max.</span></li>
+          <li><strong>d20</strong><span>à chaque attaque</span></li>
+          <li><strong>20</strong><span>cartes au Grimoire</span></li>
+        </ul>
       </div>
 
       <!-- Choix des cartes du deck (bouton « Choisir mes cartes ») -->
