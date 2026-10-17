@@ -5,8 +5,12 @@
    ===================================================================== */
 
 /* ---------- Échoppe des boosters (boutique) ---------- */
-.page-boutique .etal--boosters { display: flex; flex-wrap: wrap; justify-content: center; gap: 0 28px; }
+.page-boutique .etal--boosters { display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-start; gap: 0 28px; }
+/* Chaque étiquette garde sa propre hauteur : pas de grand vide quand une voisine montre plus de cartes */
+.page-boutique .etal--boosters .article__desc { flex: none; }
 .page-boutique .etal--boosters .article { width: min(300px, 100%); }
+/* L’offrande gratuite : seule sur sa rangée, au-dessus des boosters en vente (cachée tant que le SQL n’est pas lancé) */
+.page-boutique .etal--offrande[hidden] { display: none; }
 .page-boutique .article__niche--booster { height: 230px; }
 .page-boutique .article__booster {
   height: 210px; width: auto;
@@ -581,4 +585,53 @@ body.ob-plein > :not(.ob) { visibility: hidden; }
 @media (prefers-reduced-motion: reduce) {
   .ob__cinema::before, .ob__cinema::after { transition: none; }
   .ob__vitrail--tremble { animation: none; }
+}
+
+
+/* =====================================================================
+   Booster gratuit : l'Offrande du Voyageur (3 cartes toutes les 10 minutes, JS/boutique-boosters.js)
+   Un article de l'étal comme les autres boosters, en premier : ruban vert « Gratuit »,
+   « Gratuit » à la place du prix, jauge qui se remplit et compte à rebours au-dessus du bouton.
+   Prêt : la niche s'éclaire d'or et la porte flotte.
+   ===================================================================== */
+.page-boutique .article--offrande .booster__ruban { background: linear-gradient(180deg, #5f9a52, #355e2c); color: #f3fbe9; }
+.page-boutique .article--offrande.est-pret .article__niche {
+  box-shadow: inset 0 0 28px rgba(0,0,0,.95), inset 0 0 46px rgba(240,200,115,.22);
+}
+.page-boutique .article--offrande.est-pret .booster__pile .article__booster { animation: offrande-flotte 2.6s ease-in-out infinite; }
+@keyframes offrande-flotte { 50% { translate: 0 -5px; filter: drop-shadow(0 0 14px rgba(240,200,115,.55)); } }
+.page-boutique .offrande__prix { color: #9fd38f; letter-spacing: .08em; text-transform: uppercase; font-size: 1.05rem; }
+/* Jauge du compte à rebours */
+.page-boutique .offrande__jauge {
+  align-self: stretch;
+  height: 5px; margin-top: 8px;
+  background: rgba(240,236,227,.1);
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,.4);
+  overflow: hidden;
+}
+.page-boutique .offrande__jauge span {
+  display: block; height: 100%; width: 0;
+  background: linear-gradient(90deg, #b8892f, #f6d995);
+  box-shadow: 0 0 8px rgba(240,200,115,.6);
+  transition: width 1s linear;
+}
+.page-boutique .offrande__compte {
+  margin: 2px 0 0;
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: .7rem; letter-spacing: .06em;
+  color: var(--texte-doux);
+}
+.page-boutique .article--offrande.est-pret .offrande__compte { color: #f6d995; }
+/* En attente : le bouton affiche le temps restant, éteint */
+.page-boutique .offrande__btn:disabled {
+  background: transparent;
+  color: var(--texte-doux);
+  box-shadow: inset 0 0 0 1px var(--trait);
+  font-variant-numeric: tabular-nums;
+  cursor: not-allowed;
+  filter: none;
+}
+.page-boutique .offrande__btn:disabled::after { content: none; }
+@media (prefers-reduced-motion: reduce) {
+  .page-boutique .article--offrande.est-pret .booster__pile .article__booster { animation: none; }
+  .page-boutique .offrande__jauge span { transition: none; }
 }

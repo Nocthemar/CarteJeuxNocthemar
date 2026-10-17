@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <!-- Sécurité : seuls les scripts du jeu et de Supabase peuvent s'exécuter (aucun code glissé dans la page) -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://euurgbwgygtsqduyadmh.supabase.co wss://euurgbwgygtsqduyadmh.supabase.co https://cdn.jsdelivr.net; media-src 'self' data: blob:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Toutes les cartes — Nocthémar</title>
+  <link rel="icon" type="image/png" href="img/Logo/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800&family=Cinzel+Decorative:wght@700;900&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="CSS/polices.css">
+  <link rel="stylesheet" href="CSS/index.css">
+  <link rel="stylesheet" href="CSS/compte.css">
+  <link rel="stylesheet" href="CSS/cartes-jeu.css">
+  <link rel="stylesheet" href="CSS/carte-infos.css">
+  <link rel="stylesheet" href="CSS/toutes-les-cartes.css">
+<!-- Thème clair / sombre (bouton dans la barre latérale) : appliqué avant l'affichage -->
+<script src="JS/theme.js"></script>
+<link rel="stylesheet" href="CSS/theme-jour.css">
+</head>
+<body class="page-profil page-catalogue">
+<canvas id="embers"></canvas>
+
+  <header class="topbar">
+    <a class="brand" href="index.html">Nocthémar</a>
+    <span class="brand-sub">Duel des Couronnes</span>
+    <nav class="nav-links">
+      <a href="index.html">Accueil</a>
+      <a href="index.html#categories">Le Codex</a>
+    </nav>
+    <a href="boutique.html" class="nav-boutique">Boutique</a>
+    <div id="discord-auth"></div>
+  </header>
+
+  <main class="catalogue">
+
+    <!-- En-tête : titre et progression (cartes possédées / cartes du jeu) -->
+    <header class="catalogue__tete">
+      <span class="catalogue__sur">Le bestiaire du Duel des Couronnes</span>
+      <h1 class="catalogue__titre">Toutes les cartes</h1>
+      <p class="catalogue__intro">Chaque carte qui existe dans le jeu. Celles que tu possèdes brillent de leurs couleurs ; les autres t'attendent encore dans les boosters.</p>
+      <div class="catalogue__progression" id="progression" hidden>
+        <div class="catalogue__compte"><strong id="nb-possedees">0</strong> / <span id="nb-total">0</span> <small>cartes possédées</small></div>
+        <div class="catalogue__jauge" aria-hidden="true"><span id="jauge"></span></div>
+      </div>
+      <p class="catalogue__connexion" id="non-connecte" hidden>
+        <button type="button" class="catalogue__btn-discord" id="btn-connexion">Connecte-toi avec Discord</button>
+        pour voir les cartes que tu possèdes.
+      </p>
+    </header>
+
+    <!-- Filtres : recherche, possession, rareté (JS/toutes-les-cartes.js) -->
+    <div class="catalogue__filtres">
+      <input type="search" id="recherche" class="catalogue__recherche" placeholder="Chercher une carte…" aria-label="Chercher une carte">
+      <div class="catalogue__onglets" id="filtre-possession" role="radiogroup" aria-label="Possession" hidden>
+        <button type="button" role="radio" aria-checked="true" data-possession="toutes">Toutes</button>
+        <button type="button" role="radio" aria-checked="false" data-possession="possedees">Possédées</button>
+        <button type="button" role="radio" aria-checked="false" data-possession="manquantes">Manquantes</button>
+      </div>
+      <div class="catalogue__raretes" id="filtre-rarete" role="radiogroup" aria-label="Rareté">
+        <button type="button" role="radio" aria-checked="true" data-rarete="">Toutes</button>
+        <button type="button" role="radio" aria-checked="false" data-rarete="transcendante" style="--c: var(--rarete-transcendante)">Transcendante</button>
+        <button type="button" role="radio" aria-checked="false" data-rarete="legendaire" style="--c: var(--rarete-legendaire)">Légendaire</button>
+        <button type="button" role="radio" aria-checked="false" data-rarete="mythique" style="--c: var(--rarete-mythique)">Mythique</button>
+        <button type="button" role="radio" aria-checked="false" data-rarete="eveillee" style="--c: var(--rarete-eveillee)">Éveillée</button>
+        <button type="button" role="radio" aria-checked="false" data-rarete="commune" style="--c: var(--rarete-commune)">Commune</button>
+      </div>
+    </div>
+
+    <div class="catalogue__grille" id="grille"><p class="vide">Les cartes sortent du grimoire…</p></div>
+  </main>
+
+  <div id="notif" class="notif" role="status" aria-live="polite"></div>
+
+  <script src="JS/embers.js"></script>
+  <script src="JS/lien-site.js"></script>
+  <script src="JS/barre-laterale.js"></script>
+  <script type="module" src="JS/auth.js"></script>
+  <script type="module" src="JS/toutes-les-cartes.js"></script>
+</body>
+</html>

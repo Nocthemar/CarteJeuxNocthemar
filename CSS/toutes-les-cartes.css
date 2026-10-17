@@ -1,0 +1,138 @@
+/* =====================================================================
+   Page toutes-les-cartes.html : le catalogue de toutes les cartes du jeu
+   Cartes possédées en couleur (étiquette dorée « Possédée »), les autres en gris.
+   Utilise les variables de CSS/compte.css et les couleurs de rareté de CSS/cartes-jeu.css.
+   ===================================================================== */
+.page-catalogue { --or: #d8b978; --trait: rgba(240,236,227,.16); }
+
+.catalogue {
+  position: relative; z-index: 1;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 34px 16px 70px;
+}
+
+/* ---------- En-tête ---------- */
+.catalogue__tete { text-align: center; margin-bottom: 26px; }
+.catalogue__sur {
+  display: inline-flex; align-items: center; gap: 14px;
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: .72rem; letter-spacing: .32em; text-transform: uppercase;
+  color: var(--texte-doux);
+}
+.catalogue__sur::before,
+.catalogue__sur::after { content: ""; width: 40px; height: 1px; background: linear-gradient(90deg, transparent, var(--or)); }
+.catalogue__sur::after { background: linear-gradient(90deg, var(--or), transparent); }
+.catalogue__titre {
+  margin: 8px 0 10px;
+  font-family: "Cinzel Decorative","Cinzel Decorative Repli", serif;
+  font-size: clamp(2rem, 5vw, 3.2rem);
+  line-height: 1.05;
+  color: var(--texte);
+}
+.catalogue__intro { max-width: 58ch; margin: 0 auto; color: var(--texte-doux); font-style: italic; font-size: 1.05rem; line-height: 1.55; }
+
+/* Progression : cartes possédées / cartes du jeu */
+.catalogue__progression { max-width: 360px; margin: 20px auto 0; }
+.catalogue__progression[hidden] { display: none; }
+.catalogue__compte { font-family: "Cinzel","Cinzel Repli", serif; color: var(--texte-doux); }
+.catalogue__compte strong { font-size: 1.6rem; color: var(--or); }
+.catalogue__compte small { font-family: "EB Garamond", serif; font-size: .95rem; font-style: italic; }
+.catalogue__jauge {
+  height: 6px; margin-top: 8px;
+  background: rgba(240,236,227,.1);
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,.4);
+  overflow: hidden;
+}
+.catalogue__jauge span {
+  display: block; height: 100%; width: 0;
+  background: linear-gradient(90deg, #b8892f, #f6d995);
+  box-shadow: 0 0 8px rgba(240,200,115,.55);
+  transition: width .8s ease;
+}
+.catalogue__connexion { margin: 18px 0 0; color: var(--texte-doux); font-style: italic; }
+.catalogue__connexion[hidden] { display: none; }
+.catalogue__btn-discord {
+  padding: 0; border: 0; background: none; cursor: pointer;
+  color: var(--or); font: inherit; font-style: normal; text-decoration: underline; text-underline-offset: 3px;
+}
+
+/* ---------- Filtres ---------- */
+.catalogue__filtres {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 12px 16px;
+  margin-bottom: 26px;
+  padding: 14px 16px;
+  background: rgba(10,8,7,.55);
+  border: 1px solid var(--trait);
+}
+.catalogue__recherche {
+  flex: 1 1 220px; max-width: 300px;
+  min-height: 38px; padding: 0 12px;
+  border: 1px solid var(--trait); border-radius: 0;
+  background: rgba(0,0,0,.35);
+  color: var(--texte); font: inherit;
+}
+.catalogue__recherche:focus { outline: 2px solid var(--or); outline-offset: 0; }
+.catalogue__onglets,
+.catalogue__raretes { display: flex; flex-wrap: wrap; gap: 6px; }
+.catalogue__onglets[hidden] { display: none; }
+.catalogue__onglets button,
+.catalogue__raretes button {
+  display: inline-flex; align-items: center; gap: 7px;
+  min-height: 34px; padding: 0 12px;
+  border: 1px solid var(--trait); border-radius: 0;
+  background: transparent; cursor: pointer;
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: .72rem; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--texte-doux);
+  transition: background .15s, color .15s, border-color .15s;
+}
+.catalogue__onglets button:hover,
+.catalogue__raretes button:hover { color: var(--texte); border-color: rgba(240,236,227,.4); }
+.catalogue__onglets button:focus-visible,
+.catalogue__raretes button:focus-visible { outline: 2px solid var(--or); outline-offset: 2px; }
+/* Pastille de couleur de la rareté */
+.catalogue__raretes button[style]::before {
+  content: ""; width: 8px; height: 8px; rotate: 45deg;
+  background: var(--c);
+}
+.catalogue__onglets button[aria-checked="true"],
+.catalogue__raretes button[aria-checked="true"] { background: var(--or); border-color: var(--or); color: #1a1410; }
+
+/* ---------- La grille ---------- */
+.catalogue__grille {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 26px 18px;
+}
+.catalogue__grille > .vide { grid-column: 1 / -1; text-align: center; padding: 30px 0; }
+.catalogue__carte {
+  position: relative;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: 0; border: 0; background: none; cursor: pointer;
+  color: inherit; font: inherit;
+}
+.catalogue__carte .carte-jeu { cursor: pointer; }
+.catalogue__carte:focus-visible { outline: 2px solid var(--or); outline-offset: 4px; }
+/* Pas encore obtenue : en gris, même au survol */
+.catalogue__carte.est-manquante .carte-jeu,
+.catalogue__carte.est-manquante .carte-jeu:hover { filter: grayscale(1) brightness(.6); }
+/* Étiquette sous la carte */
+.catalogue__statut {
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: .66rem; letter-spacing: .1em; text-transform: uppercase;
+  color: rgba(240,236,227,.4);
+}
+.catalogue__statut--oui {
+  padding: 3px 10px;
+  background: linear-gradient(180deg, #f6d995, #c08d33);
+  color: #1a1410; font-weight: 700;
+}
+.catalogue__statut--oui b { font-weight: 800; }
+
+@media (max-width: 600px) {
+  .catalogue { padding-top: 16px; }
+  .catalogue__grille { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 18px 10px; }
+  .catalogue__filtres { padding: 12px; }
+  .catalogue__recherche { max-width: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .catalogue__jauge span { transition: none; }
+}

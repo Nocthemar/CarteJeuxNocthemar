@@ -440,6 +440,10 @@
 }
 .souhait.est-souhaitee .souhait__coeur { background: #e36a7d; color: #fff; }
 .souhait:hover .echange__loupe { opacity: 1; }
+/* « Toutes les cartes » : en gris, même au survol ; en couleur une fois dans la liste (♥) */
+.souhaits--catalogue .souhait > :first-child,
+.souhaits--catalogue .souhait > :first-child:hover { filter: grayscale(1) brightness(.75); }
+.souhaits--catalogue .souhait.est-souhaitee > :first-child { filter: none; }
 
 @media (max-width: 700px) {
   .contrat { padding: 22px 14px 16px; }

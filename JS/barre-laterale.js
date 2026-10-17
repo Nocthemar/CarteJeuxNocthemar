@@ -29,6 +29,7 @@
     cartes:  '<rect x="3" y="6" width="11" height="15" rx="1.5" transform="rotate(-8 8.5 13.5)"/><rect x="10" y="3" width="11" height="15" rx="1.5" transform="rotate(8 15.5 10.5)"/>',
     pass:    '<path d="M6 3h12v18l-6-4-6 4z"/><path d="M9 8l3 2 3-2M9 12l3 2 3-2"/>',
     collection:'<path d="M5 3h11l3 3v15H5z"/><path d="M9 3v6l2-1.5L13 9V3"/>',
+    catalogue:'<rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="9" rx="1"/><rect x="3" y="15" width="7" height="6" rx="1"/><rect x="14" y="15" width="7" height="6" rx="1"/>',
     boutique:'<path d="M5 8h14l-1.2 12H6.2z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>',
     marche:  '<path d="M12 3v18M7 21h10"/><path d="M4 7h16"/><path d="M6 7l-3 7a3 3 0 0 0 6 0zM18 7l-3 7a3 3 0 0 0 6 0z"/>',
     reglages:'<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/>',
@@ -43,6 +44,7 @@
   const surModes = ['jeu-cartes.html', 'histoire.html'].some((p) => new URL(p, racine).pathname === page);
   const surPass = new URL('pass.html', racine).pathname === page;
   const surCollection =new URL('collection.html', racine).pathname === page;
+  const surCatalogue = new URL('toutes-les-cartes.html', racine).pathname === page;
   const surMarche = new URL('marche.html', racine).pathname === page;
   const surReglages = new URL('parametres.html', racine).pathname === page;
 
@@ -113,6 +115,7 @@
     item('cartes', 'Modes de jeu', lien('jeu-cartes.html'), surModes),
     item('pass', 'Pass de saison', lien('pass.html'), surPass),
     item('collection', 'Collection', lien('collection.html'), surCollection),
+    item('catalogue', 'Toutes les cartes', lien('toutes-les-cartes.html'), surCatalogue),
     item('boutique', 'Boutique', lien('boutique.html'), surBoutique),
     item('marche', 'Marché', lien('marche.html'), surMarche),
     item('reglages', 'Paramètres', lien('parametres.html'), surReglages),
