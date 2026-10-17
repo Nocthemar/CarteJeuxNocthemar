@@ -1,0 +1,190 @@
+/* =====================================================================
+   Page succes.html : les succès (hauts faits) du joueur
+   Un succès = une plaque : icône dans un médaillon, nom, description, jauge, récompense en or.
+   Verrouillé : sombre ; prêt à réclamer : liseré et médaillon dorés, bouton qui appelle ;
+   obtenu : médaillon doré plein, « ✓ Obtenu ».
+   Utilise les variables de CSS/compte.css.
+   ===================================================================== */
+.page-succes { --or: #d8b978; --or-vif: #f6d995; --trait: rgba(240,236,227,.16); }
+
+.succes-page {
+  position: relative; z-index: 1;
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 34px 16px 70px;
+}
+
+/* ---------- En-tête ---------- */
+.succes-page__tete { text-align: center; margin-bottom: 30px; }
+.succes-page__sur {
+  display: inline-flex; align-items: center; gap: 14px;
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: .72rem; letter-spacing: .32em; text-transform: uppercase;
+  color: var(--texte-doux);
+}
+.succes-page__sur::before,
+.succes-page__sur::after { content: ""; width: 40px; height: 1px; background: linear-gradient(90deg, transparent, var(--or)); }
+.succes-page__sur::after { background: linear-gradient(90deg, var(--or), transparent); }
+.succes-page__titre {
+  margin: 8px 0 10px;
+  font-family: "Cinzel Decorative","Cinzel Decorative Repli", serif;
+  font-size: clamp(2.2rem, 5vw, 3.4rem);
+  line-height: 1.05;
+  color: var(--texte);
+}
+.succes-page__intro { max-width: 54ch; margin: 0 auto; color: var(--texte-doux); font-style: italic; font-size: 1.05rem; line-height: 1.55; }
+.succes-page__progression { max-width: 380px; margin: 22px auto 0; }
+.succes-page__progression[hidden] { display: none; }
+.succes-page__compte { font-family: "Cinzel","Cinzel Repli", serif; color: var(--texte-doux); }
+.succes-page__compte strong { font-size: 1.6rem; color: var(--or); }
+.succes-page__compte small { font-family: "EB Garamond", serif; font-size: .95rem; font-style: italic; }
+.succes-page__jauge,
+.succ__jauge {
+  height: 6px; margin-top: 8px;
+  background: rgba(240,236,227,.1);
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,.4);
+  overflow: hidden;
+}
+.succes-page__jauge span,
+.succ__jauge span {
+  display: block; height: 100%; width: 0;
+  background: linear-gradient(90deg, #b8892f, var(--or-vif));
+  box-shadow: 0 0 8px rgba(240,200,115,.5);
+  transition: width .6s ease;
+}
+.succes-page__tout {
+  margin-top: 16px; padding: 11px 22px;
+  border: 0; cursor: pointer;
+  background: linear-gradient(180deg, var(--or-vif), #c08d33);
+  color: #1a1410;
+  font-family: "Cinzel","Cinzel Repli", serif; font-weight: 800; font-size: .78rem; letter-spacing: .12em; text-transform: uppercase;
+  box-shadow: 0 0 18px rgba(240,200,115,.3);
+}
+.succes-page__tout[hidden] { display: none; }
+.succes-page__tout:hover { filter: brightness(1.1); }
+.succes-page__tout:disabled { opacity: .6; cursor: wait; }
+
+.succes-page__connexion { display: grid; justify-items: center; gap: 14px; text-align: center; color: var(--texte-doux); }
+.succes-page__connexion[hidden] { display: none; }
+.succes-page__liste > .vide { text-align: center; }
+
+/* ---------- Catégories ---------- */
+.succes-cat { margin-top: 30px; }
+.succes-cat__titre {
+  display: flex; align-items: center; gap: 14px;
+  margin: 0 0 14px;
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: .95rem; letter-spacing: .2em; text-transform: uppercase;
+  color: var(--texte);
+}
+.succes-cat__titre small { font-size: .78rem; letter-spacing: .08em; color: var(--or); }
+.succes-cat__titre::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, rgba(216,185,120,.5), transparent); }
+.succes-cat__liste { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr)); gap: 12px; }
+
+/* ---------- Un succès ---------- */
+/* Couleur de la rareté (bordure quand il est prêt ou obtenu) */
+.succ--commun     { --rc: rgba(217,180,138,.55); }
+.succ--rare       { --rc: rgba(111,178,255,.6); }
+.succ--epique     { --rc: rgba(183,124,240,.65); }
+.succ--legendaire { --rc: rgba(246,200,90,.75); }
+.succ {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 16px;
+  background: linear-gradient(180deg, rgba(30,25,22,.92), rgba(18,15,13,.92));
+  border: 1px solid var(--trait);
+  box-shadow: 0 6px 16px rgba(0,0,0,.35);
+  transition: border-color .3s, box-shadow .3s;
+}
+.succ__nom {
+  margin: 0;
+  font-family: "Cinzel","Cinzel Repli", serif; font-weight: 700; font-size: .98rem; letter-spacing: .04em;
+  color: var(--texte);
+}
+.succ__desc { margin: 2px 0 0; font-size: .95rem; font-style: italic; color: var(--texte-doux); }
+.succ__meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin: 6px 0 0; }
+.succ__pct { font-size: .82rem; color: rgba(240,236,227,.5); }
+.succ__droite { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; text-align: right; }
+.succ__or { display: inline-flex; align-items: center; gap: 5px; font-family: "Cinzel","Cinzel Repli", serif; font-weight: 700; color: var(--or); }
+.succ__or img { width: 18px; height: 18px; }
+.succ__compte { font-family: "Cinzel","Cinzel Repli", serif; font-size: .78rem; color: var(--texte-doux); font-variant-numeric: tabular-nums; }
+
+/* Verrouillé : badge éteint, texte plus sombre */
+.succ.est-verrouille .badge-succes { filter: grayscale(1) brightness(.55); opacity: .7; animation: none; }
+.succ.est-verrouille .succ__nom { color: rgba(240,236,227,.7); }
+
+/* Prêt à réclamer : bordure à la couleur de la rareté, le bouton appelle */
+.succ.est-pret {
+  border-color: var(--rc);
+  box-shadow: 0 0 22px color-mix(in srgb, var(--rc) 40%, transparent), 0 6px 16px rgba(0,0,0,.35);
+}
+.succ__btn {
+  padding: 8px 16px;
+  border: 0; cursor: pointer;
+  background: linear-gradient(180deg, var(--or-vif), #c08d33);
+  color: #1a1410;
+  font-family: "Cinzel","Cinzel Repli", serif; font-weight: 800; font-size: .72rem; letter-spacing: .12em; text-transform: uppercase;
+  animation: succ-appel 2.4s ease-in-out infinite;
+}
+.succ__btn:hover { filter: brightness(1.12); }
+.succ__btn:disabled { opacity: .6; cursor: wait; animation: none; }
+@keyframes succ-appel { 50% { box-shadow: 0 0 14px rgba(240,200,115,.6); } }
+
+/* Obtenu : liseré de la rareté, bouton pour épingler sur le profil */
+.succ.est-reclame { border-color: color-mix(in srgb, var(--rc) 55%, transparent); }
+.succ__epingle {
+  padding: 6px 12px;
+  border: 1px solid rgba(216,185,120,.45); cursor: pointer;
+  background: transparent;
+  color: var(--or);
+  font-family: "Cinzel","Cinzel Repli", serif; font-size: .68rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+  white-space: nowrap;
+  transition: background .15s, color .15s;
+}
+.succ__epingle:hover:not(:disabled) { background: rgba(216,185,120,.12); }
+.succ__epingle.est-epingle { background: var(--or); border-color: var(--or); color: #1a1410; }
+.succ__epingle:disabled { opacity: .4; cursor: not-allowed; }
+
+/* ---------- La vitrine : les 3 badges du profil ---------- */
+.vitrine-succes {
+  margin: 0 auto 10px;
+  padding: 18px 20px 14px;
+  text-align: center;
+  background:
+    radial-gradient(ellipse 60% 80% at 50% 0, rgba(216,185,120,.08), transparent 70%),
+    rgba(10,8,7,.55);
+  border: 1px solid rgba(216,185,120,.3);
+}
+.vitrine-succes[hidden] { display: none; }
+.vitrine-succes__titre { font-family: "Cinzel","Cinzel Repli", serif; font-size: .74rem; letter-spacing: .24em; text-transform: uppercase; color: var(--or); }
+.vitrine-succes__places { display: flex; justify-content: center; gap: clamp(14px, 4vw, 40px); margin: 14px 0 6px; }
+.vitrine-succes__place {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  width: 120px;
+  padding: 0; border: 0; background: none;
+  color: inherit; font: inherit;
+}
+.vitrine-succes__place.est-pleine { cursor: pointer; }
+.vitrine-succes__place.est-pleine:hover .badge-succes { transform: translateY(-3px); }
+.vitrine-succes__place .badge-succes { transition: transform .2s ease; }
+.vitrine-succes__vide {
+  display: grid; place-items: center;
+  width: 76px; height: 84px;
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+  background: rgba(240,236,227,.06);
+  color: rgba(240,236,227,.3); font-size: 1.6rem;
+}
+.vitrine-succes__nom { font-family: "Cinzel","Cinzel Repli", serif; font-size: .72rem; letter-spacing: .04em; color: var(--texte-doux); line-height: 1.3; }
+.vitrine-succes__aide { margin: 0; font-size: .9rem; font-style: italic; color: var(--texte-doux); }
+.vitrine-succes__aide a { color: var(--or); }
+
+@media (max-width: 520px) {
+  .succ { grid-template-columns: 44px minmax(0, 1fr); gap: 12px; }
+  .succ .badge-succes { --taille: 42px; }
+  .succ__droite { grid-column: 1 / -1; flex-direction: row; justify-content: space-between; align-items: center; }
+  .vitrine-succes__place { width: 90px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .succ__btn { animation: none; }
+  .succes-page__jauge span, .succ__jauge span { transition: none; }
+}

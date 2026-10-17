@@ -32,7 +32,7 @@ begin
     'histoire_progression', 'player_pass', 'histoire_tentatives', -- mode Histoire
     'joueur_plateaux',                                        -- plateaux achetés
     'rangs', 'file_classee', 'parties_classees', 'salons_classes', -- classé
-    'souhaits'                                                -- liste de souhaits
+    'souhaits', 'player_succes'                               -- liste de souhaits, succès réclamés
   ] loop
     if to_regclass('public.' || v_table) is not null then
       execute format('delete from public.%I where discord_id = $1', v_table) using v_joueur;

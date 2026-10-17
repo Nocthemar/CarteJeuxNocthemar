@@ -8,6 +8,7 @@ import { supabase, connexionDiscord, getMonJoueur, SITE_ROOT } from './supabase.
 import { $, esc, couleur } from './commun.js';
 import { chargerDeck, Deck, activerGlisser, htmlCarte } from './cartes.js';
 import { OBJETS, TAILLE_DECK, objetDepuisNom } from './jeu-cartes-moteur.js';
+import { htmlBadge, pourcentageTexte, RARETES_SUCCES } from './succes-badge.js';
 
 // Les bannières (achetées à la boutique) restent sur le site Nocthémar (JS/lien-site.js)
 const RACINE_IMAGES = window.NOCTHEMAR_SITE ? new URL(window.NOCTHEMAR_SITE) : SITE_ROOT;
@@ -56,6 +57,7 @@ async function init() {
   const [deckProfil] = await Promise.all([
     afficherDeck(discordId, estMoi),
     afficherRang(discordId, estMoi).catch(console.error),
+    afficherBadges(discordId, estMoi).catch(console.error),
   ]);
 
   // Partie privée : seulement sur mon propre profil
@@ -107,6 +109,29 @@ function afficherEntete(j) {
 // Les 7 objets sont toujours affichés : ceux qu'on possède en couleur, les autres grisés.
 // Deck de cartes : lecture seule pour les visiteurs ; sur mon profil,
 // je peux le renommer, retirer des cartes et les réorganiser en les glissant.
+// ---------------------------------------------------------------------
+//  Badges : les succès épinglés par le joueur (jusqu'à 3), visibles par tous (SQL/succes.sql)
+//  Sur son propre profil sans badge : un lien pour les choisir. Ailleurs sans badge : section cachée.
+// ---------------------------------------------------------------------
+async function afficherBadges(discordId, estMoi) {
+  const { data, error } = await supabase.rpc('succes_vitrine', { p_discord_id: discordId });
+  if (error) return;   // SQL/succes.sql pas encore lancé
+  const badges = data ?? [];
+  if (!badges.length && !estMoi) return;
+  $('badges').innerHTML = badges.length
+    ? badges.map((s) => `
+      <div class="badge-profil" title="${esc(s.description)}">
+        ${htmlBadge(s, { taille: 'grand' })}
+        <strong class="badge-profil__nom">${esc(s.nom)}</strong>
+        <span class="rarete-succes rarete-succes--${esc(s.rarete)}">${RARETES_SUCCES[s.rarete]?.nom ?? 'Commun'}</span>
+        <small class="badge-profil__pct">${pourcentageTexte(s.pourcentage)} des joueurs</small>
+      </div>`).join('')
+    : '<p class="vide">Aucun badge épinglé pour le moment.</p>';
+  $('lien-succes').hidden = !estMoi;
+  $('lien-succes').textContent = badges.length ? 'Changer mes badges' : 'Choisir mes badges';
+  $('badges-profil').hidden = false;
+}
+
 async function afficherDeck(discordId, estMoi) {
   const { nom, ids, cartes } = await chargerDeck(discordId);
   const deck = new Deck($('deck'), { nom, ids, cartes, editable: estMoi, lienAjout: 'collection.html#grimoire' });

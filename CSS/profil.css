@@ -238,38 +238,44 @@ body.page-fiche::before,
 .page-fiche .btn-petit { border-color: var(--vif-encre); color: var(--vif-encre); }
 .page-fiche .btn-petit:hover { background: var(--vif-encre); color: #f5ecd8; }
 
-/* Boutons : planchettes de bois ; le bouton principal est à la couleur du thème */
+/* Boutons : contour doré sur le papier noir, remplis d'or au survol ;
+   le bouton principal (duel__btn--plein) est à la couleur du thème */
 .page-fiche .btn-collection,
 .page-fiche .duel__btn {
-  border: 0;
-  border-radius: 3px;
-  color: #f5e6c8;
-  text-shadow: 0 1px 1px rgba(0,0,0,.6);
-  background:
-    linear-gradient(180deg, rgba(255,220,170,.18), transparent 40%, rgba(0,0,0,.25)),
-    var(--bois) 0 0 / 200px 200px,
-    #5a3a22;
-  box-shadow: inset 0 0 0 2px #2c1a0d, 0 4px 6px rgba(0,0,0,.4);
-  transition: transform .15s, filter .15s;
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  border: 1px solid rgba(216,185,120,.6);
+  border-radius: 0;
+  color: #f0d9a6;
+  font-family: "Cinzel","Cinzel Repli", serif; font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
+  text-shadow: none;
+  background: linear-gradient(180deg, rgba(216,185,120,.1), rgba(216,185,120,.02));
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,.4), 0 6px 14px rgba(0,0,0,.35);
+  transition: background .2s, color .2s, border-color .2s, box-shadow .2s, transform .2s;
 }
-.page-fiche .btn-collection { margin-top: 26px; padding: 9px 24px; }
+.page-fiche .btn-collection { margin-top: 30px; padding: 12px 28px; font-size: .78rem; }
+/* Petit losange doré devant le texte */
+.page-fiche .btn-collection::before {
+  content: ""; width: 7px; height: 7px; rotate: 45deg;
+  background: currentColor;
+}
 .page-fiche .btn-collection:hover,
 .page-fiche .duel__btn:hover {
-  color: #fff3dc;
-  background:
-    linear-gradient(180deg, rgba(255,220,170,.18), transparent 40%, rgba(0,0,0,.25)),
-    var(--bois) 0 0 / 200px 200px,
-    #5a3a22;
-  filter: brightness(1.15);
+  color: #1a1410;
+  border-color: #f0d9a6;
+  background: linear-gradient(180deg, #f6d995, #c9a24a);
+  box-shadow: 0 0 18px rgba(240,200,115,.35), 0 6px 14px rgba(0,0,0,.35);
   transform: translateY(-2px);
 }
 .page-fiche .duel__btn--plein,
 .page-fiche .duel__btn--plein:hover {
+  color: #fff;
+  border-color: color-mix(in srgb, var(--vif) 60%, #fff);
   background:
     linear-gradient(180deg, rgba(255,255,255,.18), transparent 45%, rgba(0,0,0,.22)),
     var(--vif);
-  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--vif) 55%, #000), 0 4px 6px rgba(0,0,0,.4);
+  box-shadow: 0 6px 14px rgba(0,0,0,.35);
 }
+.page-fiche .duel__btn--plein:hover { filter: brightness(1.12); box-shadow: 0 0 18px color-mix(in srgb, var(--vif) 50%, transparent), 0 6px 14px rgba(0,0,0,.35); }
 
 
 /* ---------- Duel ---------- */
@@ -380,75 +386,14 @@ body.page-fiche::before,
 .page-fiche .vitrine .deck-tete { margin-bottom: 18px; }
 
 
-/* Chaque carte posée sur un socle de bois gravé de son nom (sans cadre autour ;
-   une vitrine vide garde sa cloche de verre cintrée, cerclée de laiton, pour montrer la place).
+/* Chaque carte debout sur un socle sombre gravé de son nom, une flaque de lumière à la couleur
+   de sa rareté à ses pieds ; une place vide est un cadre en pointillés dorés avec un « + ».
    Ajustée à la carte : l'image d'une carte a une marge transparente (son cadre va de 6,3 à 93,6 %
-   en largeur, de 9,4 à 91,3 % en hauteur, le « N » monte jusqu'à 2,7 %) ; la cloche épouse la carte
-   visible (quelques pixels d'air), son arche passe juste au-dessus du « N », le socle est juste dessous. */
+   en largeur, de 9,4 à 91,3 % en hauteur) ; le socle est juste dessous. */
 .page-fiche .vitrine .deck-emplacements {
   align-items: end;
   gap: clamp(12px, 2.4vw, 26px);
-  padding: 18px clamp(10px, 2.4vw, 26px) 30px;
-}
-.page-fiche .vitrine .deck-emplacement {
-  --cloche: 50% 50% 4px 4px / 13% 13% 4px 4px;   /* haut cintré, bas droit */
-}
-
-/* La cloche de verre : seulement sur une vitrine vide (une carte posée se montre sans cadre) */
-.page-fiche .vitrine .deck-emplacement:not(.deck-emplacement--plein)::before {
-  content: "";
-  position: absolute;
-  inset: -5% 3.5% 3.5% 3.5%;
-  z-index: 3;
-  border-radius: var(--cloche);
-  border: 1px solid rgba(255,255,255,.35);
-  background: none;
-  box-shadow:
-    0 0 0 2px rgba(201,162,74,.75),                 /* cerclage de laiton */
-    0 0 0 3px rgba(90,60,15,.5),
-    0 14px 18px -6px rgba(40,20,5,.45);
-  pointer-events: none;
-}
-
-/* La carte, debout dans sa vitrine, s'élève un peu au survol */
-.page-fiche .vitrine .deck-emplacement--plein .deck-flip {
-  filter: drop-shadow(0 6px 6px rgba(40,20,5,.35));
-  transition: transform .6s cubic-bezier(.45,.05,.3,1), translate .35s, filter .35s;
-}
-.page-fiche .vitrine .deck-emplacement--plein:hover .deck-flip {
-  translate: 0 -6px;
-  filter: drop-shadow(0 0 10px color-mix(in srgb, var(--vif) 50%, transparent)) drop-shadow(0 10px 8px rgba(40,20,5,.35));
-}
-
-/* Le socle : bois sombre, filet de la couleur de la rareté, nom gravé en or */
-.page-fiche .vitrine .deck-emplacement--plein::after,
-.page-fiche .vitrine .deck-emplacement:not(.deck-emplacement--plein)::after {
-  content: attr(data-nom);
-  position: absolute;
-  left: 1%; right: 1%; top: calc(96.5% + 3px);
-  z-index: 4;
-  height: 26px;
-  padding: 0 6px;
-  overflow: hidden;
-  border-radius: 2px 2px 4px 4px;
-  background:
-    linear-gradient(180deg, var(--rarete, #8f8a84) 0 3px, rgba(0,0,0,.4) 3px 4px, transparent 4px),
-    linear-gradient(180deg, rgba(255,220,170,.2), transparent 45%, rgba(0,0,0,.35)),
-    var(--bois) 0 0 / 160px 160px,
-    #4a2e19;
-  box-shadow: inset 0 0 0 1px rgba(20,10,4,.6), 0 6px 8px -2px rgba(40,20,5,.5);
-  color: #f0cf8a;
-  font-family: "Cinzel","Cinzel Repli", serif;
-  font-size: .64rem;
-  font-weight: 700;
-  letter-spacing: .1em;
-  line-height: 29px;
-  text-align: center;
-  text-overflow: ellipsis;
-  text-shadow: 0 1px 1px rgba(0,0,0,.8);
-  text-transform: uppercase;
-  white-space: nowrap;
-  pointer-events: none;
+  padding: 18px clamp(10px, 2.4vw, 26px) 34px;
 }
 .page-fiche .vitrine [data-rarete="commune"]       { --rarete: var(--rarete-commune); }
 .page-fiche .vitrine [data-rarete="eveillee"]      { --rarete: var(--rarete-eveillee); }
@@ -456,34 +401,99 @@ body.page-fiche::before,
 .page-fiche .vitrine [data-rarete="legendaire"]    { --rarete: var(--rarete-legendaire); }
 .page-fiche .vitrine [data-rarete="transcendante"] { --rarete: var(--rarete-transcendante); }
 
-/* Vitrine vide : la cloche et le socle sans carte, en attente */
-.page-fiche .vitrine .deck-emplacement:not(.deck-emplacement--plein) {
-  border: 0;
-  background: none;
+/* La flaque de lumière sous la carte (couleur de la rareté) */
+.page-fiche .vitrine .deck-emplacement--plein::before {
+  content: "";
+  position: absolute;
+  left: -8%; right: -8%; bottom: -4%;
+  height: 22%;
+  z-index: 0;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, color-mix(in srgb, var(--rarete, #8f8a84) 55%, transparent), transparent 70%);
+  opacity: .55;
+  transition: opacity .35s;
+  pointer-events: none;
 }
+.page-fiche .vitrine .deck-emplacement--plein:hover::before { opacity: 1; }
+
+/* La carte s'élève un peu au survol, auréolée de sa rareté */
+.page-fiche .vitrine .deck-emplacement--plein .deck-flip {
+  position: relative; z-index: 1;
+  filter: drop-shadow(0 8px 8px rgba(0,0,0,.55));
+  transition: transform .6s cubic-bezier(.45,.05,.3,1), translate .35s, filter .35s;
+}
+.page-fiche .vitrine .deck-emplacement--plein:hover .deck-flip {
+  translate: 0 -8px;
+  filter: drop-shadow(0 0 12px color-mix(in srgb, var(--rarete, #8f8a84) 70%, transparent)) drop-shadow(0 12px 10px rgba(0,0,0,.55));
+}
+
+/* Le socle : verre noir, liseré lumineux de la rareté, nom en ivoire */
+.page-fiche .vitrine .deck-emplacement::after {
+  content: attr(data-nom);
+  position: absolute;
+  left: 2%; right: 2%; top: calc(96.5% + 6px);
+  z-index: 4;
+  height: 28px;
+  padding: 0 8px;
+  overflow: hidden;
+  background:
+    linear-gradient(90deg, transparent, var(--rarete, #8f8a84) 15% 85%, transparent) top / 100% 3px no-repeat,
+    linear-gradient(180deg, #24211f, #0f0e0d);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.06),
+    0 -4px 12px -6px var(--rarete, transparent),
+    0 8px 12px -4px rgba(0,0,0,.7);
+  color: #ece4d4;
+  font-family: "Cinzel","Cinzel Repli", serif;
+  font-size: .64rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+  line-height: 30px;
+  text-align: center;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* Place vide : cadre en pointillés dorés à la taille d'une carte visible, « + » au centre, socle « Libre » */
+.page-fiche .vitrine .deck-emplacement:not(.deck-emplacement--plein) { border: 0; background: none; }
 .page-fiche .vitrine .deck-emplacement:not(.deck-emplacement--plein)::before {
-  background: rgba(255,250,235,.15);
-  opacity: .8;
+  content: "";
+  position: absolute;
+  inset: 9.4% 6.3% 8.7%;   /* le cadre visible d'une carte posée */
+  border: 1px dashed rgba(216,185,120,.4);
+  border-radius: 6px;
+  background:
+    radial-gradient(ellipse at 50% 40%, rgba(216,185,120,.09), transparent 70%),
+    rgba(255,255,255,.02);
+  transition: border-color .2s, background .2s;
+  pointer-events: none;
+}
+.page-fiche .vitrine .deck-emplacement:not(.deck-emplacement--plein):hover::before {
+  border-color: rgba(216,185,120,.75);
+  background: radial-gradient(ellipse at 50% 40%, rgba(216,185,120,.18), transparent 70%), rgba(255,255,255,.03);
 }
 .page-fiche .vitrine .deck-emplacement:not(.deck-emplacement--plein)::after {
-  content: "Vitrine libre";
-  color: rgba(240,207,138,.55);
+  content: "Libre";
+  color: rgba(216,185,120,.6);
   font-style: italic;
+  font-weight: 400;
   text-transform: none;
   letter-spacing: .04em;
 }
 .page-fiche .vitrine .deck-emplacement__ajout,
-.page-fiche .vitrine .deck-emplacement__num { position: relative; z-index: 5; color: var(--encre-douce); }
-.page-fiche .vitrine .deck-emplacement__ajout:hover { color: var(--vif-encre); }
+.page-fiche .vitrine .deck-emplacement__num { position: relative; z-index: 5; color: rgba(216,185,120,.7); }
+.page-fiche .vitrine .deck-emplacement__ajout { font-size: 2rem; transition: color .2s, transform .2s; }
+.page-fiche .vitrine .deck-emplacement__ajout:hover { color: #f6d995; transform: scale(1.15); }
 
 .page-fiche .vitrine .deck-retirer,
 .page-fiche .vitrine .carte-loupe { z-index: 6; }
 
 @media (max-width: 600px) {
-  .page-fiche .vitrine .deck-emplacements { gap: 10px; padding: 14px 6px 26px; }
-  .page-fiche .vitrine .deck-emplacement--plein::after,
-  .page-fiche .vitrine .deck-emplacement:not(.deck-emplacement--plein)::after {
-    left: 0; right: 0; height: 20px; line-height: 22px; font-size: .45rem; letter-spacing: 0;
+  .page-fiche .vitrine .deck-emplacements { gap: 10px; padding: 14px 6px 28px; }
+  .page-fiche .vitrine .deck-emplacement::after {
+    left: 0; right: 0; height: 22px; line-height: 24px; font-size: .45rem; letter-spacing: 0;
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -838,3 +848,18 @@ body.page-fiche::before,
 }
 /* L'or posé directement sur le papier (sans niche ronde) */
 .page-fiche .tresor__or { border-radius: 0; background: none; box-shadow: none; }
+
+/* ---------- Badges : les succès épinglés (JS/profil.js, afficherBadges ; CSS/succes-badges.css) ---------- */
+.badges-profil { text-align: center; }
+.badges-profil[hidden] { display: none; }
+.badges-profil__liste { display: flex; flex-wrap: wrap; justify-content: center; gap: 18px clamp(20px, 5vw, 56px); }
+.badge-profil {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  width: 150px;
+}
+.badge-profil .badge-succes { margin-bottom: 4px; }
+.badge-profil__nom { font-family: "Cinzel","Cinzel Repli", serif; font-size: .9rem; line-height: 1.25; color: var(--encre); }
+.badge-profil__pct { font-size: .82rem; font-style: italic; color: var(--encre-douce); }
+.badges-profil .vide { margin: 0; color: var(--encre-douce); font-style: italic; }
+.page-fiche .badges-profil__lien { display: inline-block; margin-top: 22px; }
+.page-fiche .badges-profil__lien[hidden] { display: none; }

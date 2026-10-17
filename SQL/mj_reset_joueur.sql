@@ -16,6 +16,7 @@
 --    - les plateaux achetés
 --    - le classé : rang et cote, file d'attente, parties classées
 --    - le Marché : échanges et contrats (proposés et reçus), annonces, liste de souhaits
+--    - les succès réclamés (SQL/succes.sql)
 --
 --  Seuls les MJ (players.is_mj) peuvent l'appeler. Les tables absentes (SQL pas encore lancé)
 --  sont simplement ignorées. Ajouter ici toute nouvelle table de données de joueur.
@@ -52,6 +53,7 @@ begin
     'joueur_plateaux',                                                    -- plateaux achetés
     'rangs', 'file_classee', 'parties_classees', 'salons_classes',        -- classé
     'souhaits',                                                           -- liste de souhaits
+    'player_succes',                                                      -- succès réclamés
     'inventory', 'transactions'                                           -- cosmétiques, historique des pièces
   ] loop
     if to_regclass('public.' || v_table) is not null then

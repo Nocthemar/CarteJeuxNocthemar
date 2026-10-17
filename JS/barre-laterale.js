@@ -33,6 +33,7 @@
     boutique:'<path d="M5 8h14l-1.2 12H6.2z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>',
     marche:  '<path d="M12 3v18M7 21h10"/><path d="M4 7h16"/><path d="M6 7l-3 7a3 3 0 0 0 6 0zM18 7l-3 7a3 3 0 0 0 6 0z"/>',
     reglages:'<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/>',
+    succes:  '<circle cx="12" cy="9" r="6"/><path d="M8.5 14L7 22l5-3 5 3-1.5-8"/>',
     retour:  '<path d="M15 5l-7 7 7 7"/>',
   };
   const icone = (nom) => `<span class="rail-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONES[nom]}</svg></span>`;
@@ -45,6 +46,7 @@
   const surPass = new URL('pass.html', racine).pathname === page;
   const surCollection =new URL('collection.html', racine).pathname === page;
   const surCatalogue = new URL('toutes-les-cartes.html', racine).pathname === page;
+  const surSucces = new URL('succes.html', racine).pathname === page;
   const surMarche = new URL('marche.html', racine).pathname === page;
   const surReglages = new URL('parametres.html', racine).pathname === page;
 
@@ -116,6 +118,7 @@
     item('pass', 'Pass de saison', lien('pass.html'), surPass),
     item('collection', 'Collection', lien('collection.html'), surCollection),
     item('catalogue', 'Toutes les cartes', lien('toutes-les-cartes.html'), surCatalogue),
+    item('succes', 'Succès', lien('succes.html'), surSucces),
     item('boutique', 'Boutique', lien('boutique.html'), surBoutique),
     item('marche', 'Marché', lien('marche.html'), surMarche),
     item('reglages', 'Paramètres', lien('parametres.html'), surReglages),

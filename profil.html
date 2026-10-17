@@ -15,6 +15,7 @@
   <link rel="stylesheet" href="CSS/compte.css">
   <link rel="stylesheet" href="CSS/cartes-jeu.css">
   <link rel="stylesheet" href="CSS/carte-infos.css">
+  <link rel="stylesheet" href="CSS/succes-badges.css">
   <link rel="stylesheet" href="CSS/profil.css">
 <!-- Thème clair / sombre (bouton dans la barre latérale) : appliqué avant l'affichage -->
 <script src="JS/theme.js"></script>
@@ -63,6 +64,15 @@
             <a id="lien-echange" class="btn-echange" href="marche.html#echanges" hidden>⇄ Proposer un échange</a>
           </div>
         </div>
+      </section>
+
+      <!-- Badges : jusqu'à 3 succès épinglés par le joueur, visibles par tous
+           (JS/profil.js, afficherBadges ; choisis sur succes.html ; SQL/succes.sql : succes_vitrine) -->
+      <section id="badges-profil" class="carte badges-profil" hidden>
+        <span class="vitrine__sur">Hauts faits</span>
+        <h2>Badges</h2>
+        <div id="badges" class="badges-profil__liste"></div>
+        <a id="lien-succes" class="btn-collection badges-profil__lien" href="succes.html" hidden>Choisir mes badges</a>
       </section>
 
       <!-- Rang et statistiques : visibles par tous (JS/profil.js, afficherRang).

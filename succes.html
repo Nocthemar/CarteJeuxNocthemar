@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <!-- Sécurité : seuls les scripts du jeu et de Supabase peuvent s'exécuter (aucun code glissé dans la page) -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://euurgbwgygtsqduyadmh.supabase.co wss://euurgbwgygtsqduyadmh.supabase.co https://cdn.jsdelivr.net; media-src 'self' data: blob:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Succès — Nocthémar</title>
+  <link rel="icon" type="image/png" href="img/Logo/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800&family=Cinzel+Decorative:wght@700;900&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="CSS/polices.css">
+  <link rel="stylesheet" href="CSS/index.css">
+  <link rel="stylesheet" href="CSS/compte.css">
+  <link rel="stylesheet" href="CSS/cartes-jeu.css">
+  <link rel="stylesheet" href="CSS/carte-infos.css">
+  <link rel="stylesheet" href="CSS/succes-badges.css">
+  <link rel="stylesheet" href="CSS/succes.css">
+<!-- Thème clair / sombre (bouton dans la barre latérale) : appliqué avant l'affichage -->
+<script src="JS/theme.js"></script>
+<link rel="stylesheet" href="CSS/theme-jour.css">
+</head>
+<body class="page-profil page-succes">
+<canvas id="embers"></canvas>
+
+  <header class="topbar">
+    <a class="brand" href="index.html">Nocthémar</a>
+    <span class="brand-sub">Duel des Couronnes</span>
+    <nav class="nav-links">
+      <a href="index.html">Accueil</a>
+      <a href="index.html#categories">Le Codex</a>
+    </nav>
+    <a href="boutique.html" class="nav-boutique">Boutique</a>
+    <div id="discord-auth"></div>
+  </header>
+
+  <main class="succes-page">
+
+    <!-- En-tête : titre et progression (succès débloqués / total, or à réclamer) -->
+    <header class="succes-page__tete">
+      <span class="succes-page__sur">Les hauts faits du Duel des Couronnes</span>
+      <h1 class="succes-page__titre">Succès</h1>
+      <p class="succes-page__intro">Chaque exploit accompli dans le jeu est gravé ici. Réclame l'or de ceux que tu as débloqués.</p>
+      <div class="succes-page__progression" id="progression" hidden>
+        <div class="succes-page__compte"><strong id="nb-atteints">0</strong> / <span id="nb-total">0</span> <small>succès débloqués</small></div>
+        <div class="succes-page__jauge" aria-hidden="true"><span id="jauge"></span></div>
+        <button type="button" class="succes-page__tout" id="btn-tout" hidden></button>
+      </div>
+    </header>
+
+    <!-- Pas connecté -->
+    <section class="succes-page__connexion" id="non-connecte" hidden>
+      <p>Connecte-toi avec Discord pour voir tes succès et réclamer leurs récompenses.</p>
+      <button id="btn-connexion" type="button" class="btn-discord">
+        <span class="btn-discord__logo" aria-hidden="true"></span>
+        Connecter Discord
+      </button>
+    </section>
+
+    <!-- Vitrine : les 3 badges épinglés sur le profil (JS/succes.js) -->
+    <section class="vitrine-succes" id="vitrine" hidden></section>
+
+    <!-- Les succès, par catégorie (JS/succes.js) -->
+    <div id="liste" class="succes-page__liste"><p class="vide">Les hauts faits se dévoilent…</p></div>
+  </main>
+
+  <div id="notif" class="notif" role="status" aria-live="polite"></div>
+
+  <script src="JS/embers.js"></script>
+  <script src="JS/lien-site.js"></script>
+  <script src="JS/barre-laterale.js"></script>
+  <script type="module" src="JS/auth.js"></script>
+  <script type="module" src="JS/succes.js"></script>
+</body>
+</html>
