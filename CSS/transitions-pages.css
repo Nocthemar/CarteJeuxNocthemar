@@ -1,0 +1,26 @@
+/* =====================================================================
+   Passage entre le menu du duel (jeu-cartes.html) et l'Histoire (histoire.html)
+   Chargé par ces deux pages.
+   - Chrome, Edge, Safari récents : transition native entre pages (View Transitions) :
+     fondu enchaîné simple — les deux pages se mélangent, sans mouvement
+   - autres navigateurs : JS/transitions-pages.js fait un court fondu avant de changer de page,
+     et la nouvelle page apparaît en fondu (classe .page-arrivee ci-dessous)
+   ===================================================================== */
+@view-transition { navigation: auto; }
+
+::view-transition-group(root) { background: #07080d; }
+::view-transition-old(root),
+::view-transition-new(root) { animation-duration: .25s; animation-timing-function: ease; }
+/* (le fondu enchaîné est l'animation par défaut du navigateur : seule la durée change) */
+
+/* Secours (sans View Transitions) */
+html.page-depart, html.page-arrivee { background: #07080d; }
+html.page-depart body { opacity: 0; transition: opacity .15s ease; }
+html.page-arrivee body { animation: page-apparition .25s ease both; }
+@keyframes page-apparition { from { opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root), ::view-transition-new(root) { animation-duration: .01s; }
+  html.page-depart body { transition: none; }
+  html.page-arrivee body { animation: none; }
+}
