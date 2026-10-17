@@ -162,6 +162,7 @@ const UNIQUE_PAR_NOM = {
   'elfe des neiges doree': 'blizzard',
   'garde de pravorn': 'sentinelle',
   'gardes de pravorn': 'rangs',
+  'garde des elfes': 'vigie',
 };
 
 export const UNIQUES = {
@@ -235,6 +236,15 @@ export const UNIQUES = {
     texte: 'À son arrivée, tes autres unités gagnent +1 Défense pour de bon.',
     arrivee(p, qui, u, ev) {
       unites(p.camps[qui]).filter((x) => x !== u).forEach((x) => { x.d += 1; ev.touches.push({ camp: qui, uid: x.uid, texte: '+1 Défense', buff: true }); });
+    },
+  },
+  // Garde des Elfes : les gardiennes des cols d'Erynedhal repèrent la plus grande menace et la figent
+  vigie: {
+    nom: 'Vigie d’Erynedhal',
+    texte: 'À son arrivée, gèle l’unité adverse la plus forte : elle ne pourra ni attaquer ni défendre à son prochain tour.',
+    arrivee(p, qui, u, ev) {
+      const t = [...unites(p.camps[autre(qui)])].sort((x, y) => y.a - x.a)[0];
+      if (t) { t.gele = 1; ev.touches.push({ camp: autre(qui), uid: t.uid, texte: 'Gelée', etat: true }); }
     },
   },
   // Légendaires sans capacité propre

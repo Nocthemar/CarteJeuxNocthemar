@@ -354,6 +354,14 @@ html:has(.page-boutique) { scroll-behavior: smooth; }
   }
   .sommaire__nom { display: none; }
   .page-boutique .marche { padding-bottom: 70px; }
+  /* Avec la barre de navigation en bas (CSS/barre-laterale.css) : le sommaire se pose juste au-dessus */
+  .has-rail .sommaire {
+    bottom: 72px; left: 10px; right: 10px;
+    padding: 4px;
+    border-radius: 999px;
+    box-shadow: 0 6px 18px rgba(0,0,0,.55);
+  }
+  .has-rail .sommaire a { padding: 2px; }
 }
 @media (prefers-reduced-motion: reduce) {
   html:has(.page-boutique) { scroll-behavior: auto; }

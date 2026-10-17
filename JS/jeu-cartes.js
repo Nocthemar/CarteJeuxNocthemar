@@ -554,8 +554,33 @@ function montrerPlateau() {
   $('ecran-accueil').hidden = true;
   $('ecran-duel').hidden = false;
   document.body.classList.add('en-duel');   // le duel prend tout l'écran (CSS/jeu-cartes.css)
+  passerEnPaysage();
   scrollTo(0, 0);
   afficher();
+}
+
+// ---------------------------------------------------------------------
+//  Téléphone : le duel se joue couché (paysage), en plein écran, comme un jeu.
+//  Le navigateur n'accepte le plein écran et le verrouillage de l'orientation qu'après un geste du
+//  joueur (le clic sur « Engager le duel ») et pas partout (iPhone : non) : sinon l'écran
+//  « Tourne ton téléphone » (CSS/jeu-cartes.css) l'invite à le faire lui-même.
+// ---------------------------------------------------------------------
+const estTelephone = () => matchMedia('(pointer: coarse) and (max-width: 940px), (pointer: coarse) and (max-height: 520px)').matches;
+let pleinEcranAuto = false;
+async function passerEnPaysage() {
+  if (!estTelephone()) return;
+  try {
+    if (!document.fullscreenElement) {
+      await document.documentElement.requestFullscreen({ navigationUI: 'hide' });
+      pleinEcranAuto = true;
+    }
+    await screen.orientation?.lock?.('landscape');
+  } catch { /* refusé ou pas disponible : l'écran « Tourne ton téléphone » prend le relais */ }
+}
+function quitterPaysage() {
+  try { screen.orientation?.unlock?.(); } catch { /* rien à déverrouiller */ }
+  if (pleinEcranAuto && document.fullscreenElement) document.exitFullscreen().catch(() => {});
+  pleinEcranAuto = false;
 }
 
 function nouvellePartieSolo() {
@@ -1266,6 +1291,7 @@ function revenirAccueil() {
   $('ecran-duel').hidden = true;
   $('ecran-accueil').hidden = false;
   document.body.classList.remove('en-duel');
+  quitterPaysage();
 }
 
 function revenirAuSalon() {
@@ -2014,7 +2040,10 @@ document.addEventListener('click', (e) => {
 $('btn-plein-ecran').addEventListener('click', async () => {
   try {
     if (document.fullscreenElement) await document.exitFullscreen();
-    else await document.documentElement.requestFullscreen({ navigationUI: 'hide' });
+    else {
+      await document.documentElement.requestFullscreen({ navigationUI: 'hide' });
+      if (estTelephone()) await screen.orientation?.lock?.('landscape').catch(() => {});
+    }
   } catch { notifier("Le plein écran n'est pas disponible sur ce navigateur.", 'erreur'); }
 });
 document.addEventListener('fullscreenchange', () => {

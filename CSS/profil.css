@@ -491,9 +491,10 @@ body.page-fiche::before,
 .page-fiche .vitrine .carte-loupe { z-index: 6; }
 
 @media (max-width: 600px) {
-  .page-fiche .vitrine .deck-emplacements { gap: 10px; padding: 14px 6px 28px; }
+  /* Téléphone : trois cartes par ligne, assez grandes pour se voir, noms lisibles */
+  .page-fiche .vitrine .deck-emplacements { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 46px 14px; padding: 14px 8px 34px; }
   .page-fiche .vitrine .deck-emplacement::after {
-    left: 0; right: 0; height: 22px; line-height: 24px; font-size: .45rem; letter-spacing: 0;
+    left: 0; right: 0; height: 24px; line-height: 26px; font-size: .58rem; letter-spacing: .04em;
   }
 }
 @media (prefers-reduced-motion: reduce) {

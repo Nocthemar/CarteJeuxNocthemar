@@ -474,6 +474,35 @@ const ATTAQUES = {
       return retour;
     },
   },
+  // Garde des Elfes
+  'Lance de Givre': {
+    charge: aura(GIVRE, false),
+    async coup(att, cib) {
+      const retour = await elan(att, cib, 0.85);
+      jouerSon('acier');
+      jouerSon('eau', 0.08);
+      // une estocade de lance : un trait droit, puis le givre prend sur la cible
+      griffes(cib, { n: 1, couleur: '#dff4ff', angle: 0, epaisseur: 6 });
+      flash(cib, 'rgba(223,244,255,.85)', 2);
+      symbole(cib, '❄', { couleur: '#ffffff', taille: 46, duree: 800 });
+      particules(cib, { n: 20, couleurs: GIVRE, vitesse: 160, gravite: 30, taille: [2, 6] });
+      return retour;
+    },
+  },
+  'Embuscade des Neiges': {
+    charge: (att) => { aura([...OMBRE, '#dff4ff'], false)(att); voile('rgba(220,240,255,.25)', 500); },
+    async coup(att, cib) {
+      jouerSon('elan');
+      // le blizzard cache les gardiennes, puis trois lances surgissent de la neige
+      voile('rgba(235,245,255,.45)', 700);
+      await salve(att, cib, 3, { forme: '❄', couleur: '#ffffff', taille: 22, duree: 380, arc: 25, rotation: 360 }, 60);
+      jouerSon('acier');
+      griffes(cib, { n: 3, couleur: '#1a1222', angle: -30, ecart: 16, epaisseur: 5 });
+      onde(cib, '#dff4ff', 2.2, 600);
+      particules(cib, { n: 24, couleurs: ['#ffffff', '#dff4ff', '#3a2a4a'], vitesse: 200, gravite: 50, taille: [2, 7] });
+      secousseEcran(7);
+    },
+  },
   // Veilleuse Écarlate
   'Saignée Pourpre': {
     async coup(att, cib) {

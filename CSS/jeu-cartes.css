@@ -3107,3 +3107,108 @@ body.avec-conseils.page-jeu .tg-tapis > .centre__consigne:empty { display: none;
 .menu .prive__boutons .btn-dc { padding: 0 10px; font-size: .76rem; letter-spacing: .08em; white-space: nowrap; }
 /* Place libre : texte en italique, comme une attente */
 .menu .salon__joueur--vide .salon__nom { font-family: "EB Garamond", serif; font-size: .98rem; font-weight: 400; font-style: italic; color: var(--gris); }
+
+
+/* =====================================================================
+   Téléphone : le duel se joue couché (paysage). JS/jeu-cartes.js (passerEnPaysage) demande le
+   plein écran et verrouille l'orientation quand le navigateur l'accepte ; sinon, en portrait,
+   l'écran « Tourne ton téléphone » ci-dessous.
+   Téléphone couché = paysage peu haut (moins de 520 px) : tout est resserré pour tenir dans la hauteur.
+   ===================================================================== */
+@media (orientation: landscape) and (max-height: 520px) {
+  .en-duel .table__plateau { padding: 4px 8px 0; }
+
+  /* Fin du tour, Destin et actions : une colonne compacte collée au bord droit, au milieu */
+  .en-duel .tg-cote {
+    position: fixed; right: 6px; top: 50%; z-index: 6;
+    display: flex; flex-direction: column; align-items: stretch; gap: 5px;
+    width: 108px; margin: 0;
+    translate: 0 -46%;
+  }
+  .en-duel .tg-cote .btn-fin,
+  .en-duel .tg-cote .btn-destin { min-width: 0; width: 100%; min-height: 0; padding: 7px 6px; font-size: .72rem; }
+  .en-duel .tg-cote .btn-fin { min-height: 50px; }
+  .en-duel .tg-cote .btn-destin svg { width: 20px; height: 20px; }
+  .en-duel .tg-cote small { font-size: .55rem; }
+  .en-duel .tg-cote__petits { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+  .en-duel .tg-cote__petits:empty,
+  .en-duel .tg-cote__unite:not(:has(button:not([hidden]):not(:disabled))) { display: none; }
+  .en-duel .tg-cote .btn-action { min-height: 0; padding: 5px 3px; font-size: .58rem; letter-spacing: .02em; }
+  .en-duel .tg-cote .btn-action small { display: none; }
+
+  /* La main : fixée au bas de l’écran, entre le bord gauche et la colonne de boutons ;
+     le plateau lui laisse la place (padding du bas) */
+  .en-duel .table__plateau { padding-bottom: calc(min(9vw, 19vh) * 1.5 - 14px); }
+  .en-duel .main {
+    --carte-l: min(9vw, 19vh);
+    min-height: calc(var(--carte-l) * 1.5 + 8px);
+    position: fixed; left: 8px; right: 116px; bottom: 2px; z-index: 5;
+    margin: 0;
+    padding: 4px 0 0;
+  }
+  .en-duel .main .dc-carte { --carte-l: min(9vw, 19vh); }
+  .en-duel .main .dc-carte + .dc-carte { margin-left: calc(var(--carte-l) * -0.22); }
+  /* Une carte touchée monte au-dessus des autres, assez grosse pour se lire */
+  .en-duel .main .dc-carte:hover,
+  .en-duel .main .dc-carte:focus-visible,
+  .en-duel .main .dc-carte.est-choisie { translate: 0 calc(var(--carte-l) * -0.55); scale: 1.35; z-index: 5; }
+
+  /* Le panneau des jets : seulement ses boutons, en haut à droite */
+  .en-duel .historique {
+    top: 4px; right: 6px;
+    width: auto; max-height: none;
+    padding: 0;
+    background: none; box-shadow: none; clip-path: none;
+  }
+  .en-duel .historique__titre, .en-duel .historique__liste { display: none; }
+  .en-duel .historique__outils { position: static; display: flex; gap: 4px; margin: 0; padding: 0; border: 0; background: none; }
+  .en-duel .historique__outils .btn-outil { flex: none; width: 32px; height: 32px; min-height: 0; padding: 0; }
+  .en-duel .terrain-duel { display: none; }   /* le terrain est annoncé en début de partie (bannière) */
+  .en-duel .volume { display: none; }
+  .en-duel .tg-haut { padding-right: 34px; margin-right: 150px; }
+
+  /* Fenêtres du duel (main de départ, Méditer, Tombeau, loupe) et fin de partie : tout tient dans la hauteur */
+  .fenetre-jeu { max-height: calc(100vh - 16px); padding: 12px 18px; overflow-y: auto; }
+  .fenetre-jeu h2 { margin-bottom: 4px; font-size: 1rem; }
+  .fenetre-jeu__texte { margin-bottom: 8px; font-size: .86rem; line-height: 1.35; }
+  .fenetre-jeu__cartes { --carte-l: min(15vw, 24vh); max-height: none; margin-bottom: 8px; padding: 4px; gap: 8px; }
+  .fenetre-jeu .btn-dc { min-height: 36px; padding: 4px 18px; }
+  .fenetre-jeu.loupe { gap: 10px 18px; }
+  .loupe__carte, .loupe__carte .dc-carte { --carte-l: min(220px, 52vh); }
+  .loupe__fiche { max-height: calc(100vh - 80px); }
+  .fin__cadre { padding: 16px 22px 14px; max-height: calc(100vh - 20px); overflow-y: auto; }
+  .fin__titre { font-size: 1.8rem; margin: 2px 0 4px; }
+  .fin__texte { margin-bottom: 10px; font-size: .9rem; }
+
+  /* La table : un peu moins large pour laisser la colonne de droite */
+  .en-duel .tg-table { margin-right: 112px; }
+  .en-duel .banniere { font-size: .9em; }
+}
+
+/* Portrait, pendant un duel : on invite à tourner le téléphone (élément .tourne-telephone de jeu-cartes.html) */
+.tourne-telephone { display: none; }
+@media (orientation: portrait) and (max-width: 600px) {
+  .en-duel .tourne-telephone {
+    position: fixed; inset: 0; z-index: 9999;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+    padding: 30px;
+    text-align: center;
+    background: radial-gradient(ellipse at 50% 40%, rgba(217,164,65,.16), transparent 60%), #0b0d12;
+    color: var(--gris);
+    font-size: 1.05rem; font-style: italic;
+  }
+  .tourne-telephone strong {
+    font-family: "Cinzel","Cinzel Repli", serif; font-size: 1.3rem; font-style: normal; letter-spacing: .08em;
+    color: #f3cf7c;
+  }
+  /* Un téléphone qui bascule à l'horizontale */
+  .tourne-telephone__icone {
+    width: 46px; height: 78px; margin-bottom: 12px;
+    border: 3px solid #f3cf7c; border-radius: 9px;
+    box-shadow: 0 0 22px rgba(217,164,65,.35), inset 0 -8px 0 -5px #f3cf7c;
+    animation: tourne-telephone 2.4s ease-in-out infinite;
+  }
+  .en-duel .table { visibility: hidden; }
+}
+@keyframes tourne-telephone { 0%, 25% { rotate: 0deg; } 55%, 85% { rotate: -90deg; } 100% { rotate: 0deg; } }
+@media (prefers-reduced-motion: reduce) { .tourne-telephone__icone { animation: none; rotate: -90deg; } }
