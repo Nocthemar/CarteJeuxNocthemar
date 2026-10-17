@@ -1,5 +1,6 @@
 -- =====================================================================
 --  Remise à zéro d'UN joueur (pour tester) : comme s'il venait d'arriver dans le jeu de cartes.
+--  (Même chose depuis le panneau MJ du site : bouton « Réinitialiser le joueur », SQL/mj_reset_joueur.sql)
 --
 --  1. Trouve ton discord_id :
 --       select discord_id, username from public.players where username ilike '%ton pseudo%';
@@ -26,10 +27,11 @@ begin
   -- Tout ce qui appartient au jeu de cartes, table par table (si elle existe)
   foreach v_table in array array[
     'player_deck_cards', 'player_decks', 'player_cards',      -- cartes, grimoire, deck
-    'player_boosters', 'booster_ouvertures',                  -- boosters
+    'player_boosters', 'booster_ouvertures', 'player_booster_gratuit', -- boosters
     'pass_progression', 'pass_parties', 'pass_cosmetiques',   -- Pass de saison
     'histoire_progression', 'player_pass', 'histoire_tentatives', -- mode Histoire
     'joueur_plateaux',                                        -- plateaux achetés
+    'rangs', 'file_classee', 'parties_classees', 'salons_classes', -- classé
     'souhaits'                                                -- liste de souhaits
   ] loop
     if to_regclass('public.' || v_table) is not null then
