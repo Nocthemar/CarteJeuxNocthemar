@@ -474,7 +474,34 @@ const ATTAQUES = {
       return retour;
     },
   },
-  // Garde des Elfes
+  // Garde d'Erynedhal
+  'Pique Glacée': {
+    charge: aura(GIVRE, false),
+    async coup(att, cib) {
+      const retour = await elan(att, cib, 0.7);
+      jouerSon('acier');
+      // une pique rapide, puis le froid qui engourdit
+      griffes(cib, { n: 1, couleur: '#dff4ff', angle: 10, epaisseur: 4 });
+      particules(cib, { n: 14, couleurs: GIVRE, vitesse: 130, gravite: 20, taille: [2, 5] });
+      symbole(cib, '❄', { couleur: '#dff4ff', taille: 36, duree: 650 });
+      return retour;
+    },
+  },
+  'Œil des Cimes': {
+    charge: (att) => { aura(GIVRE, false)(att); symbole(att, '👁️', { couleur: '#dff4ff', taille: 40, duree: 900, monte: 10 }); },
+    async coup(att, cib) {
+      // elle vise la faille : un trait de lumière froide, puis le coup tombe juste
+      rayon(att, cib, { couleur: '#bfe3f0', epaisseur: 4, duree: 380 });
+      await pause(300);
+      const retour = await elan(att, cib, 0.85);
+      jouerSon('acier');
+      griffes(cib, { n: 1, couleur: '#ffffff', angle: -20, epaisseur: 6 });
+      flash(cib, 'rgba(223,244,255,.85)', 2);
+      particules(cib, { n: 16, couleurs: [...GIVRE, '#bfe3f0'], vitesse: 160, gravite: 40, taille: [2, 5] });
+      return retour;
+    },
+  },
+  // Gardes d'Erynedhal (ancienne « Garde des Elfes »)
   'Lance de Givre': {
     charge: aura(GIVRE, false),
     async coup(att, cib) {
@@ -501,6 +528,148 @@ const ATTAQUES = {
       onde(cib, '#dff4ff', 2.2, 600);
       particules(cib, { n: 24, couleurs: ['#ffffff', '#dff4ff', '#3a2a4a'], vitesse: 200, gravite: 50, taille: [2, 7] });
       secousseEcran(7);
+    },
+  },
+  // Garde d'Aelkor
+  'Coup de Marteau': {
+    charge: aura([...ACIER, '#c9853a'], false),
+    async coup(att, cib) {
+      const retour = await elan(att, cib, 0.75);
+      jouerSon('forge');
+      // un marteau qui tombe d'en haut : choc sourd, étincelles de forge
+      symbole(cib, '🔨', { couleur: '#e6eaf1', taille: 56, duree: 600, monte: -20 });
+      onde(cib, '#c9853a', 2.4, 550);
+      particules(cib, { n: 22, couleurs: BRAISES, vitesse: 190, gravite: 160, taille: [2, 5] });
+      secousseEcran(9);
+      return retour;
+    },
+  },
+  'Serment des Trois': {
+    charge: aura([...ACIER, '#f6d995'], false),
+    async coup(att, cib) {
+      const retour = await elan(att, cib, 0.85);
+      jouerSon('couronne');
+      // trois éclats d'or, un par élu d'Aelkor
+      griffes(cib, { n: 3, couleur: '#f6d995', angle: 90, ecart: 16, epaisseur: 5 });
+      flash(cib, 'rgba(246,217,149,.8)', 2);
+      particules(cib, { n: 16, couleurs: [...OR, '#c9853a'], vitesse: 160, gravite: 90, taille: [2, 5] });
+      return retour;
+    },
+  },
+  // Gardes d'Aelkor
+  'Marteaux en Cadence': {
+    charge: aura([...ACIER, '#c9853a'], false),
+    async coup(att, cib) {
+      // trois marteaux lancés l'un après l'autre, au rythme des enclumes
+      for (let i = 0; i < 3; i++) {
+        await projectile(att, cib, { forme: '🔨', couleur: '#e6eaf1', taille: 28, duree: 340, arc: 35, rotation: 540 });
+        jouerSon('forge');
+        particules(cib, { n: 10, couleurs: BRAISES, vitesse: 150, gravite: 150, taille: [2, 4] });
+        secousseEcran(5, 220);
+      }
+      onde(cib, '#c9853a', 2.2, 600);
+    },
+  },
+  'Rang d\'Acier': {
+    charge: (att) => { aura(ACIER, false)(att); symbole(att, '⛓', { couleur: '#c5cad3', taille: 40, duree: 900, monte: 0 }); },
+    async coup(att, cib) {
+      const retour = await elan(att, cib, 0.9);
+      jouerSon('chaine');
+      jouerSon('choc', 0.08);
+      // le mur de métal percute la cible d'un bloc
+      griffes(cib, { n: 4, couleur: '#c5cad3', angle: 0, ecart: 12, epaisseur: 6 });
+      flash(cib, 'rgba(197,202,211,.85)', 2.4);
+      onde(cib, '#8a919c', 2.6, 650);
+      particules(cib, { n: 18, couleurs: ACIER, vitesse: 170, gravite: 120, taille: [2, 6] });
+      secousseEcran(11);
+      return retour;
+    },
+  },
+  // Vultoff
+  'Sentence du Sans-Tête': {
+    charge: aura([...OMBRE, '#a3121f']),
+    async coup(att, cib) {
+      jouerSon('sombre');
+      voile('rgba(20,8,14,.6)', 900);
+      // le regard de la tête tranchée : un rayon blême, puis la marque de la mort
+      rayon(att, cib, { couleur: '#d9d2ff', epaisseur: 8, duree: 480 });
+      await pause(380);
+      symbole(cib, '💀', { couleur: '#e6dccb', taille: 70, duree: 1000 });
+      onde(cib, '#a3121f', 2.4, 700);
+      particules(cib, { n: 20, couleurs: [...OMBRE, '#d9d2ff'], vitesse: 140, gravite: -20, taille: [3, 7] });
+    },
+  },
+  'Moisson Pourpre': {
+    charge: aura(SANG),
+    async coup(att, cib) {
+      jouerSon('griffe');
+      voile('rgba(120,10,20,.45)', 800);
+      // ses haillons rouges fouettent la cible et boivent le sang
+      await salve(att, cib, 4, { forme: 'orbe', couleur: '#a3121f', taille: 18, duree: 360, arc: 30 }, 60);
+      griffes(cib, { n: 3, couleur: '#ff3b4a', angle: -40, ecart: 18, epaisseur: 6 });
+      jouerSon('coeur');
+      particules(cib, { n: 30, couleurs: SANG, vitesse: 210, gravite: 140, taille: [2, 6] });
+      secousseEcran(9);
+      // le sang revient vers Vultoff
+      await salve(cib, att, 3, { forme: 'orbe', couleur: '#ff8a8f', taille: 12, duree: 420, arc: 40 }, 70);
+    },
+  },
+  // Les Veines
+  'Éveil des Entités': {
+    charge: aura([...OR, '#c9b2fb', '#bfe3f0']),
+    async coup(att, cib) {
+      jouerSon('magie');
+      voile('rgba(30,24,60,.55)', 1100);
+      // les symboles des Veines apparaissent un à un et fondent sur la cible
+      const signes = ['🩸', '👑', '👁️', '🌙', '⚰️', '🐺', '⚒️', '🌊', '🌿', '🕯️', '🌑', '⛓️'];
+      await salve(att, cib, 6, { forme: 'orbe', couleur: '#f6d995', taille: 16, duree: 420, arc: 50 }, 70);
+      signes.slice(0, 6).forEach((s, i) => setTimeout(() => symbole(cib, s, { couleur: '#fff', taille: 34, duree: 700, monte: 40 }), i * 60));
+      flash(cib, 'rgba(255,246,214,.9)', 2.6);
+      onde(cib, '#c9b2fb', 2.8, 800);
+      particules(cib, { n: 30, couleurs: [...OR, ...VIOLET, '#bfe3f0'], vitesse: 200, gravite: 20, taille: [2, 6] });
+    },
+  },
+  'Convergence des Douze': {
+    charge: aura([...OR, '#ffffff']),
+    async coup(att, cib) {
+      jouerSon('tonnerre');
+      jouerSon('couronne', 0.15);
+      voile('rgba(255,240,200,.5)', 1300);
+      secousseEcran(12, 800);
+      // douze traits de lumière, un par Veine, convergent sur la cible
+      const couleurs = ['#ff3b4a', '#f6d995', '#bfe3f0', '#c9b2fb', '#8a919c', '#a5876a', '#ff9a3d', '#3f8fc0', '#5d9b48', '#fff3c4', '#6e4a8a', '#c5cad3'];
+      couleurs.forEach((c, i) => setTimeout(() => rayon(att, cib, { couleur: c, epaisseur: 6, duree: 420 }), reduit ? 0 : i * 40));
+      await pause(couleurs.length * 40 + 350);
+      symbole(cib, '✦', { couleur: '#f6d995', taille: 96, duree: 1100 });
+      flash(cib, 'rgba(255,255,255,.95)', 3.2);
+      onde(cib, '#f6d995', 3.4, 900);
+      particules(cib, { n: 40, couleurs: [...OR, ...couleurs.slice(0, 6)], vitesse: 260, gravite: 30, taille: [3, 8] });
+    },
+  },
+  // Astris, Reine de Pravorn
+  'Décret de la Couronne': {
+    charge: (att) => { aura([...OR, '#2f6b45'])(att); symbole(att, '👑', { couleur: '#f6d995', taille: 46, duree: 900, monte: 20 }); },
+    async coup(att, cib) {
+      jouerSon('couronne');
+      // le sceau royal descend sur la cible, entouré d'éclats d'émeraude et d'or
+      await salve(att, cib, 3, { forme: 'orbe', couleur: '#f6d995', taille: 16, duree: 380, arc: 40 }, 80);
+      symbole(cib, '👑', { couleur: '#f6d995', taille: 74, duree: 900, monte: -10 });
+      flash(cib, 'rgba(246,217,149,.85)', 2.4);
+      particules(cib, { n: 24, couleurs: [...OR, '#2f6b45', '#7fd6a0'], vitesse: 180, gravite: 70, taille: [2, 6] });
+      secousseEcran(7);
+    },
+  },
+  'Loi du Tournoi': {
+    charge: aura([...ACIER, '#2f6b45'], false),
+    async coup(att, cib) {
+      jouerSon('chaine');
+      // les chaînes de la loi enserrent la cible, puis le verdict tombe
+      await salve(att, cib, 2, { forme: '⛓', couleur: '#c5cad3', taille: 26, duree: 420, arc: 20, rotation: 180 }, 90);
+      griffes(cib, { n: 2, couleur: '#c5cad3', angle: 45, ecart: 0, epaisseur: 6 });
+      griffes(cib, { n: 2, couleur: '#c5cad3', angle: -45, ecart: 0, epaisseur: 6 });
+      jouerSon('cloche', 0.1);
+      onde(cib, '#2f6b45', 2.4, 650);
+      particules(cib, { n: 18, couleurs: [...ACIER, '#2f6b45'], vitesse: 150, gravite: 100, taille: [2, 5] });
     },
   },
   // Veilleuse Écarlate

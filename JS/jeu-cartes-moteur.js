@@ -162,7 +162,14 @@ const UNIQUE_PAR_NOM = {
   'elfe des neiges doree': 'blizzard',
   'garde de pravorn': 'sentinelle',
   'gardes de pravorn': 'rangs',
-  'garde des elfes': 'vigie',
+  "gardes d'erynedhal": 'vigie',
+  'garde des elfes': 'vigie',   // ancien nom des Gardes d'Erynedhal
+  "garde d'erynedhal": 'neige',
+  "garde d'aelkor": 'armure',
+  "gardes d'aelkor": 'marteaux',
+  'vultoff': 'sanstete',
+  'les veines': 'entites',
+  'astris, reine de pravorn': 'reine',
 };
 
 export const UNIQUES = {
@@ -238,13 +245,76 @@ export const UNIQUES = {
       unites(p.camps[qui]).filter((x) => x !== u).forEach((x) => { x.d += 1; ev.touches.push({ camp: qui, uid: x.uid, texte: '+1 Défense', buff: true }); });
     },
   },
-  // Garde des Elfes : les gardiennes des cols d'Erynedhal repèrent la plus grande menace et la figent
+  // Garde d'Erynedhal : la gardienne ne laisse aucune trace dans la neige
+  neige: {
+    nom: 'Pas dans la neige',
+    texte: 'À son arrivée, gagne Esquive : la première attaque qui la vise à chaque tour adverse lance deux d20 et garde le plus bas.',
+    arrivee(p, qui, u, ev) {
+      if (!u.caps.includes('esquive')) u.caps.push('esquive');
+      ev.touches.push({ camp: qui, uid: u.uid, texte: 'Esquive', buff: true });
+    },
+  },
+  // Gardes d'Erynedhal : les gardiennes des cols repèrent la plus grande menace et la figent
   vigie: {
     nom: 'Vigie d’Erynedhal',
     texte: 'À son arrivée, gèle l’unité adverse la plus forte : elle ne pourra ni attaquer ni défendre à son prochain tour.',
     arrivee(p, qui, u, ev) {
       const t = [...unites(p.camps[autre(qui)])].sort((x, y) => y.a - x.a)[0];
       if (t) { t.gele = 1; ev.touches.push({ camp: autre(qui), uid: t.uid, texte: 'Gelée', etat: true }); }
+    },
+  },
+  // Garde d'Aelkor : une armure forgée par les nains
+  armure: {
+    nom: 'Armure naine',
+    texte: 'À son arrivée, gagne Bouclier : les premiers dégâts qu’il subit sont annulés.',
+    arrivee(p, qui, u, ev) {
+      u.bouclier = true;
+      if (!u.caps.includes('bouclier')) u.caps.push('bouclier');
+      ev.touches.push({ camp: qui, uid: u.uid, texte: 'Bouclier', buff: true });
+    },
+  },
+  // Gardes d'Aelkor : les marteaux de la garde naine
+  marteaux: {
+    nom: 'Marteaux d’Aelkor',
+    texte: 'À son arrivée, tes autres unités gagnent +1 Attaque pour de bon.',
+    arrivee(p, qui, u, ev) {
+      unites(p.camps[qui]).filter((x) => x !== u).forEach((x) => { x.a += 1; ev.touches.push({ camp: qui, uid: x.uid, texte: '+1 Attaque', buff: true }); });
+    },
+  },
+  // Vultoff : la mort qu'il a refusée, il la rend
+  sanstete: {
+    nom: 'Le Sans-Tête',
+    texte: 'À son arrivée, inflige 3 dégâts au héros adverse ; ton héros récupère autant de PV.',
+    arrivee(p, qui, u, ev) {
+      p.camps[autre(qui)].pv -= 3;
+      p.camps[qui].stats.degats += 3;
+      ev.touches.push({ camp: autre(qui), heros: true, valeur: 3 });
+      soignerHeros(p.camps[qui], 3, qui, ev);
+    },
+  },
+  // Les Veines : les Entités prennent forme et renforcent les tiens
+  entites: {
+    nom: 'Éveil des Entités',
+    texte: 'À son arrivée, tes autres unités gagnent +1 Attaque et +1 Défense pour de bon, et ton héros récupère 4 PV.',
+    arrivee(p, qui, u, ev) {
+      unites(p.camps[qui]).filter((x) => x !== u).forEach((x) => {
+        x.a += 1; x.d += 1;
+        ev.touches.push({ camp: qui, uid: x.uid, texte: '+1 / +1', buff: true });
+      });
+      soignerHeros(p.camps[qui], 4, qui, ev);
+    },
+  },
+  // Astris, Reine de Pravorn : un mot de la reine, et la milice accourt
+  reine: {
+    nom: 'Appel de la Couronne',
+    texte: 'À son arrivée, un Milicien de la Couronne (2 / 1 / 2) rejoint ta rangée s’il reste une place.',
+    arrivee(p, qui, u, ev) {
+      const camp = p.camps[qui];
+      const place = placeLibre(camp);
+      if (place < 0) return;
+      const m = instancier(MILICIEN);
+      camp.terrain[place] = m;
+      ev.renfort = m.uid;
     },
   },
   // Légendaires sans capacité propre
